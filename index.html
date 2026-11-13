@@ -1,0 +1,714 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>POS guided help — prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1E8E4F}a:hover{color:#003323}
+button{font-family:inherit;cursor:pointer}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes drain{from{width:100%}to{width:0%}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.08)}100%{transform:scale(1)}}
+html,body{height:100%}
+body{background:#EEF0F3;font-family:Inter,sans-serif;color:#2C3448;display:flex;align-items:center;justify-content:center;min-height:100vh}
+.stage{box-sizing:border-box;padding:40px;display:flex;gap:40px;width:720px;max-width:100%}
+@media (max-width:760px){body{align-items:flex-start}.stage{flex-direction:column;align-items:center;padding:16px;gap:24px;width:100%}.stage>div:last-child{width:100%;max-width:360px}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<template id="tpl">
+
+<div class="stage">
+
+<!-- PHONE -->
+<div style="width: 360px; height: 640px; flex-shrink: 0; background: #FFFFFF; display: flex; flex-direction: column; overflow: hidden; border-radius: 4px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); position: relative">
+<div style="height: 24px; background: #003323; flex-shrink: 0"></div>
+
+<!-- ============ FULL-SCREEN TOUCH TEST ============ -->
+<sc-if value="{{isTest}}" hint-placeholder-val="{{ false }}">
+<div style="flex: 1; display: flex; flex-direction: column; background: #101418; min-height: 0">
+<div style="padding: 14px 16px 10px; color: #FFFFFF; text-align: center; pointer-events: none">
+<div style="font-size: 16px; font-weight: 600">Tap the green spot</div>
+<div style="font-size: 13px; color: #B7BCC8; margin-top: 2px">{{testCount}}</div>
+</div>
+<div style="flex: 1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 2px; background: #2A3038; min-height: 0">
+<sc-for list="{{cells}}" as="c" hint-placeholder-count="6">
+<button onClick="{{c.tap}}" aria-label="{{c.name}}" style="border: none; background: #101418; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 0">
+<sc-if value="{{c.active}}" hint-placeholder-val="{{ false }}">
+<div style="width: 84px; height: 84px; border-radius: 42px; background: #50D387; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; color: #003323; animation: pulse 1s ease-in-out infinite">Tap</div>
+<div style="width: 84px; height: 4px; border-radius: 2px; background: #2A3038; overflow: hidden"><div style="height: 4px; background: #50D387; animation: drain 5s linear forwards"></div></div>
+</sc-if>
+<sc-if value="{{c.pass}}" hint-placeholder-val="{{ false }}">
+<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#50D387" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>
+</sc-if>
+<sc-if value="{{c.fail}}" hint-placeholder-val="{{ false }}">
+<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#F28B82" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+</sc-if>
+</button>
+</sc-for>
+</div>
+<div style="padding: 10px 16px; text-align: center; font-size: 12px; color: #B7BCC8; pointer-events: none">No need to exit. The test ends by itself.</div>
+</div>
+</sc-if>
+
+<!-- ============ NORMAL SCREENS ============ -->
+<sc-if value="{{notTest}}" hint-placeholder-val="{{ true }}">
+
+<!-- Header -->
+<div style="height: 56px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 0 12px; border-bottom: 1px solid #DBDDE4">
+<button onClick="{{back}}" aria-label="Back" style="width: 44px; height: 44px; border: none; background: none; display: flex; align-items: center; justify-content: center; padding: 0">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2C3448" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+</button>
+<div style="flex: 1; display: flex; flex-direction: column; gap: 1px">
+<div style="font-size: 18px; font-weight: 500; line-height: 22px">{{title}}</div>
+<sc-if value="{{hasSub}}" hint-placeholder-val="{{ false }}"><div style="font-size: 12px; color: #5A6580">{{subtitle}}</div></sc-if>
+</div>
+</div>
+
+<!-- Help & Support (static, unchanged entry) -->
+<sc-if value="{{isHelp}}" hint-placeholder-val="{{ true }}">
+<div style="flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 4px">
+<sc-for list="{{helpItems}}" as="it" hint-placeholder-count="4">
+<button onClick="{{it.go}}" style="display: flex; align-items: center; gap: 16px; padding: 12px 4px; border: none; background: none; text-align: left; min-height: 56px; opacity: {{it.op}}">
+<div style="width: 24px; height: 24px; border-radius: 12px; background: #E8F7EE; flex-shrink: 0"></div>
+<div style="flex: 1"><div style="font-size: 16px; color: #2C3448">{{it.t}}</div><div style="font-size: 12px; color: #5A6580; margin-top: 2px">{{it.d}}</div></div>
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#003323" stroke-width="2.5" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+</button>
+</sc-for>
+</div>
+</sc-if>
+
+<!-- ============ GUIDED FLOW: one conversation, starts at the top ============ -->
+<sc-if value="{{isFlow}}" hint-placeholder-val="{{ false }}">
+<div style="flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column-reverse">
+<div style="margin-bottom: auto; padding: 16px; display: flex; flex-direction: column; gap: 14px">
+
+<sc-for list="{{msgs}}" as="m" hint-placeholder-count="3">
+<div style="display: flex; flex-direction: column; gap: 6px; animation: {{m.anim}}">
+
+<sc-if value="{{m.isBot}}" hint-placeholder-val="{{ true }}">
+<div style="font-size: 14px; line-height: 21px; color: #2C3448; max-width: 304px">{{m.t}}<span style="font-weight: 700">{{m.b}}</span>{{m.t2}}</div>
+</sc-if>
+
+<sc-if value="{{m.isErr}}" hint-placeholder-val="{{ false }}">
+<div style="font-size: 14px; line-height: 21px; color: #B3261E; max-width: 304px">{{m.t}}</div>
+</sc-if>
+
+<sc-if value="{{m.isUser}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; justify-content: flex-end">
+<sc-if value="{{m.fixedReply}}" hint-placeholder-val="{{ true }}">
+<div style="background: #EEF0F3; border-radius: 20px; padding: 10px 16px; font-size: 14px; color: #2C3448; max-width: 260px">{{m.t}}</div>
+</sc-if>
+<sc-if value="{{m.canChange}}" hint-placeholder-val="{{ false }}">
+<button onClick="{{m.change}}" aria-label="{{m.changeAria}}" style="background: #EEF0F3; border: none; border-radius: 20px; min-height: 44px; padding: 10px 12px 10px 16px; font-size: 14px; color: #2C3448; max-width: 260px; display: inline-flex; align-items: center; gap: 8px; text-align: left">{{m.t}}<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#003323" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg></button>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{m.isBusy}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; align-items: center; gap: 10px; font-size: 14px; color: #495678">
+<div style="width: 18px; height: 18px; border-radius: 9px; border: 3px solid #DBDDE4; border-top-color: #1E8E4F; animation: spin 0.9s linear infinite; flex-shrink: 0"></div>{{m.t}}
+</div>
+</sc-if>
+
+<sc-if value="{{m.isStep}}" hint-placeholder-val="{{ false }}">
+<div style="border: 1px solid #DBDDE4; border-radius: 8px; overflow: hidden; max-width: 300px">
+<div style="height: 88px; background: #F4F5F7; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #5A6580">{{m.img}}</div>
+<div style="padding: 12px 14px; display: flex; flex-direction: column; gap: 4px">
+<div style="font-size: 12px; font-weight: 600; color: #1E7A45">{{m.cap}}</div>
+<div style="font-size: 17px; line-height: 23px; font-weight: 600; color: #2C3448">{{m.title}}</div>
+<div style="font-size: 13px; line-height: 19px; color: #495678">{{m.d}}</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{m.isResult}}" hint-placeholder-val="{{ false }}">
+<div style="border: 1px solid #DBDDE4; border-radius: 8px; padding: 12px 14px; display: flex; align-items: center; gap: 14px; max-width: 300px">
+<div style="width: 56px; height: 84px; border: 2px solid #2C3448; border-radius: 6px; padding: 3px; box-sizing: border-box; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px; flex-shrink: 0">
+<sc-for list="{{m.zones}}" as="z" hint-placeholder-count="6">
+<div style="background: {{z.bg}}; border-radius: 2px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: {{z.col}}">{{z.mark}}</div>
+</sc-for>
+</div>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<div style="font-size: 12px; color: #5A6580">Touch test result</div>
+<div style="font-size: 13px; line-height: 18px; color: #2C3448">{{m.d}}</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{m.isCard}}" hint-placeholder-val="{{ false }}">
+<div style="border: 1px solid {{m.border}}; background: {{m.bg}}; border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; max-width: 300px">
+<div style="font-size: 15px; font-weight: 600">{{m.title}}</div>
+<sc-for list="{{m.rows}}" as="r" hint-placeholder-count="3">
+<div style="display: flex; justify-content: space-between; gap: 12px; font-size: 13px"><span style="color: #5A6580; flex-shrink: 0">{{r.a}}</span><span style="font-weight: 500; text-align: right">{{r.b}}</span></div>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{m.isTicket}}" hint-placeholder-val="{{ false }}">
+<div style="border: 1px solid #DBDDE4; border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; max-width: 300px">
+<div style="align-self: flex-start; background: #FFE9A8; color: #5C4400; font-size: 12px; font-weight: 600; border-radius: 10px; padding: 2px 10px">Open</div>
+<div style="font-size: 15px; font-weight: 600">{{m.title}}</div>
+<div style="font-size: 12px; color: #5A6580">{{m.d}}</div>
+</div>
+</sc-if>
+
+<sc-if value="{{m.isDone}}" hint-placeholder-val="{{ false }}">
+<div style="border: 1px solid #A8DDBF; background: #EEF9F2; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+<div style="width: 36px; height: 36px; border-radius: 10px; background: #FFFFFF; display: flex; align-items: center; justify-content: center">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1E7A45" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>
+</div>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<div style="font-size: 15px; font-weight: 600">{{m.title}}</div>
+<div style="font-size: 13px; line-height: 19px; color: #495678">{{m.d}}</div>
+</div>
+</div>
+</sc-if>
+
+</div>
+</sc-for>
+
+<!-- ============ SELECTION: sizes itself to the number of options ============ -->
+<sc-if value="{{hasOpts}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 10px; order: {{optOrder}}; position: {{optPos}}; top: 0; background: #FFFFFF; z-index: 1; padding-bottom: 4px">
+
+<sc-if value="{{optsTop}}" hint-placeholder-val="{{ false }}">
+<div style="font-size: 12px; color: #5A6580">Buttons moved up, because the bottom of the screen isn't responding.</div>
+</sc-if>
+
+<!-- one action: a single filled button -->
+<sc-for list="{{actions}}" as="o" hint-placeholder-count="1">
+<button onClick="{{o.pick}}" style="min-height: 48px; border-radius: 24px; border: none; background: #003323; color: #FFFFFF; font-size: 15px; font-weight: 600; padding: 8px 16px">{{o.label}}</button>
+</sc-for>
+
+<!-- the request: a quieter, hug-width green pill -->
+<sc-for list="{{reqPills}}" as="o" hint-placeholder-count="1">
+<button onClick="{{o.pick}}" style="align-self: flex-start; min-height: 46px; border-radius: 24px; border: none; background: #003323; color: #FFFFFF; font-size: 15px; font-weight: 600; padding: 6px 18px 6px 20px; display: inline-flex; align-items: center; gap: 8px">{{o.label}}<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0"><path d="M7 5v8h10"/><path d="M13 9l4 4-4 4"/></svg></button>
+</sc-for>
+
+<!-- 2 to 3 answers: pills -->
+<sc-if value="{{isPills}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; align-items: flex-start; gap: 10px">
+<sc-for list="{{answers}}" as="o" hint-placeholder-count="2">
+<button onClick="{{o.pick}}" style="min-height: 44px; border-radius: 22px; border: 1px solid #003323; background: #FFFFFF; color: #2C3448; font-size: 14px; font-weight: 500; padding: 6px 16px 6px 18px; display: inline-flex; align-items: center; gap: 8px; text-align: left; opacity: {{o.op}}">{{o.label}}<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#003323" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0"><path d="M7 5v8h10"/><path d="M13 9l4 4-4 4"/></svg></button>
+</sc-for>
+</div>
+</sc-if>
+
+<!-- 4 or more answers: compact list, with More from 7 -->
+<sc-if value="{{isList}}" hint-placeholder-val="{{ false }}">
+<div style="border: 1px solid #DBDDE4; border-radius: 8px; overflow: hidden; display: flex; flex-direction: column">
+<sc-for list="{{answers}}" as="o" hint-placeholder-count="5">
+<button onClick="{{o.pick}}" style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 14px; min-height: 48px; border: none; border-bottom: 1px solid #EEF0F3; background: #FFFFFF; text-align: left; font-size: 15px; color: #2C3448; opacity: {{o.op}}">
+<span>{{o.label}}</span>
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#003323" stroke-width="2.5" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+</button>
+</sc-for>
+<sc-if value="{{showMore}}" hint-placeholder-val="{{ false }}">
+<button onClick="{{moreGo}}" style="display: flex; align-items: center; justify-content: space-between; padding: 0 14px; min-height: 48px; border: none; background: #F7F8FA; text-align: left; font-size: 15px; color: #495678">
+<span>More</span>
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#495678" stroke-width="2.5" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+</button>
+</sc-if>
+</div>
+</sc-if>
+
+<!-- the quiet last resort -->
+<sc-for list="{{quiet}}" as="o" hint-placeholder-count="1">
+<button onClick="{{o.pick}}" style="align-self: flex-start; border: none; background: none; font-size: 13px; color: #495678; text-decoration: underline; padding: 10px 4px; min-height: 44px">{{o.label}}</button>
+</sc-for>
+
+</div>
+</sc-if>
+
+</div>
+</div>
+
+<!-- number pad: the only place the merchant types -->
+<sc-if value="{{padOn}}" hint-placeholder-val="{{ false }}">
+<div style="flex-shrink: 0; border-top: 1px solid #DBDDE4; background: #F7F8FA; padding: 10px 16px 10px; display: flex; flex-direction: column; gap: 8px">
+<div style="font-size: 12px; color: #5A6580">{{padLabel}}</div>
+<div style="height: 44px; border: 1.5px solid #003323; border-radius: 8px; background: #FFFFFF; display: flex; align-items: center; padding: 0 14px; font-size: 20px; font-weight: 600; letter-spacing: 0.04em; color: #2C3448">{{padShown}}</div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px">
+<sc-for list="{{padKeys}}" as="k" hint-placeholder-count="12">
+<button onClick="{{k.tap}}" aria-label="{{k.aria}}" style="height: 40px; border-radius: 8px; border: 1px solid #DBDDE4; background: #FFFFFF; font-size: 18px; font-weight: 500; color: #2C3448; opacity: {{k.op}}">{{k.t}}</button>
+</sc-for>
+</div>
+<button onClick="{{padGo}}" style="height: 46px; border-radius: 24px; border: none; background: #003323; color: #FFFFFF; font-size: 15px; font-weight: 600; opacity: {{padGoOp}}">{{padCta}}</button>
+<button onClick="{{padCancel}}" style="align-self: center; border: none; background: none; font-size: 13px; color: #495678; text-decoration: underline; min-height: 30px">Use the registered number instead</button>
+</div>
+</sc-if>
+</sc-if>
+
+<!-- Leave sheet -->
+<sc-if value="{{sheet}}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; left: 0; right: 0; top: 24px; bottom: 40px; background: rgba(0,0,0,0.45); display: flex; flex-direction: column; justify-content: flex-end; z-index: 5">
+<div style="background: #FFFFFF; border-radius: 16px 16px 0 0; padding: 20px 16px 16px; display: flex; flex-direction: column; gap: 10px">
+<div style="font-size: 17px; font-weight: 600">Leave this check?</div>
+<div style="font-size: 14px; line-height: 20px; color: #495678">We'll save your progress. You can continue from Help &amp; Support.</div>
+<button onClick="{{stay}}" style="height: 48px; border-radius: 24px; border: none; background: #003323; color: #FFFFFF; font-size: 15px; font-weight: 600; margin-top: 6px">Keep going</button>
+<button onClick="{{startOver}}" style="height: 48px; border-radius: 24px; border: 1.5px solid #003323; background: #FFFFFF; color: #003323; font-size: 15px; font-weight: 600">Start over</button>
+<button onClick="{{leave}}" style="height: 48px; border: none; background: none; color: #003323; font-size: 15px; font-weight: 600">Leave</button>
+</div>
+</div>
+</sc-if>
+
+</sc-if>
+
+<div style="height: 40px; background: #000; flex-shrink: 0; display: flex; align-items: center; justify-content: space-around">
+<div style="width: 0; height: 0; border-top: 7px solid transparent; border-bottom: 7px solid transparent; border-right: 11px solid #FFF"></div>
+<div style="width: 14px; height: 14px; border-radius: 7px; border: 2px solid #FFF"></div>
+<div style="width: 12px; height: 12px; background: #FFF"></div>
+</div>
+</div>
+
+<!-- SIDE PANEL -->
+<div style="flex: 1; display: flex; flex-direction: column; gap: 10px; padding-top: 8px">
+<div style="font-size: 12px; font-weight: 600; color: #5A6580; letter-spacing: 0.06em">PROTOTYPE NOTES</div>
+<div style="font-size: 18px; font-weight: 700; line-height: 24px">Guided flow from Log a complaint</div>
+<div style="font-size: 12px; line-height: 17px; color: #2C3448; display: flex; flex-direction: column; gap: 6px">
+<div style="border: 1px solid #DBDDE4; border-radius: 8px; padding: 8px 10px"><b>Built:</b> Power and charging, Screen and buttons. Greyed options aren't built.</div>
+<div style="border: 1px solid #DBDDE4; border-radius: 8px; padding: 8px 10px"><b>Touch test:</b> tap a green spot to pass it, or leave it 5 seconds to miss it. Missed spots get a second try.</div>
+<div style="border: 1px solid #DBDDE4; border-radius: 8px; padding: 8px 10px"><b>Changing an answer:</b> tap your last reply (it shows a pencil) or press back. Once a check has run, back offers Keep going, Start over or Leave.</div>
+</div>
+<sc-for list="{{toggles}}" as="tg" hint-placeholder-count="3">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="font-size: 12px; font-weight: 600; color: #2C3448">{{tg.label}}</div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px">
+<sc-for list="{{tg.items}}" as="x" hint-placeholder-count="2">
+<button onClick="{{x.pick}}" style="min-height: 34px; border-radius: 8px; border: 1.5px solid {{x.border}}; background: {{x.bg}}; font-size: 12px; font-weight: 600; color: #2C3448; padding: 5px 9px">{{x.label}}</button>
+</sc-for>
+</div>
+</div>
+</sc-for>
+<button onClick="{{restart}}" style="height: 40px; border-radius: 20px; border: 1.5px solid #2C3448; background: transparent; font-size: 13px; font-weight: 600; color: #2C3448; margin-top: 4px">Restart prototype</button>
+</div>
+
+</div>
+</template>
+<script>
+/* Tiny renderer: reads the template above, fills {{holes}} from renderVals(), and redraws on setState. */
+class DCLogic {
+  constructor() { this.state = {}; }
+  setState(u) { Object.assign(this.state, u); if (!this._q) { this._q = true; Promise.resolve().then(() => { this._q = false; draw(this); }); } }
+}
+function look(path, scope) {
+  path = path.trim(); if (path === 'true') return true; if (path === 'false') return false;
+  const parts = path.split('.'); let v;
+  for (let s = scope; s; s = s.up) { if (parts[0] in s.vars) { v = s.vars[parts[0]]; break; } }
+  for (let i = 1; i < parts.length && v != null; i++) v = v[parts[i]];
+  return v;
+}
+const WHOLE = /^\s*\{\{([^}]+)\}\}\s*$/;
+const fill = (str, scope) => str.replace(/\{\{([^}]+)\}\}/g, (m, p) => { const v = look(p, scope); return v == null ? '' : v; });
+function build(node, scope, out) {
+  if (node.nodeType === 3) { out.appendChild(document.createTextNode(fill(node.nodeValue, scope))); return; }
+  if (node.nodeType !== 1) return;
+  const tag = node.localName;
+  if (tag === 'sc-if') { const m = WHOLE.exec(node.getAttribute('value') || ''); if (m && look(m[1], scope)) node.childNodes.forEach((c) => build(c, scope, out)); return; }
+  if (tag === 'sc-for') {
+    const m = WHOLE.exec(node.getAttribute('list') || ''); const list = (m && look(m[1], scope)) || []; const as = node.getAttribute('as');
+    list.forEach((item, i) => { const vars = { $index: i }; vars[as] = item; node.childNodes.forEach((c) => build(c, { vars: vars, up: scope }, out)); });
+    return;
+  }
+  const el = node.cloneNode(false);
+  for (const at of Array.from(node.attributes)) {
+    if (at.name.startsWith('hint-')) { el.removeAttribute(at.name); continue; }
+    if (at.name.startsWith('on')) { el.removeAttribute(at.name); const m = WHOLE.exec(at.value); const fn = m && look(m[1], scope); if (typeof fn === 'function') el.addEventListener(at.name.slice(2).toLowerCase(), fn); continue; }
+    if (at.value.includes('{{')) el.setAttribute(at.name, fill(at.value, scope));
+  }
+  node.childNodes.forEach((c) => build(c, scope, el));
+  out.appendChild(el);
+}
+function draw(c) {
+  const frag = document.createDocumentFragment();
+  document.getElementById('tpl').content.childNodes.forEach((n) => build(n, { vars: c.renderVals(), up: null }, frag));
+  const app = document.getElementById('app'); app.replaceChildren(frag);
+  c._seen = c.state.hist ? c.state.hist.length : 0;
+}
+
+class Component extends DCLogic {
+  constructor(p) {
+    super(p);
+    this.state = Object.assign(this.fresh(), { scen: 'port', openReq: 'no', failMode: 'no' });
+  }
+  fresh() {
+    return { screen: 'help', hist: [], opts: [], undo: [], more: false, tq: [], tpos: 0, tmap: {}, tpass: 1, pad: null, run: 0, optsTop: false, sheet: false, fixI: 0, pfixI: 0, failedOnce: false, num: '', ftitle: 'Log a complaint', fsub: '' };
+  }
+  componentWillUnmount() { this.clearAll(); }
+  clearAll() { (this._t || []).forEach(clearTimeout); this._t = []; }
+  later(fn, ms) { this._t = this._t || []; const id = setTimeout(fn, ms); this._t.push(id); return id; }
+
+  /* ---------- questions that narrow down the problem ---------- */
+  nodes() {
+    return {
+      root: { head: "Tell us what's going wrong. We'll try to fix it right here.", rows: [
+        { label: 'Device issue', to: 'part' },
+        { label: 'Payment issue', off: true }
+      ], quiet: [] },
+      part: { head: 'Which part has the problem?', rows: [
+        { label: 'Power and charging', to: 'psym' },
+        { label: 'Card reader', off: true },
+        { label: 'Printer', off: true },
+        { label: 'Screen and buttons', to: 'sym' },
+        { label: 'Network', off: true },
+        { label: 'Device slow or restarting', off: true },
+        { label: 'Damage or security alert', off: true }
+      ], quiet: [{ label: 'None of these issues', to: 'when' }] },
+      when: { head: 'When does the problem happen?', rows: [
+        { label: 'While taking a payment', to: 'payq' },
+        { label: 'While printing a receipt', off: true },
+        { label: 'While charging, or the battery runs out', to: 'psym' },
+        { label: 'When I touch or look at the screen', to: 'sym' },
+        { label: 'All the time: slow, hangs or restarts', off: true }
+      ], quiet: [{ label: "I'm not sure", flow: 'cantSay' }] },
+      payq: { head: 'What happens with the payment?', rows: [
+        { label: "The card isn't read", off: true },
+        { label: 'It keeps loading or fails', off: true }
+      ], quiet: [] },
+      psym: { head: 'What do you notice with power or charging?', rows: [
+        { label: "Won't charge", flow: 'charge' },
+        { label: 'Battery runs out fast', flow: 'drain' },
+        { label: 'Switches off by itself', off: true },
+        { label: 'Battery swollen or hot', flow: 'swollen' },
+        { label: 'Charger or cable missing or damaged', off: true }
+      ], quiet: [{ label: 'None of these issues', flow: 'chargeAny' }] },
+      sym: { head: 'What do you notice with the screen?', rows: [
+        { label: 'Touch not working properly', flow: 'touch' },
+        { label: 'Screen dim, flickering or lines', off: true },
+        { label: 'Power button not working', off: true },
+        { label: 'Screen cracked', flow: 'crack' }
+      ], quiet: [{ label: 'None of these issues', flow: 'screenAny' }] }
+    };
+  }
+  ask(key) {
+    const n = this.nodes()[key];
+    return { entries: [{ k: 'bot', t: n.head }], opts: n.rows.map((r) => ({ id: 'node', label: r.label, off: r.off, r: r })).concat(n.quiet.map((r) => ({ id: 'node', label: r.label, r: r }))) };
+  }
+  sum(rows) { return { k: 'card', tone: 'info', title: 'Request summary', rows: rows }; }
+  raiseOpts(withElse) {
+    return [{ id: 'raise', label: 'Raise a request', primary: true }].concat(withElse ? [{ id: 'else', label: 'Need help with something else?' }] : []);
+  }
+  testIntro() {
+    return { k: 'step', img: '[Picture: screen with 6 spots]', cap: 'Touch test', title: 'Tap each spot when it turns green', d: "We'll light up 6 spots, one at a time. You get 5 seconds for each, and a second try for any you miss." };
+  }
+  flowStart(kind) {
+    const start = [{ id: 'start', label: 'Start touch test', primary: true }];
+    const pStart = [{ id: 'pStart', label: 'Start check', primary: true }];
+    const plug = { k: 'step', img: '[Picture: charger plugged into the device]', cap: 'Before we check', title: 'Plug in your charger and keep it connected', d: "We'll check the charger, the charging and the battery. It takes about 10 seconds." };
+    const P = 'Power and charging'; const S = 'Screen and buttons';
+    if (kind === 'touch') return { title: 'Touch not working', sub: S, entries: [{ k: 'bot', t: "Let's check your touch screen." }, this.testIntro()], opts: start };
+    if (kind === 'screenAny') return { title: 'Screen check', sub: S, entries: [{ k: 'bot', t: "No problem. We'll run the screen check for you." }, this.testIntro()], opts: start };
+    if (kind === 'crack') return { title: 'Screen cracked', sub: S, entries: [{ k: 'bot', t: 'A cracked screen ', b: 'has to be replaced', t2: '. If any glass is loose, stop using the device.' }, this.sum([{ a: 'Problem', b: 'Screen cracked' }, { a: 'Needs', b: 'Device replacement' }, { a: 'Diagnostic report', b: 'Attached' }])], opts: this.raiseOpts(false) };
+    if (kind === 'charge') return { title: "Won't charge", sub: P, entries: [{ k: 'bot', t: "Let's find out why it isn't charging." }, plug], opts: pStart };
+    if (kind === 'chargeAny') return { title: 'Power check', sub: P, entries: [{ k: 'bot', t: "No problem. We'll run the power check for you." }, plug], opts: pStart };
+    if (kind === 'drain') return { title: 'Battery runs out fast', sub: P, entries: [{ k: 'bot', t: "Let's see what is using your battery. It takes a few seconds." }], opts: [{ id: 'dStart', label: 'Start check', primary: true }] };
+    if (kind === 'swollen') return { title: 'Battery swollen or hot', sub: P, entries: [{ k: 'bot', t: '', b: 'Stop using the device now.', t2: " Unplug it and don't charge it." }, this.sum([{ a: 'Problem', b: 'Battery swollen or hot' }, { a: 'Priority', b: 'Safety' }, { a: 'Diagnostic report', b: 'Attached' }])], opts: this.raiseOpts(false) };
+    return { title: 'Log a complaint', sub: '', entries: [{ k: 'bot', t: "That's okay. Our support team will call you to understand the problem." }, this.sum([{ a: 'Problem', b: 'Not identified' }, { a: 'Diagnostic report', b: 'Latest device readings attached' }])], opts: this.raiseOpts(false) };
+  }
+  keep() { const st = this.state; return { scen: st.scen, openReq: st.openReq, failMode: st.failMode }; }
+  enterStart() { this.clearAll(); this.setState(Object.assign(this.fresh(), this.keep(), { screen: 'start' })); }
+  enterFlow() {
+    this.clearAll();
+    const head = [];
+    if (this.state.openReq === 'yes') {
+      this.setState(Object.assign(this.fresh(), this.keep(), { screen: 'flow',
+        hist: head.concat([{ k: 'bot', t: 'You already have an open request for this device. We will call you ', b: 'within [SLA]', t2: '.' }, { k: 'ticket', title: 'Touch not working', d: 'Request no. [SR number] · Raised [date and time]' }]),
+        opts: [{ id: 'resolved', label: 'My issue is resolved' }, { id: 'different', label: 'I have a different problem' }] }));
+      return;
+    }
+    const a = this.ask('root');
+    this.setState(Object.assign(this.fresh(), this.keep(), { screen: 'flow', hist: head.concat(a.entries), opts: a.opts }));
+  }
+
+  /* ---------- conversation mechanics ---------- */
+  step(userLabel, entries, opts, lock, extra) {
+    const st = this.state;
+    const undo = lock ? [] : st.undo.concat([{ n: st.hist.length, opts: st.opts, ftitle: st.ftitle, fsub: st.fsub }]);
+    const hist = st.hist.concat(userLabel ? [{ k: 'user', t: userLabel }] : [], entries);
+    this.setState(Object.assign({ hist: hist, opts: opts, undo: undo, more: false }, extra || {}));
+  }
+  change() {
+    const st = this.state; if (!st.undo.length) return;
+    const u = st.undo[st.undo.length - 1];
+    this.setState({ hist: st.hist.slice(0, u.n), opts: u.opts, ftitle: u.ftitle, fsub: u.fsub, undo: st.undo.slice(0, -1), more: false });
+  }
+  busyThen(label, text, ms, fn) {
+    this.step(label, [{ k: 'busy', t: text }], [], true);
+    this.later(() => fn(this.state.hist.filter((h) => h.k !== 'busy')), ms);
+  }
+
+  /* ---------- touch test: 5 seconds a spot, and a second try for missed spots ---------- */
+  beginTest(label, fresh) {
+    const st = this.state;
+    this.setState({ screen: 'test', tq: [0, 1, 2, 3, 4, 5], tpos: 0, tmap: {}, tpass: 1, undo: [], opts: [], run: fresh ? 0 : st.run, hist: st.hist.concat([{ k: 'user', t: label }]) });
+    this.arm();
+  }
+  arm() { clearTimeout(this._tt); this._tt = this.later(() => this.mark(false), 5000); }
+  mark(ok) {
+    const st = this.state; if (st.screen !== 'test' || st.tpos >= st.tq.length) return;
+    const tmap = Object.assign({}, st.tmap); tmap[st.tq[st.tpos]] = ok;
+    const pos = st.tpos + 1;
+    if (pos < st.tq.length) { this.setState({ tmap: tmap, tpos: pos }); this.arm(); return; }
+    clearTimeout(this._tt);
+    const all = [0, 1, 2, 3, 4, 5];
+    const missed = all.filter((i) => !tmap[i]);
+    this.setState({ tmap: tmap, tpos: pos });
+    if (st.tpass === 1 && missed.length > 0 && missed.length < 6) {
+      this.later(() => { const m2 = Object.assign({}, this.state.tmap); missed.forEach((i) => { delete m2[i]; }); this.setState({ tpass: 2, tq: missed, tpos: 0, tmap: m2 }); this.arm(); }, 900);
+      return;
+    }
+    this.later(() => this.finishTest(all.map((i) => !!tmap[i])), 700);
+  }
+  finishTest(res) {
+    const st = this.state;
+    const names = ['Top left', 'Top right', 'Middle left', 'Middle right', 'Bottom left', 'Bottom right'];
+    const failed = names.filter((n, i) => !res[i]);
+    const f = failed.length; const run = st.run + 1;
+    const result = { k: 'result', zones: res, d: f ? 'Not responding: ' + failed.join(', ') : 'Every spot responded' };
+    let entries = []; let opts = [];
+    const done = [{ id: 'close', label: 'Done', primary: true }];
+    const clean = { k: 'step', img: '[Photo: peeling off the screen guard]', cap: 'Try this', title: 'Remove the screen guard and wipe the screen with a dry cloth', d: 'Then run the test again.' };
+    if (f === 0 && run === 1) {
+      entries = [{ k: 'bot', t: '', b: 'Touch is working in all 6 spots.', t2: '' }, result, { k: 'bot', t: "What's still wrong?" }];
+      opts = [{ id: 'slowYes', label: "It's slow to respond" }, { id: 'else', label: "It's something else" }, { id: 'works0', label: "It's working now" }];
+    } else if (f === 0) {
+      entries = [{ k: 'bot', t: '', b: 'Touch is working in all 6 spots now.', t2: '' }, result, { k: 'done', title: 'Touch is working again', d: "The screen guard or dirt was the problem. We'll check in tomorrow to make sure it's still fine." }];
+      opts = done;
+    } else if (f === 6) {
+      entries = [{ k: 'bot', t: '', b: "We didn't register any taps.", t2: " If you weren't ready, try again. If the screen isn't responding at all, raise the request from PineOne on your phone." }, result,
+        { k: 'step', img: '[QR code]', cap: 'No touch needed', title: 'Scan with your phone to raise this in PineOne', d: 'The test result is sent along, so you will not have to explain it again.' }];
+      opts = [{ id: 'retest0', label: 'Try again', primary: true }];
+    } else if (run === 1) {
+      entries = [{ k: 'bot', t: '', b: (6 - f) + ' of 6 spots are working.', t2: ' We tried the missed spots twice. A screen guard or dirt is often the cause.' }, result, clean];
+      opts = [{ id: 'retest', label: 'Done, test again', primary: true }];
+    } else {
+      entries = [{ k: 'bot', t: "The same area still isn't responding after cleaning, so ", b: 'the screen needs a repair', t2: '.' }, result, this.sum([{ a: 'Problem', b: 'Touch not working' }, { a: 'Not responding', b: failed.join(', ') }, { a: 'Already tried', b: 'Screen guard removed, screen cleaned' }, { a: 'Diagnostic report', b: 'Attached' }])];
+      opts = this.raiseOpts(false);
+    }
+    const bottomDead = !res[4] || !res[5];
+    const topOk = res[0] && res[1];
+    this.setState({ screen: 'flow', run: run, hist: st.hist.concat(entries), opts: opts, undo: [], more: false, optsTop: f > 0 && f < 6 && bottomDead && topOk });
+  }
+
+  /* ---------- power helpers ---------- */
+  pcard(a, b, c) { return { k: 'card', tone: 'plain', title: 'Power check', rows: [{ a: 'Charger', b: a }, { a: 'Charging', b: b }, { a: 'Battery health', b: c }] }; }
+  pfixes() {
+    return [
+      { name: 'Plug the charger into a different wall socket', d: 'Use a socket you know is working.', img: '[Photo: charger in a wall socket]' },
+      { name: 'Unplug the cable at both ends and push it back in firmly', d: 'Check the charger end and the device end.', img: '[Photo: cable ends pushed in]' },
+      { name: 'Gently blow the dust out of the charging port', d: 'Do not use a pin or anything sharp.', img: '[Photo: charging port close-up]' }
+    ];
+  }
+  offerP(i) {
+    const f = this.pfixes()[i];
+    return { entries: [{ k: 'step', img: f.img, cap: 'Fix ' + (i + 1) + '/3', title: f.name, d: f.d }], opts: [{ id: 'pDo', label: 'Done, check again', primary: true }] };
+  }
+  /* ---------- number pad ---------- */
+  padKey(k) { const p = this.state.pad; if (!p) return; const max = p.mode === 'num' ? 10 : 4; let v = p.val; if (k === 'del') v = v.slice(0, -1); else if (v.length < max) v += k; this.setState({ pad: { mode: p.mode, val: v, num: p.num } }); }
+  padGo() {
+    const st = this.state; const p = st.pad; if (!p) return;
+    if (p.mode === 'num') {
+      if (p.val.length < 10) return;
+      const shown = '+91 ' + p.val.slice(0, 5) + ' ' + p.val.slice(5);
+      this.setState({ hist: st.hist.concat([{ k: 'user', t: shown }, { k: 'bot', t: 'Enter the 4-digit code we sent to that number by SMS.' }]), pad: { mode: 'otp', val: '', num: shown }, undo: [] });
+      return;
+    }
+    if (p.val.length < 4) return;
+    this.setState({ pad: null }); this.raiseNow('Code entered', p.num);
+  }
+  padCancel() { const st = this.state; this.setState({ pad: null, undo: [], hist: st.hist.concat([{ k: 'bot', t: 'Which number should we call?' }]), opts: [{ id: 'numThis', label: '98XXX XXXXX (registered)' }, { id: 'numOther', label: 'A different number' }] }); }
+  runDrain(L) {
+    this.busyThen(L, 'Checking battery health and battery use…', 2200, (hist) => {
+      if (this.state.scen === 'battery') {
+        this.setState({ hist: hist.concat([{ k: 'bot', t: '', b: 'Your battery needs replacing.', t2: " It can't hold a charge any more, and this can't be fixed on the device. Until it's replaced, keep the device plugged in during work hours." }, { k: 'card', tone: 'plain', title: 'Battery check', rows: [{ a: 'Battery health', b: '38%' }] }, this.sum([{ a: 'Problem', b: 'Battery runs out fast' }, { a: 'Part to replace', b: 'Battery' }, { a: 'Diagnostic report', b: 'Attached' }])]), opts: this.raiseOpts(false) });
+      } else {
+        this.setState({ hist: hist.concat([{ k: 'bot', t: 'Your battery is healthy. ', b: 'The screen and background apps are using most of the power.', t2: '' }, { k: 'card', tone: 'plain', title: 'Battery check', rows: [{ a: 'Battery health', b: 'Good' }, { a: 'Screen brightness', b: '100%' }, { a: 'Background apps', b: 'Many running' }] }, { k: 'card', tone: 'plain', title: 'We can fix this for you', rows: [{ a: 'What happens', b: 'Lower brightness, close background apps' }, { a: 'Takes', b: 'A few seconds' }] }]), opts: [{ id: 'dFix', label: 'Fix it for me', primary: true }] });
+      }
+    });
+  }
+  /* ---------- slow-screen fix ladder ---------- */
+  fixes() {
+    return [
+      { name: 'Clear memory', why: 'Memory is almost full, which slows the screen down.', rows: [{ a: 'What happens', b: 'Close background apps, clear memory' }, { a: 'Takes', b: 'About a minute' }, { a: 'Your payments', b: 'Settled first, nothing is lost' }], cta: 'Fix it for me', busy: 'Closing apps and clearing memory…', doneT: 'Memory cleared', doneD: 'Background apps are closed.' },
+      { name: 'Restart the device', why: 'A restart clears anything that is still stuck.', rows: [{ a: 'What happens', b: 'The device restarts' }, { a: 'Takes', b: 'About 2 minutes' }, { a: 'After the restart', b: 'We continue from here' }], cta: 'Restart now', busy: 'Restarting…', doneT: 'Restarted', doneD: "We've picked up where you left off. Try using the screen now." },
+      { name: 'Update the software', why: 'A newer version is available and may fix this.', rows: [{ a: 'Takes', b: 'About 10 minutes' }, { a: 'During the update', b: "The device can't take payments" }, { a: 'Needs', b: 'Charger connected' }], cta: 'Update now', busy: 'Updating the software…', doneT: 'Software updated', doneD: 'You are on the latest version.' }
+    ];
+  }
+  offer(i) {
+    const f = this.fixes()[i];
+    return {
+      entries: [{ k: 'bot', t: f.why }, { k: 'card', tone: 'plain', title: 'Fix ' + (i + 1) + '/3: ' + f.name, rows: f.rows }],
+      opts: [{ id: 'doFix', label: f.cta, primary: true }].concat(i === 2 ? [{ id: 'fixLater', label: 'Update after closing' }] : [])
+    };
+  }
+  raiseNow(L, num) {
+    this.busyThen(L, 'Raising your request…', 1600, (hist) => {
+      const st = this.state;
+      if (st.failMode === 'yes' && !st.failedOnce) {
+        this.setState({ hist: hist.concat([{ k: 'err', t: "We couldn't raise the request right now. Your details are saved, so you won't need to enter them again." }]), opts: [{ id: 'retryRaise', label: 'Try again', primary: true }, { id: 'cancelReq', label: 'Not now' }], failedOnce: true, num: num });
+      } else {
+        this.setState({ hist: hist.concat([{ k: 'card', tone: 'ok', title: 'Request raised', rows: [{ a: 'Request no.', b: '[SR number]' }, { a: "We'll call", b: num }, { a: 'Expect a call', b: '[within SLA]' }, { a: 'WhatsApp', b: 'Confirmation sent' }] }, { k: 'bot', t: 'You can track this in Help & Support, under My Requests.' }]), opts: [{ id: 'close', label: 'Done', primary: true }] });
+      }
+    });
+  }
+
+  pick(o) {
+    if (o.off) return;
+    const id = o.id; const L = o.label;
+    const done = [{ id: 'close', label: 'Done', primary: true }];
+    if (id === 'node') {
+      const r = o.r;
+      if (r.to) { const a = this.ask(r.to); this.step(L, a.entries, a.opts, false); return; }
+      const f = this.flowStart(r.flow);
+      this.step(L, f.entries, f.opts, false, { ftitle: f.title, fsub: f.sub, run: 0, fixI: 0, pfixI: 0, optsTop: false });
+      return;
+    }
+    if (id === 'resolved') { this.step(L, [{ k: 'done', title: 'Request closed', d: 'Glad it is working again. No one will call or visit for this request.' }], done, true); return; }
+    if (id === 'different') { const a = this.ask('root'); this.step(L, a.entries, a.opts, true); return; }
+    if (id === 'else') { const a = this.ask('when'); this.step(L, a.entries, a.opts, true, { ftitle: 'Log a complaint', fsub: '', optsTop: false }); return; }
+    if (id === 'works0') { this.step(L, [{ k: 'done', title: 'All good', d: 'The check found no problem, so no request is needed. You can run it again anytime.' }], done, true); return; }
+    if (id === 'start' || id === 'retest') { this.beginTest(L); return; }
+    if (id === 'retest0') { this.beginTest(L, true); return; }
+
+    /* slow screen ladder */
+    if (id === 'slowYes') {
+      const f = this.offer(0);
+      this.step(L, [{ k: 'card', tone: 'plain', title: 'Screen check', rows: [{ a: 'Touch', b: 'Working' }, { a: 'Memory', b: 'Almost full' }, { a: 'Software', b: 'Update available' }] }].concat(f.entries), f.opts, false, { fixI: 0 });
+      return;
+    }
+    if (id === 'doFix') {
+      const i = this.state.fixI; const f = this.fixes()[i];
+      this.busyThen(L, f.busy, 2200, (hist) => {
+        const next = i < 2 ? { id: 'nextFix', label: 'Try another fix' } : { id: 'stillNo', label: 'Still slow' };
+        if (i === 1) this.setState({ hist: hist.concat([{ k: 'done', title: f.doneT, d: f.doneD }, { k: 'bot', t: 'How does it feel now?' }]), opts: [{ id: 'works', label: "It's working now" }, next] });
+        else this.setState({ hist: hist.concat([{ k: 'done', title: f.doneT, d: f.doneD }, { k: 'bot', t: 'Now ', b: 'restart the app', t2: ' so you can feel the difference.' }]), opts: [{ id: 'restartApp', label: 'Restart the app', primary: true }] });
+      });
+      return;
+    }
+    if (id === 'restartApp') {
+      const i = this.state.fixI;
+      this.busyThen(L, 'Restarting the app…', 2000, (hist) => {
+        const next = i < 2 ? { id: 'nextFix', label: 'Try another fix' } : { id: 'stillNo', label: 'Still slow' };
+        this.setState({ hist: hist.concat([{ k: 'bot', t: 'Welcome back. We saved your place. How does it feel now?' }]), opts: [{ id: 'works', label: "It's working now" }, next] });
+      });
+      return;
+    }
+    if (id === 'nextFix') { const i = this.state.fixI + 1; const f = this.offer(i); this.step(L, f.entries, f.opts, true, { fixI: i }); return; }
+    if (id === 'fixLater') { this.step(L, [{ k: 'done', title: 'Update scheduled', d: "We'll update the software after closing tonight and check in tomorrow." }], done, true); return; }
+    if (id === 'works') { this.step(L, [{ k: 'done', title: 'Fixed', d: "We'll check in tomorrow to make sure it's still running well." }], done, true); return; }
+    if (id === 'stillNo') { this.step(L, [{ k: 'bot', t: "We've tried every fix we can run on the device, so ", b: 'an engineer should look at this', t2: '.' }, this.sum([{ a: 'Problem', b: 'Screen slow to respond' }, { a: 'Touch test', b: '6 of 6 spots working' }, { a: 'Already tried', b: 'Memory cleared, restart, software update' }, { a: 'Diagnostic report', b: 'Attached' }])], this.raiseOpts(true), true); return; }
+
+    /* power and charging */
+    if (id === 'pStart') {
+      this.busyThen(L, 'Checking charger, charging and battery…', 2400, (hist) => {
+        const sc = this.state.scen; let e = []; let op = [];
+        if (sc === 'battery') { e = [{ k: 'bot', t: 'Your charger works, but ', b: 'the battery needs replacing', t2: ". This can't be fixed on the device. Until it's replaced, keep the device plugged in during work hours." }, this.pcard('Pine Labs charger', 'Working', '38%'), this.sum([{ a: 'Problem', b: "Won't charge" }, { a: 'Part to replace', b: 'Battery' }, { a: 'Diagnostic report', b: 'Attached' }])]; op = this.raiseOpts(false); }
+        else if (sc === 'charger') { e = [{ k: 'bot', t: '', b: "This isn't a Pine Labs charger.", t2: " It doesn't give your device enough power. Your battery is fine." }, this.pcard('Not a Pine Labs charger', 'Too weak', 'Good'), { k: 'step', img: '[Photo: the Pine Labs charger]', cap: 'Try this', title: 'Plug in the Pine Labs charger', d: 'It came in the box with your device.' }]; op = [{ id: 'chgRe', label: "I've plugged it in, check again", primary: true }, { id: 'chgNo', label: "I don't have it" }]; }
+        else if (sc === 'fine') { e = [{ k: 'bot', t: '', b: 'Your device is charging normally.', t2: '' }, this.pcard('Pine Labs charger', 'Working', 'Good'), { k: 'bot', t: "What's still wrong?" }]; op = [{ id: 'toDrain', label: 'Battery runs out fast' }, { id: 'else', label: "It's something else" }, { id: 'works0', label: "It's working now" }]; }
+        else { const f = this.offerP(0); e = [{ k: 'bot', t: '', b: 'No power is reaching the device.', t2: " Let's find out why." }, this.pcard('Pine Labs charger', 'No power coming in', 'Good')].concat(f.entries); op = f.opts; }
+        this.setState({ hist: hist.concat(e), opts: op, pfixI: 0 });
+      });
+      return;
+    }
+    if (id === 'pDo') {
+      const i = this.state.pfixI;
+      this.busyThen(L, 'Checking for charging…', 1800, (hist) => {
+        if (this.state.scen === 'socket' && i === 0) this.setState({ hist: hist.concat([{ k: 'done', title: 'Charging now', d: "The wall socket was the problem. Your device is charging normally. We'll check in tomorrow." }]), opts: done });
+        else if (i < 2) this.setState({ hist: hist.concat([{ k: 'bot', t: '', b: 'Still no charging detected.', t2: '' }]), opts: [{ id: 'pNext', label: 'Try another fix', primary: true }] });
+        else this.setState({ hist: hist.concat([{ k: 'bot', t: '', b: 'Still no charging detected.', t2: ' Do you have another Pine Labs charger or cable to try?' }]), opts: [{ id: 'spYes', label: 'Yes, it charges with the other one' }, { id: 'spNo', label: 'Yes, but still not charging' }, { id: 'spNone', label: "No, I don't have a spare" }] });
+      });
+      return;
+    }
+    if (id === 'pNext') { const i = this.state.pfixI + 1; const f = this.offerP(i); this.step(L, f.entries, f.opts, true, { pfixI: i }); return; }
+    if (id === 'spYes') { this.step(L, [{ k: 'bot', t: 'Then ', b: 'the charger or cable is faulty', t2: ". We'll send a replacement." }, this.sum([{ a: 'Problem', b: "Won't charge" }, { a: 'Part to replace', b: 'Charger or cable' }, { a: 'Already tried', b: 'Other socket, cable reconnected, port cleaned' }, { a: 'Diagnostic report', b: 'Attached' }])], this.raiseOpts(true), true); return; }
+    if (id === 'spNo' || id === 'spNone') { this.step(L, [{ k: 'bot', t: 'Then ', b: 'the charging port most likely needs a repair', t2: '.' }, this.sum([{ a: 'Problem', b: "Won't charge" }, { a: 'Part to check', b: 'Charging port' }, { a: 'Already tried', b: 'Other socket, cable reconnected, port cleaned' }, { a: 'Diagnostic report', b: 'Attached' }])], this.raiseOpts(true), true); return; }
+    if (id === 'chgRe') { this.busyThen(L, 'Checking for charging…', 1800, (hist) => this.setState({ hist: hist.concat([{ k: 'done', title: 'Charging now', d: "The Pine Labs charger is working. Use only this charger from now on. We'll check in tomorrow." }]), opts: done })); return; }
+    if (id === 'chgNo') { this.step(L, [{ k: 'bot', t: "We'll send you a Pine Labs charger. ", b: 'No engineer visit is needed.', t2: '' }, this.sum([{ a: 'Problem', b: 'Wrong charger in use' }, { a: 'Needs', b: 'Pine Labs charger' }, { a: 'Diagnostic report', b: 'Attached' }])], this.raiseOpts(false), false); return; }
+    if (id === 'dStart' || id === 'toDrain') { this.runDrain(L); return; }
+    if (id === 'dFix') { this.busyThen(L, 'Lowering brightness and closing apps…', 1800, (hist) => this.setState({ hist: hist.concat([{ k: 'done', title: 'Battery saver applied', d: "Brightness is lower and background apps are closed. We'll check your battery use tomorrow." }]), opts: done })); return; }
+
+    /* request */
+    if (id === 'raise') { this.step(L, [{ k: 'bot', t: 'Which number should we call?' }], [{ id: 'numThis', label: '98XXX XXXXX (registered)' }, { id: 'numOther', label: 'A different number' }], false); return; }
+    if (id === 'numOther') { this.step(L, [{ k: 'bot', t: 'Type the number we should call.' }], [], true, { pad: { mode: 'num', val: '', num: '' } }); return; }
+    if (id === 'numThis') { this.raiseNow(L, '98XXX XXXXX'); return; }
+    if (id === 'retryRaise') { this.raiseNow(L, this.state.num); return; }
+    if (id === 'cancelReq') { this.step(L, [{ k: 'bot', t: 'No request was raised. You can come back anytime from Help & Support.' }], done, true); return; }
+    if (id === 'close') { this.restart(); return; }
+  }
+  restart() { this.clearAll(); const st = this.state; this.setState(Object.assign(this.fresh(), { scen: st.scen, openReq: st.openReq, failMode: st.failMode })); }
+
+  renderVals() {
+    const st = this.state; const scr = st.screen;
+    const helpItems = [
+      { t: 'My Requests', d: 'View open and closed requests' },
+      { t: 'Request Paper Roll', d: 'Order thermal rolls' },
+      { t: 'Log a Complaint', d: 'Raise a device or payment issue', on: true },
+      { t: 'Help & Support', d: 'Contact for service related queries' }
+    ].map((h) => ({ t: h.t, d: h.d, op: h.on ? 1 : 0.55, go: h.on ? () => this.enterFlow() : () => {} }));
+
+    const names = ['Top left', 'Top right', 'Middle left', 'Middle right', 'Bottom left', 'Bottom right'];
+    const cur = st.tq[st.tpos];
+    const cells = names.map((n, i) => ({ name: n, active: i === cur, pass: st.tmap[i] === true, fail: st.tmap[i] === false, tap: () => { const z = this.state; if (z.tq[z.tpos] === i) this.mark(true); } }));
+    const testCount = st.tpass === 2 ? 'Second try for missed spots · ' + Math.min(st.tpos + 1, st.tq.length) + ' of ' + st.tq.length : 'Spot ' + Math.min(st.tpos + 1, 6) + ' of 6';
+    const pd = st.pad; const isNum = pd && pd.mode === 'num';
+    const padKeys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'del'].map((k) => ({ t: k === 'del' ? '⌫' : k, aria: k === 'del' ? 'Delete' : (k || 'Blank'), op: k === '' ? 0 : 1, tap: () => { if (k !== '') this.padKey(k); } }));
+    const padVal = pd ? pd.val : '';
+    const padShown = !pd ? '' : (isNum ? '+91 ' + padVal.slice(0, 5) + (padVal.length > 5 ? ' ' + padVal.slice(5) : '') : padVal.split('').join(' '));
+    const padValid = pd && padVal.length === (isNum ? 10 : 4);
+    const topUndo = st.undo.length ? st.undo[st.undo.length - 1].n : -1;
+    const tones = { info: ['#8CCBEA', '#EAF6FC'], ok: ['#A8DDBF', '#EEF9F2'], plain: ['#DBDDE4', '#FFFFFF'] };
+    const msgs = st.hist.map((h, i) => {
+      const m = { anim: i >= (this._seen || 0) ? 'fadeUp 0.28s ease-out' : 'none', t: h.t || '', b: h.b || '', t2: h.t2 || '', cap: h.cap || '', title: h.title, d: h.d, img: h.img, rows: h.rows || [],
+        isBot: h.k === 'bot', isErr: h.k === 'err', isUser: h.k === 'user', isBusy: h.k === 'busy', isStep: h.k === 'step', isResult: h.k === 'result', isCard: h.k === 'card', isDone: h.k === 'done', isTicket: h.k === 'ticket',
+        canChange: h.k === 'user' && i === topUndo, fixedReply: h.k === 'user' && i !== topUndo, changeAria: 'Change answer: ' + (h.t || ''), change: () => this.change(), zones: [] };
+      if (h.k === 'result') m.zones = h.zones.map((ok) => ({ bg: ok ? '#1E8E4F' : '#FBE3E1', col: ok ? '#FFFFFF' : '#B3261E', mark: ok ? '✓' : '✕' }));
+      if (h.k === 'card') { const c = tones[h.tone] || tones.plain; m.border = c[0]; m.bg = c[1]; }
+      return m;
+    });
+
+    /* the selection sizes itself: pills for up to 3 answers, a list for more, a More row from 7 */
+    const mk = (o) => ({ label: o.label, op: o.off ? 0.45 : 1, pick: () => this.pick(o) });
+    const actions = st.opts.filter((o) => o.primary && o.id !== 'raise').map(mk);
+    const reqPills = st.opts.filter((o) => o.primary && o.id === 'raise').map(mk);
+    const quiet = st.opts.filter((o) => o.quiet).map(mk);
+    const allAnswers = st.opts.filter((o) => !o.primary && !o.quiet);
+    const isList = allAnswers.length > 3;
+    const collapsed = allAnswers.length >= 7 && !st.more;
+    const answers = (collapsed ? allAnswers.slice(0, 5) : allAnswers).map(mk);
+
+    const T = (label, key, items) => ({ label: label, items: items.map((x) => ({ label: x[1], border: st[key] === x[0] ? '#003323' : '#DBDDE4', bg: st[key] === x[0] ? '#FFFFFF' : 'transparent', pick: () => { const u = {}; u[key] = x[0]; this.setState(u); } })) });
+    const toggles = [
+      T('The power check finds:', 'scen', [['battery', 'Battery failing'], ['charger', 'Wrong charger'], ['socket', 'Socket was the problem'], ['port', 'Faulty part'], ['fine', 'Charging is fine']]),
+      T('Open request on this device:', 'openReq', [['no', 'None'], ['yes', 'One is open']]),
+      T('Raising a request:', 'failMode', [['no', 'Works'], ['yes', 'Fails the first time']])
+    ];
+    const answered = st.hist.some((h) => h.k === 'user');
+
+    return {
+      isTest: scr === 'test', notTest: scr !== 'test', isHelp: scr === 'help', isStart: scr === 'start', isFlow: scr === 'flow', goDevice: () => this.enterFlow(),
+      padOn: !!pd && scr === 'flow', padLabel: isNum ? 'Mobile number · 10 digits' : 'Code sent to ' + (pd ? pd.num : ''), padShown: padShown, padKeys: padKeys, padCta: isNum ? 'Send code' : 'Verify and raise request', padGoOp: padValid ? 1 : 0.4, padGo: () => this.padGo(), padCancel: () => this.padCancel(),
+      title: scr === 'help' ? 'Help & Support' : st.ftitle, subtitle: st.fsub, hasSub: scr === 'flow' && !!st.fsub,
+      back: () => { if (scr === 'start') this.restart(); else if (scr === 'flow') { if (st.undo.length && !st.pad) this.change(); else if (answered) this.setState({ sheet: true }); else this.restart(); } },
+      startOver: () => this.enterFlow(),
+      helpItems: helpItems, cells: cells, testCount: testCount,
+      msgs: msgs, hasOpts: st.opts.length > 0, actions: actions, reqPills: reqPills, answers: answers, quiet: quiet,
+      isPills: !isList && answers.length > 0, isList: isList, showMore: collapsed, moreGo: () => this.setState({ more: true }),
+      optsTop: st.optsTop, optOrder: st.optsTop ? -1 : 0, optPos: st.optsTop ? 'sticky' : 'static',
+      sheet: st.sheet && scr === 'flow', stay: () => this.setState({ sheet: false }), leave: () => this.restart(),
+      toggles: toggles, restart: () => this.restart()
+    };
+  }
+}
+
+window.proto = new Component(); draw(window.proto);
+</script>
+</body>
+</html>
