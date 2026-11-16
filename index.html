@@ -160,6 +160,33 @@ body{background:#EEF0F3;font-family:Inter,sans-serif;color:#2C3448;display:flex;
 </div>
 </sc-if>
 
+<sc-if value="{{m.isAlert}}" hint-placeholder-val="{{ false }}">
+<div role="alert" style="border: 1.5px solid #D93025; background: #FDECEA; border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; align-items: center; gap: 10px">
+<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#B3261E" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0"><path d="M12 3L2 20h20L12 3z"/><path d="M12 10v4M12 17v.5"/></svg>
+<div style="font-size: 18px; line-height: 23px; font-weight: 700; color: #8C1D18">{{m.title}}</div>
+</div>
+<sc-for list="{{m.items}}" as="it" hint-placeholder-count="3">
+<div style="display: flex; gap: 10px; font-size: 15px; line-height: 21px; font-weight: 600; color: #2C3448"><span style="color: #B3261E" aria-hidden="true">•</span><span>{{it.name}}</span></div>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{m.isFixlist}}" hint-placeholder-val="{{ false }}">
+<div style="border: 1px solid #DBDDE4; border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 14px">
+<div style="font-size: 12px; font-weight: 600; color: #1E7A45">{{m.title}}</div>
+<sc-for list="{{m.items}}" as="it" hint-placeholder-count="2">
+<div style="display: flex; gap: 12px">
+<div style="width: 26px; height: 26px; border-radius: 13px; background: #E8F7EE; color: #003323; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0">{{it.n}}</div>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<div style="font-size: 16px; line-height: 22px; font-weight: 600; color: #2C3448">{{it.name}}</div>
+<div style="font-size: 13px; line-height: 19px; color: #495678">{{it.d}}</div>
+</div>
+</div>
+</sc-for>
+</div>
+</sc-if>
+
 <sc-if value="{{m.isDone}}" hint-placeholder-val="{{ false }}">
 <div style="border: 1px solid #A8DDBF; background: #EEF9F2; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
 <div style="width: 36px; height: 36px; border-radius: 10px; background: #FFFFFF; display: flex; align-items: center; justify-content: center">
@@ -181,6 +208,18 @@ body{background:#EEF0F3;font-family:Inter,sans-serif;color:#2C3448;display:flex;
 
 <sc-if value="{{optsTop}}" hint-placeholder-val="{{ false }}">
 <div style="font-size: 12px; color: #5A6580">Buttons moved up, because the bottom of the screen isn't responding.</div>
+</sc-if>
+
+<!-- "already tried?" tick list -->
+<sc-if value="{{hasChecks}}" hint-placeholder-val="{{ false }}">
+<div style="border: 1px solid #DBDDE4; border-radius: 8px; overflow: hidden; display: flex; flex-direction: column">
+<sc-for list="{{checks}}" as="c" hint-placeholder-count="3">
+<button onClick="{{c.tap}}" aria-pressed="{{c.on}}" style="display: flex; align-items: center; gap: 12px; padding: 0 14px; min-height: 52px; border: none; border-bottom: 1px solid #EEF0F3; background: #FFFFFF; text-align: left; font-size: 15px; color: #2C3448">
+<span style="width: 22px; height: 22px; border-radius: 5px; border: 2px solid #003323; background: {{c.box}}; color: #FFFFFF; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0" aria-hidden="true">{{c.mark}}</span>
+<span>{{c.label}}</span>
+</button>
+</sc-for>
+</div>
 </sc-if>
 
 <!-- one action: a single filled button -->
@@ -230,6 +269,16 @@ body{background:#EEF0F3;font-family:Inter,sans-serif;color:#2C3448;display:flex;
 
 </div>
 </div>
+
+<!-- describe the issue: optional free text -->
+<sc-if value="{{descOn}}" hint-placeholder-val="{{ false }}">
+<div style="flex-shrink: 0; border-top: 1px solid #DBDDE4; background: #F7F8FA; padding: 12px 16px; display: flex; flex-direction: column; gap: 8px">
+<label for="desc" style="font-size: 12px; color: #5A6580">Describe the issue (optional)</label>
+<textarea id="desc" onInput="{{descInput}}" rows="3" placeholder="The charger gets hot after a few minutes" style="border: 1.5px solid #003323; border-radius: 8px; background: #FFFFFF; padding: 10px 12px; font-family: inherit; font-size: 15px; line-height: 21px; color: #2C3448; resize: none"></textarea>
+<button onClick="{{descGo}}" style="height: 46px; border-radius: 24px; border: none; background: #003323; color: #FFFFFF; font-size: 15px; font-weight: 600">Continue</button>
+<button onClick="{{descSkip}}" style="align-self: center; border: none; background: none; font-size: 13px; color: #495678; text-decoration: underline; min-height: 30px">Skip</button>
+</div>
+</sc-if>
 
 <!-- number pad: the only place the merchant types -->
 <sc-if value="{{padOn}}" hint-placeholder-val="{{ false }}">
@@ -340,7 +389,7 @@ class Component extends DCLogic {
     this.state = Object.assign(this.fresh(), { scen: 'port', openReq: 'no', failMode: 'no' });
   }
   fresh() {
-    return { screen: 'help', hist: [], opts: [], undo: [], more: false, tq: [], tpos: 0, tmap: {}, tpass: 1, pad: null, run: 0, optsTop: false, sheet: false, fixI: 0, pfixI: 0, failedOnce: false, num: '', ftitle: 'Log a complaint', fsub: '' };
+    return { screen: 'help', hist: [], opts: [], undo: [], more: false, tq: [], tpos: 0, tmap: {}, tpass: 1, pad: null, descOn: false, ticks: {}, note: '', ptried: [], failedNames: [], run: 0, optsTop: false, sheet: false, fixI: 0, pfixI: 0, failedOnce: false, num: '', ftitle: 'Log a complaint', fsub: '' };
   }
   componentWillUnmount() { this.clearAll(); }
   clearAll() { (this._t || []).forEach(clearTimeout); this._t = []; }
@@ -353,7 +402,7 @@ class Component extends DCLogic {
         { label: 'Device issue', to: 'part' },
         { label: 'Payment issue', off: true }
       ], quiet: [] },
-      part: { head: 'Which part has the problem?', rows: [
+      part: { head: 'Which part is giving trouble?', rows: [
         { label: 'Power and charging', to: 'psym' },
         { label: 'Card reader', off: true },
         { label: 'Printer', off: true },
@@ -361,31 +410,31 @@ class Component extends DCLogic {
         { label: 'Network', off: true },
         { label: 'Device slow or restarting', off: true },
         { label: 'Damage or security alert', off: true }
-      ], quiet: [{ label: 'None of these issues', to: 'when' }] },
+      ], quiet: [{ label: "My issue isn't listed", to: 'when' }] },
       when: { head: 'When does the problem happen?', rows: [
         { label: 'While taking a payment', to: 'payq' },
         { label: 'While printing a receipt', off: true },
         { label: 'While charging, or the battery runs out', to: 'psym' },
         { label: 'When I touch or look at the screen', to: 'sym' },
         { label: 'All the time: slow, hangs or restarts', off: true }
-      ], quiet: [{ label: "I'm not sure", flow: 'cantSay' }] },
+      ], quiet: [{ label: "I'm not sure when it happens", flow: 'cantSay' }] },
       payq: { head: 'What happens with the payment?', rows: [
         { label: "The card isn't read", off: true },
         { label: 'It keeps loading or fails', off: true }
       ], quiet: [] },
-      psym: { head: 'What do you notice with power or charging?', rows: [
+      psym: { head: "What's happening with charging?", rows: [
         { label: "Won't charge", flow: 'charge' },
         { label: 'Battery runs out fast', flow: 'drain' },
         { label: 'Switches off by itself', off: true },
         { label: 'Battery swollen or hot', flow: 'swollen' },
         { label: 'Charger or cable missing or damaged', off: true }
-      ], quiet: [{ label: 'None of these issues', flow: 'chargeAny' }] },
-      sym: { head: 'What do you notice with the screen?', rows: [
+      ], quiet: [{ label: "My issue isn't listed", flow: 'chargeAny' }] },
+      sym: { head: "What's happening with the screen?", rows: [
         { label: 'Touch not working properly', flow: 'touch' },
         { label: 'Screen dim, flickering or lines', off: true },
         { label: 'Power button not working', off: true },
         { label: 'Screen cracked', flow: 'crack' }
-      ], quiet: [{ label: 'None of these issues', flow: 'screenAny' }] }
+      ], quiet: [{ label: "My issue isn't listed", flow: 'screenAny' }] }
     };
   }
   ask(key) {
@@ -393,25 +442,25 @@ class Component extends DCLogic {
     return { entries: [{ k: 'bot', t: n.head }], opts: n.rows.map((r) => ({ id: 'node', label: r.label, off: r.off, r: r })).concat(n.quiet.map((r) => ({ id: 'node', label: r.label, r: r }))) };
   }
   sum(rows) { return { k: 'card', tone: 'info', title: 'Request summary', rows: rows }; }
-  raiseOpts(withElse) {
-    return [{ id: 'raise', label: 'Raise a request', primary: true }].concat(withElse ? [{ id: 'else', label: 'Need help with something else?' }] : []);
-  }
+  raiseOpts() { return [{ id: 'raise', label: 'Raise a request', primary: true }, { id: 'else', label: 'I have a different issue' }]; }
+  /* a quiet way out, offered once one check or fix has been tried */
+  reqOpt(rows, label, quiet) { return { id: 'req', label: label || 'Raise a request', quiet: quiet !== false, rows: rows.concat([{ a: 'Diagnostic report', b: 'Attached' }]) }; }
   testIntro() {
     return { k: 'step', img: '[Picture: screen with 6 spots]', cap: 'Touch test', title: 'Tap each spot when it turns green', d: "We'll light up 6 spots, one at a time. You get 5 seconds for each, and a second try for any you miss." };
   }
   flowStart(kind) {
     const start = [{ id: 'start', label: 'Start touch test', primary: true }];
-    const pStart = [{ id: 'pStart', label: 'Start check', primary: true }];
+    const pStart = [{ id: 'pStart', label: 'Start check', primary: true }, this.reqOpt([{ a: 'Problem', b: "Won't charge" }, { a: 'Power check', b: 'Could not be run' }], "I can't do this")];
     const plug = { k: 'step', img: '[Picture: charger plugged into the device]', cap: 'Before we check', title: 'Plug in your charger and keep it connected', d: "We'll check the charger, the charging and the battery. It takes about 10 seconds." };
     const P = 'Power and charging'; const S = 'Screen and buttons';
     if (kind === 'touch') return { title: 'Touch not working', sub: S, entries: [{ k: 'bot', t: "Let's check your touch screen." }, this.testIntro()], opts: start };
     if (kind === 'screenAny') return { title: 'Screen check', sub: S, entries: [{ k: 'bot', t: "No problem. We'll run the screen check for you." }, this.testIntro()], opts: start };
-    if (kind === 'crack') return { title: 'Screen cracked', sub: S, entries: [{ k: 'bot', t: 'A cracked screen ', b: 'has to be replaced', t2: '. If any glass is loose, stop using the device.' }, this.sum([{ a: 'Problem', b: 'Screen cracked' }, { a: 'Needs', b: 'Device replacement' }, { a: 'Diagnostic report', b: 'Attached' }])], opts: this.raiseOpts(false) };
+    if (kind === 'crack') return { title: 'Screen cracked', sub: S, entries: [{ k: 'bot', t: 'A cracked screen ', b: 'has to be replaced', t2: '. If any glass is loose, stop using the device.' }, this.sum([{ a: 'Problem', b: 'Screen cracked' }, { a: 'Needs', b: 'Device replacement' }, { a: 'Diagnostic report', b: 'Attached' }])], opts: this.raiseOpts() };
     if (kind === 'charge') return { title: "Won't charge", sub: P, entries: [{ k: 'bot', t: "Let's find out why it isn't charging." }, plug], opts: pStart };
     if (kind === 'chargeAny') return { title: 'Power check', sub: P, entries: [{ k: 'bot', t: "No problem. We'll run the power check for you." }, plug], opts: pStart };
     if (kind === 'drain') return { title: 'Battery runs out fast', sub: P, entries: [{ k: 'bot', t: "Let's see what is using your battery. It takes a few seconds." }], opts: [{ id: 'dStart', label: 'Start check', primary: true }] };
-    if (kind === 'swollen') return { title: 'Battery swollen or hot', sub: P, entries: [{ k: 'bot', t: '', b: 'Stop using the device now.', t2: " Unplug it and don't charge it." }, this.sum([{ a: 'Problem', b: 'Battery swollen or hot' }, { a: 'Priority', b: 'Safety' }, { a: 'Diagnostic report', b: 'Attached' }])], opts: this.raiseOpts(false) };
-    return { title: 'Log a complaint', sub: '', entries: [{ k: 'bot', t: "That's okay. Our support team will call you to understand the problem." }, this.sum([{ a: 'Problem', b: 'Not identified' }, { a: 'Diagnostic report', b: 'Latest device readings attached' }])], opts: this.raiseOpts(false) };
+    if (kind === 'swollen') return { title: 'Battery swollen or hot', sub: P, entries: [{ k: 'alert', title: 'Stop using this device now', items: [{ name: 'Unplug it from the charger' }, { name: 'Do not charge it' }, { name: 'Keep it away from heat' }] }, { k: 'bot', t: "We're treating this as a ", b: 'safety priority', t2: '.' }, this.sum([{ a: 'Problem', b: 'Battery swollen or hot' }, { a: 'Priority', b: 'Safety' }, { a: 'Diagnostic report', b: 'Attached' }])], opts: this.raiseOpts() };
+    return { title: 'Log a complaint', sub: '', entries: [{ k: 'bot', t: "That's okay. Our support team will call you to understand the problem." }, this.sum([{ a: 'Problem', b: 'Not identified' }, { a: 'Diagnostic report', b: 'Latest device readings attached' }])], opts: this.raiseOpts() };
   }
   keep() { const st = this.state; return { scen: st.scen, openReq: st.openReq, failMode: st.failMode }; }
   enterStart() { this.clearAll(); this.setState(Object.assign(this.fresh(), this.keep(), { screen: 'start' })); }
@@ -421,7 +470,7 @@ class Component extends DCLogic {
     if (this.state.openReq === 'yes') {
       this.setState(Object.assign(this.fresh(), this.keep(), { screen: 'flow',
         hist: head.concat([{ k: 'bot', t: 'You already have an open request for this device. We will call you ', b: 'within [SLA]', t2: '.' }, { k: 'ticket', title: 'Touch not working', d: 'Request no. [SR number] · Raised [date and time]' }]),
-        opts: [{ id: 'resolved', label: 'My issue is resolved' }, { id: 'different', label: 'I have a different problem' }] }));
+        opts: [{ id: 'resolved', label: 'My issue is resolved' }, { id: 'followUp', label: 'Follow up on this request' }, { id: 'different', label: 'I have a different issue' }] }));
       return;
     }
     const a = this.ask('root');
@@ -438,7 +487,7 @@ class Component extends DCLogic {
   change() {
     const st = this.state; if (!st.undo.length) return;
     const u = st.undo[st.undo.length - 1];
-    this.setState({ hist: st.hist.slice(0, u.n), opts: u.opts, ftitle: u.ftitle, fsub: u.fsub, undo: st.undo.slice(0, -1), more: false });
+    this.setState({ hist: st.hist.slice(0, u.n), opts: u.opts, ftitle: u.ftitle, fsub: u.fsub, undo: st.undo.slice(0, -1), more: false, descOn: false, pad: null, ticks: {} });
   }
   busyThen(label, text, ms, fn) {
     this.step(label, [{ k: 'busy', t: text }], [], true);
@@ -475,41 +524,50 @@ class Component extends DCLogic {
     const result = { k: 'result', zones: res, d: f ? 'Not responding: ' + failed.join(', ') : 'Every spot responded' };
     let entries = []; let opts = [];
     const done = [{ id: 'close', label: 'Done', primary: true }];
-    const clean = { k: 'step', img: '[Photo: peeling off the screen guard]', cap: 'Try this', title: 'Remove the screen guard and wipe the screen with a dry cloth', d: 'Then run the test again.' };
     if (f === 0 && run === 1) {
       entries = [{ k: 'bot', t: '', b: 'Touch is working in all 6 spots.', t2: '' }, result, { k: 'bot', t: "What's still wrong?" }];
-      opts = [{ id: 'slowYes', label: "It's slow to respond" }, { id: 'else', label: "It's something else" }, { id: 'works0', label: "It's working now" }];
+      opts = [{ id: 'slowYes', label: "It's slow to respond" }, { id: 'else', label: 'I have a different issue' }, { id: 'works0', label: "It's working now" }, this.reqOpt([{ a: 'Problem', b: 'Screen or touch issue' }, { a: 'Touch test', b: '6 of 6 spots working' }])];
     } else if (f === 0) {
-      entries = [{ k: 'bot', t: '', b: 'Touch is working in all 6 spots now.', t2: '' }, result, { k: 'done', title: 'Touch is working again', d: "The screen guard or dirt was the problem. We'll check in tomorrow to make sure it's still fine." }];
+      entries = [{ k: 'bot', t: '', b: 'Touch is working in all 6 spots now.', t2: '' }, result, { k: 'done', title: 'Touch is working again', d: 'The screen guard or dirt was the problem.' }];
       opts = done;
     } else if (f === 6) {
       entries = [{ k: 'bot', t: '', b: "We didn't register any taps.", t2: " If you weren't ready, try again. If the screen isn't responding at all, raise the request from PineOne on your phone." }, result,
         { k: 'step', img: '[QR code]', cap: 'No touch needed', title: 'Scan with your phone to raise this in PineOne', d: 'The test result is sent along, so you will not have to explain it again.' }];
       opts = [{ id: 'retest0', label: 'Try again', primary: true }];
     } else if (run === 1) {
-      entries = [{ k: 'bot', t: '', b: (6 - f) + ' of 6 spots are working.', t2: ' We tried the missed spots twice. A screen guard or dirt is often the cause.' }, result, clean];
-      opts = [{ id: 'retest', label: 'Done, test again', primary: true }];
+      entries = [{ k: 'bot', t: '', b: (6 - f) + ' of 6 spots are working.', t2: ' We tried the missed spots twice. A screen guard or dirt is often the cause.' }, result, { k: 'bot', t: 'Have you already removed the screen guard and wiped the screen?' }];
+      opts = [{ id: 'cleanNo', label: 'No, not yet' }, { id: 'cleanYes', label: 'Yes, already done' }];
     } else {
       entries = [{ k: 'bot', t: "The same area still isn't responding after cleaning, so ", b: 'the screen needs a repair', t2: '.' }, result, this.sum([{ a: 'Problem', b: 'Touch not working' }, { a: 'Not responding', b: failed.join(', ') }, { a: 'Already tried', b: 'Screen guard removed, screen cleaned' }, { a: 'Diagnostic report', b: 'Attached' }])];
-      opts = this.raiseOpts(false);
+      opts = this.raiseOpts();
     }
     const bottomDead = !res[4] || !res[5];
     const topOk = res[0] && res[1];
-    this.setState({ screen: 'flow', run: run, hist: st.hist.concat(entries), opts: opts, undo: [], more: false, optsTop: f > 0 && f < 6 && bottomDead && topOk });
+    this.setState({ screen: 'flow', run: run, failedNames: failed, hist: st.hist.concat(entries), opts: opts, undo: [], more: false, optsTop: f > 0 && f < 6 && bottomDead && topOk });
   }
 
   /* ---------- power helpers ---------- */
   pcard(a, b, c) { return { k: 'card', tone: 'plain', title: 'Power check', rows: [{ a: 'Charger', b: a }, { a: 'Charging', b: b }, { a: 'Battery health', b: c }] }; }
+  /* merchant-done fixes: asked about up front, then shown together, with one re-check */
   pfixes() {
     return [
-      { name: 'Plug the charger into a different wall socket', d: 'Use a socket you know is working.', img: '[Photo: charger in a wall socket]' },
-      { name: 'Unplug the cable at both ends and push it back in firmly', d: 'Check the charger end and the device end.', img: '[Photo: cable ends pushed in]' },
-      { name: 'Gently blow the dust out of the charging port', d: 'Do not use a pin or anything sharp.', img: '[Photo: charging port close-up]' }
+      { key: 'socket', short: 'Different socket', ask: 'Tried a different wall socket', name: 'Plug the charger into a different wall socket', d: 'Use a socket you know is working.' },
+      { key: 'cable', short: 'Cable reconnected', ask: 'Unplugged the cable and pushed it back in', name: 'Unplug the cable at both ends and push it back in firmly', d: 'Check the charger end and the device end.' },
+      { key: 'port', short: 'Port cleaned', ask: 'Cleaned the charging port', name: 'Gently blow the dust out of the charging port', d: 'Do not use a pin or anything sharp.' }
     ];
   }
-  offerP(i) {
-    const f = this.pfixes()[i];
-    return { entries: [{ k: 'step', img: f.img, cap: 'Fix ' + (i + 1) + '/3', title: f.name, d: f.d }], opts: [{ id: 'pDo', label: 'Done, check again', primary: true }] };
+  triedOpts() { return this.pfixes().map((f) => ({ id: 'tick', key: f.key, label: f.ask, check: true })).concat([{ id: 'triedGo', label: 'Continue', primary: true }]); }
+  chargeRows() { const st = this.state; const rows = [{ a: 'Problem', b: "Won't charge" }]; const did = this.pfixes().filter((f) => st.ptried.indexOf(f.short) < 0).map((f) => f.short); if (did.length) rows.push({ a: 'Tried just now', b: did.join(', ') }); if (st.ptried.length) rows.push({ a: 'You told us you tried', b: st.ptried.join(', ') }); return rows; }
+  recheck(L) {
+    this.busyThen(L, 'Checking for charging…', 1800, (hist) => {
+      if (this.state.scen === 'socket') this.setState({ hist: hist.concat([{ k: 'done', title: 'Charging now', d: 'Your device is charging normally.' }]), opts: [{ id: 'close', label: 'Done', primary: true }] });
+      else this.setState({ hist: hist.concat([{ k: 'bot', t: '', b: "It's still not charging.", t2: ' Do you have another Pine Labs charger or cable to try?' }]), opts: [{ id: 'spYes', label: 'Yes, it charges with the other one' }, { id: 'spNo', label: 'Yes, but still not charging' }, { id: 'spNone', label: "No, I don't have a spare" }] });
+    });
+  }
+  /* describe the issue, then the number */
+  descDone(skip) {
+    const st = this.state; const text = skip ? '' : String(this._desc || '').trim(); this._desc = '';
+    this.setState({ descOn: false, note: text, undo: [], hist: st.hist.concat([{ k: 'user', t: text || 'Skip' }, { k: 'bot', t: 'Which number should we call?' }]), opts: [{ id: 'numThis', label: 'Call 98XXX XXXXX' }, { id: 'numOther', label: 'Call a different number' }] });
   }
   /* ---------- number pad ---------- */
   padKey(k) { const p = this.state.pad; if (!p) return; const max = p.mode === 'num' ? 10 : 4; let v = p.val; if (k === 'del') v = v.slice(0, -1); else if (v.length < max) v += k; this.setState({ pad: { mode: p.mode, val: v, num: p.num } }); }
@@ -524,119 +582,132 @@ class Component extends DCLogic {
     if (p.val.length < 4) return;
     this.setState({ pad: null }); this.raiseNow('Code entered', p.num);
   }
-  padCancel() { const st = this.state; this.setState({ pad: null, undo: [], hist: st.hist.concat([{ k: 'bot', t: 'Which number should we call?' }]), opts: [{ id: 'numThis', label: '98XXX XXXXX (registered)' }, { id: 'numOther', label: 'A different number' }] }); }
+  padCancel() { const st = this.state; this.setState({ pad: null, undo: [], hist: st.hist.concat([{ k: 'bot', t: 'Which number should we call?' }]), opts: [{ id: 'numThis', label: 'Call 98XXX XXXXX' }, { id: 'numOther', label: 'Call a different number' }] }); }
   runDrain(L) {
     this.busyThen(L, 'Checking battery health and battery use…', 2200, (hist) => {
       if (this.state.scen === 'battery') {
-        this.setState({ hist: hist.concat([{ k: 'bot', t: '', b: 'Your battery needs replacing.', t2: " It can't hold a charge any more, and this can't be fixed on the device. Until it's replaced, keep the device plugged in during work hours." }, { k: 'card', tone: 'plain', title: 'Battery check', rows: [{ a: 'Battery health', b: '38%' }] }, this.sum([{ a: 'Problem', b: 'Battery runs out fast' }, { a: 'Part to replace', b: 'Battery' }, { a: 'Diagnostic report', b: 'Attached' }])]), opts: this.raiseOpts(false) });
+        this.setState({ hist: hist.concat([{ k: 'bot', t: '', b: 'The battery needs replacing.', t2: " Keep the device plugged in until it's replaced." }, { k: 'card', tone: 'plain', title: 'Battery check', rows: [{ a: 'Battery health', b: '38%' }] }, this.sum([{ a: 'Problem', b: 'Battery runs out fast' }, { a: 'Part to replace', b: 'Battery' }, { a: 'Diagnostic report', b: 'Attached' }])]), opts: this.raiseOpts() });
       } else {
         this.setState({ hist: hist.concat([{ k: 'bot', t: 'Your battery is healthy. ', b: 'The screen and background apps are using most of the power.', t2: '' }, { k: 'card', tone: 'plain', title: 'Battery check', rows: [{ a: 'Battery health', b: 'Good' }, { a: 'Screen brightness', b: '100%' }, { a: 'Background apps', b: 'Many running' }] }, { k: 'card', tone: 'plain', title: 'We can fix this for you', rows: [{ a: 'What happens', b: 'Lower brightness, close background apps' }, { a: 'Takes', b: 'A few seconds' }] }]), opts: [{ id: 'dFix', label: 'Fix it for me', primary: true }] });
       }
     });
   }
   /* ---------- slow-screen fix ladder ---------- */
+  /* device-run fixes for a slow screen: quick one first, disruptive ones only if needed */
   fixes() {
     return [
-      { name: 'Clear memory', why: 'Memory is almost full, which slows the screen down.', rows: [{ a: 'What happens', b: 'Close background apps, clear memory' }, { a: 'Takes', b: 'About a minute' }, { a: 'Your payments', b: 'Settled first, nothing is lost' }], cta: 'Fix it for me', busy: 'Closing apps and clearing memory…', doneT: 'Memory cleared', doneD: 'Background apps are closed.' },
-      { name: 'Restart the device', why: 'A restart clears anything that is still stuck.', rows: [{ a: 'What happens', b: 'The device restarts' }, { a: 'Takes', b: 'About 2 minutes' }, { a: 'After the restart', b: 'We continue from here' }], cta: 'Restart now', busy: 'Restarting…', doneT: 'Restarted', doneD: "We've picked up where you left off. Try using the screen now." },
-      { name: 'Update the software', why: 'A newer version is available and may fix this.', rows: [{ a: 'Takes', b: 'About 10 minutes' }, { a: 'During the update', b: "The device can't take payments" }, { a: 'Needs', b: 'Charger connected' }], cta: 'Update now', busy: 'Updating the software…', doneT: 'Software updated', doneD: 'You are on the latest version.' }
+      { name: 'Clear memory', short: 'Memory cleared', why: 'Memory is almost full, which slows the screen down.', rows: [{ a: 'What happens', b: 'Close background apps, clear memory' }, { a: 'Takes', b: 'About a minute' }, { a: 'Your payments', b: 'Settled first, nothing is lost' }], cta: 'Fix it for me', busy: 'Closing apps and clearing memory…', doneT: 'Memory cleared', doneD: 'Background apps are closed.' },
+      { name: 'Restart the device', short: 'Device restarted', why: 'A restart clears anything that is still stuck.', rows: [{ a: 'What happens', b: 'The device restarts' }, { a: 'Takes', b: 'About 2 minutes' }, { a: 'After the restart', b: 'We continue from here' }], cta: 'Restart now', busy: 'Restarting…', doneT: 'Restarted', doneD: "You're back where you left off." },
+      { name: 'Update the software', short: 'Software updated', why: 'A newer version is available and may fix this.', rows: [{ a: 'Takes', b: 'About 10 minutes' }, { a: 'During the update', b: "The device can't take payments" }, { a: 'Needs', b: 'Charger connected' }], cta: 'Update now', busy: 'Updating the software…', doneT: 'Software updated', doneD: 'You are on the latest version.' }
     ];
   }
+  slowRows(n) { const rows = [{ a: 'Problem', b: 'Screen slow to respond' }, { a: 'Touch test', b: '6 of 6 spots working' }]; if (n > 0) rows.push({ a: 'Already tried', b: this.fixes().slice(0, n).map((f) => f.short).join(', ') }); return rows; }
   offer(i) {
     const f = this.fixes()[i];
     return {
-      entries: [{ k: 'bot', t: f.why }, { k: 'card', tone: 'plain', title: 'Fix ' + (i + 1) + '/3: ' + f.name, rows: f.rows }],
-      opts: [{ id: 'doFix', label: f.cta, primary: true }].concat(i === 2 ? [{ id: 'fixLater', label: 'Update after closing' }] : [])
+      entries: [{ k: 'bot', t: f.why }, { k: 'card', tone: 'plain', title: f.name, rows: f.rows }],
+      opts: [{ id: 'doFix', label: f.cta, primary: true }].concat(i === 2 ? [{ id: 'fixLater', label: 'Update after closing' }] : [], i > 0 ? [this.reqOpt(this.slowRows(i))] : [])
     };
   }
+  afterFix(i) { return [{ id: 'works', label: "It's working now" }, i < 2 ? { id: 'nextFix', label: 'Try the next fix' } : { id: 'stillNo', label: 'Still slow' }].concat(i < 2 ? [this.reqOpt(this.slowRows(i + 1))] : []); }
   raiseNow(L, num) {
     this.busyThen(L, 'Raising your request…', 1600, (hist) => {
       const st = this.state;
       if (st.failMode === 'yes' && !st.failedOnce) {
         this.setState({ hist: hist.concat([{ k: 'err', t: "We couldn't raise the request right now. Your details are saved, so you won't need to enter them again." }]), opts: [{ id: 'retryRaise', label: 'Try again', primary: true }, { id: 'cancelReq', label: 'Not now' }], failedOnce: true, num: num });
       } else {
-        this.setState({ hist: hist.concat([{ k: 'card', tone: 'ok', title: 'Request raised', rows: [{ a: 'Request no.', b: '[SR number]' }, { a: "We'll call", b: num }, { a: 'Expect a call', b: '[within SLA]' }, { a: 'WhatsApp', b: 'Confirmation sent' }] }, { k: 'bot', t: 'You can track this in Help & Support, under My Requests.' }]), opts: [{ id: 'close', label: 'Done', primary: true }] });
+        this.setState({ hist: hist.concat([{ k: 'card', tone: 'ok', title: 'Request raised', rows: [{ a: 'Request no.', b: '[SR number]' }, { a: "We'll call", b: num }, { a: 'Expect a call', b: '[within SLA]' }, { a: 'Your note', b: st.note ? 'Added' : 'Not added' }, { a: 'WhatsApp', b: 'Confirmation sent' }] }, { k: 'bot', t: 'You can track this in Help & Support, under My Requests.' }]), opts: [{ id: 'close', label: 'Done', primary: true }] });
       }
     });
   }
 
   pick(o) {
     if (o.off) return;
-    const id = o.id; const L = o.label;
+    const st0 = this.state; const id = o.id; const L = o.label;
     const done = [{ id: 'close', label: 'Done', primary: true }];
     if (id === 'node') {
       const r = o.r;
       if (r.to) { const a = this.ask(r.to); this.step(L, a.entries, a.opts, false); return; }
       const f = this.flowStart(r.flow);
-      this.step(L, f.entries, f.opts, false, { ftitle: f.title, fsub: f.sub, run: 0, fixI: 0, pfixI: 0, optsTop: false });
+      this.step(L, f.entries, f.opts, false, { ftitle: f.title, fsub: f.sub, run: 0, fixI: 0, optsTop: false, ptried: [], ticks: {} });
       return;
     }
     if (id === 'resolved') { this.step(L, [{ k: 'done', title: 'Request closed', d: 'Glad it is working again. No one will call or visit for this request.' }], done, true); return; }
+    if (id === 'followUp') { this.step(L, [{ k: 'done', title: 'Follow-up sent', d: 'We have told our support team you are still waiting. They will call you within [SLA].' }], done, true); return; }
     if (id === 'different') { const a = this.ask('root'); this.step(L, a.entries, a.opts, true); return; }
     if (id === 'else') { const a = this.ask('when'); this.step(L, a.entries, a.opts, true, { ftitle: 'Log a complaint', fsub: '', optsTop: false }); return; }
-    if (id === 'works0') { this.step(L, [{ k: 'done', title: 'All good', d: 'The check found no problem, so no request is needed. You can run it again anytime.' }], done, true); return; }
+    if (id === 'req') { this.step(L, [{ k: 'bot', t: "Here's what we'll send to our support team." }, this.sum(o.rows)], this.raiseOpts(), false, { optsTop: false }); return; }
+    if (id === 'works0') { this.step(L, [{ k: 'done', title: 'All good', d: "We didn't find a problem. You can run this check again anytime." }], done, true); return; }
     if (id === 'start' || id === 'retest') { this.beginTest(L); return; }
     if (id === 'retest0') { this.beginTest(L, true); return; }
 
-    /* slow screen ladder */
+    /* touch: ask before telling them to clean */
+    if (id === 'cleanNo') {
+      this.step(L, [{ k: 'step', img: '[Photo: peeling off the screen guard]', cap: 'Try this', title: 'Remove the screen guard and wipe the screen with a dry cloth', d: 'Then run the test again.' }],
+        [{ id: 'retest', label: "I've done this, test again", primary: true }, this.reqOpt([{ a: 'Problem', b: 'Touch not working' }, { a: 'Not responding', b: st0.failedNames.join(', ') }], "I can't do this")], false);
+      return;
+    }
+    if (id === 'cleanYes') { this.step(L, [{ k: 'bot', t: 'Then ', b: 'the screen needs a repair', t2: '.' }, this.sum([{ a: 'Problem', b: 'Touch not working' }, { a: 'Not responding', b: st0.failedNames.join(', ') }, { a: 'You told us you tried', b: 'Screen guard removed, screen cleaned' }, { a: 'Diagnostic report', b: 'Attached' }])], this.raiseOpts(), false, { optsTop: false }); return; }
+
+    /* slow screen */
     if (id === 'slowYes') {
       const f = this.offer(0);
       this.step(L, [{ k: 'card', tone: 'plain', title: 'Screen check', rows: [{ a: 'Touch', b: 'Working' }, { a: 'Memory', b: 'Almost full' }, { a: 'Software', b: 'Update available' }] }].concat(f.entries), f.opts, false, { fixI: 0 });
       return;
     }
     if (id === 'doFix') {
-      const i = this.state.fixI; const f = this.fixes()[i];
+      const i = st0.fixI; const f = this.fixes()[i];
       this.busyThen(L, f.busy, 2200, (hist) => {
-        const next = i < 2 ? { id: 'nextFix', label: 'Try another fix' } : { id: 'stillNo', label: 'Still slow' };
-        if (i === 1) this.setState({ hist: hist.concat([{ k: 'done', title: f.doneT, d: f.doneD }, { k: 'bot', t: 'How does it feel now?' }]), opts: [{ id: 'works', label: "It's working now" }, next] });
+        if (i === 1) this.setState({ hist: hist.concat([{ k: 'done', title: f.doneT, d: f.doneD }, { k: 'bot', t: 'Is it faster now?' }]), opts: this.afterFix(i) });
         else this.setState({ hist: hist.concat([{ k: 'done', title: f.doneT, d: f.doneD }, { k: 'bot', t: 'Now ', b: 'restart the app', t2: ' so you can feel the difference.' }]), opts: [{ id: 'restartApp', label: 'Restart the app', primary: true }] });
       });
       return;
     }
-    if (id === 'restartApp') {
-      const i = this.state.fixI;
-      this.busyThen(L, 'Restarting the app…', 2000, (hist) => {
-        const next = i < 2 ? { id: 'nextFix', label: 'Try another fix' } : { id: 'stillNo', label: 'Still slow' };
-        this.setState({ hist: hist.concat([{ k: 'bot', t: 'Welcome back. We saved your place. How does it feel now?' }]), opts: [{ id: 'works', label: "It's working now" }, next] });
-      });
-      return;
-    }
-    if (id === 'nextFix') { const i = this.state.fixI + 1; const f = this.offer(i); this.step(L, f.entries, f.opts, true, { fixI: i }); return; }
-    if (id === 'fixLater') { this.step(L, [{ k: 'done', title: 'Update scheduled', d: "We'll update the software after closing tonight and check in tomorrow." }], done, true); return; }
-    if (id === 'works') { this.step(L, [{ k: 'done', title: 'Fixed', d: "We'll check in tomorrow to make sure it's still running well." }], done, true); return; }
-    if (id === 'stillNo') { this.step(L, [{ k: 'bot', t: "We've tried every fix we can run on the device, so ", b: 'an engineer should look at this', t2: '.' }, this.sum([{ a: 'Problem', b: 'Screen slow to respond' }, { a: 'Touch test', b: '6 of 6 spots working' }, { a: 'Already tried', b: 'Memory cleared, restart, software update' }, { a: 'Diagnostic report', b: 'Attached' }])], this.raiseOpts(true), true); return; }
+    if (id === 'restartApp') { const i = st0.fixI; this.busyThen(L, 'Restarting the app…', 2000, (hist) => this.setState({ hist: hist.concat([{ k: 'bot', t: "You're back where you left off. Is it faster now?" }]), opts: this.afterFix(i) })); return; }
+    if (id === 'nextFix') { const i = st0.fixI + 1; const f = this.offer(i); this.step(L, f.entries, f.opts, true, { fixI: i }); return; }
+    if (id === 'fixLater') { this.step(L, [{ k: 'done', title: 'Update scheduled', d: "We'll update the software after closing tonight." }], done.concat([this.reqOpt(this.slowRows(2).concat([{ a: 'Software update', b: 'Scheduled for tonight' }]), 'Still need help', false)]), true); return; }
+    if (id === 'works') { this.step(L, [{ k: 'done', title: 'Fixed', d: 'Glad it is working again.' }], done, true); return; }
+    if (id === 'stillNo') { this.step(L, [{ k: 'bot', t: "We've tried every fix we can run on the device, so ", b: 'an engineer should look at this', t2: '.' }, this.sum(this.slowRows(3).concat([{ a: 'Diagnostic report', b: 'Attached' }]))], this.raiseOpts(), true); return; }
 
     /* power and charging */
     if (id === 'pStart') {
       this.busyThen(L, 'Checking charger, charging and battery…', 2400, (hist) => {
         const sc = this.state.scen; let e = []; let op = [];
-        if (sc === 'battery') { e = [{ k: 'bot', t: 'Your charger works, but ', b: 'the battery needs replacing', t2: ". This can't be fixed on the device. Until it's replaced, keep the device plugged in during work hours." }, this.pcard('Pine Labs charger', 'Working', '38%'), this.sum([{ a: 'Problem', b: "Won't charge" }, { a: 'Part to replace', b: 'Battery' }, { a: 'Diagnostic report', b: 'Attached' }])]; op = this.raiseOpts(false); }
-        else if (sc === 'charger') { e = [{ k: 'bot', t: '', b: "This isn't a Pine Labs charger.", t2: " It doesn't give your device enough power. Your battery is fine." }, this.pcard('Not a Pine Labs charger', 'Too weak', 'Good'), { k: 'step', img: '[Photo: the Pine Labs charger]', cap: 'Try this', title: 'Plug in the Pine Labs charger', d: 'It came in the box with your device.' }]; op = [{ id: 'chgRe', label: "I've plugged it in, check again", primary: true }, { id: 'chgNo', label: "I don't have it" }]; }
-        else if (sc === 'fine') { e = [{ k: 'bot', t: '', b: 'Your device is charging normally.', t2: '' }, this.pcard('Pine Labs charger', 'Working', 'Good'), { k: 'bot', t: "What's still wrong?" }]; op = [{ id: 'toDrain', label: 'Battery runs out fast' }, { id: 'else', label: "It's something else" }, { id: 'works0', label: "It's working now" }]; }
-        else { const f = this.offerP(0); e = [{ k: 'bot', t: '', b: 'No power is reaching the device.', t2: " Let's find out why." }, this.pcard('Pine Labs charger', 'No power coming in', 'Good')].concat(f.entries); op = f.opts; }
-        this.setState({ hist: hist.concat(e), opts: op, pfixI: 0 });
+        if (sc === 'battery') { e = [{ k: 'bot', t: '', b: 'The battery needs replacing.', t2: " Keep the device plugged in until it's replaced." }, this.pcard('Pine Labs charger', 'Working', '38%'), this.sum([{ a: 'Problem', b: "Won't charge" }, { a: 'Part to replace', b: 'Battery' }, { a: 'Diagnostic report', b: 'Attached' }])]; op = this.raiseOpts(); }
+        else if (sc === 'charger' || sc === 'chargerBad') { e = [{ k: 'bot', t: '', b: "This isn't a Pine Labs charger.", t2: " It doesn't give your device enough power. Your battery is fine." }, this.pcard('Not a Pine Labs charger', 'Too weak', 'Good'), { k: 'step', img: '[Photo: the Pine Labs charger]', cap: 'Try this', title: 'Plug in the Pine Labs charger', d: 'It came in the box with your device.' }]; op = [{ id: 'chgRe', label: "I've done this", primary: true }, { id: 'chgNo', label: "I don't have it" }]; }
+        else if (sc === 'fine') { e = [{ k: 'bot', t: '', b: 'Your device is charging normally.', t2: '' }, this.pcard('Pine Labs charger', 'Working', 'Good'), { k: 'bot', t: "What's still wrong?" }]; op = [{ id: 'toDrain', label: 'Battery runs out fast' }, { id: 'else', label: 'I have a different issue' }, { id: 'works0', label: "It's working now" }, this.reqOpt([{ a: 'Problem', b: "Won't charge" }, { a: 'Power check', b: 'No problem found' }])]; }
+        else { e = [{ k: 'bot', t: '', b: 'No power is reaching the device.', t2: '' }, this.pcard('Pine Labs charger', 'No power coming in', 'Good'), { k: 'bot', t: 'Have you already tried any of these?' }]; op = this.triedOpts(); }
+        this.setState({ hist: hist.concat(e), opts: op, ticks: {}, ptried: [] });
       });
       return;
     }
-    if (id === 'pDo') {
-      const i = this.state.pfixI;
+    if (id === 'tick') { const t = Object.assign({}, st0.ticks); t[o.key] = !t[o.key]; this.setState({ ticks: t }); return; }
+    if (id === 'triedGo') {
+      const all = this.pfixes(); const tried = all.filter((f) => st0.ticks[f.key]); const rest = all.filter((f) => !st0.ticks[f.key]);
+      const said = tried.length ? 'Already tried: ' + tried.map((f) => f.short.toLowerCase()).join(', ') : "I haven't tried these";
+      const ptried = tried.map((f) => f.short);
+      if (!rest.length) { this.setState({ ptried: ptried }); this.recheck(said); return; }
+      const rows = [{ a: 'Problem', b: "Won't charge" }].concat(ptried.length ? [{ a: 'You told us you tried', b: ptried.join(', ') }] : []);
+      this.step(said, [{ k: 'fixlist', title: rest.length > 1 ? 'Try these, in any order' : 'Try this', items: rest.map((f, i) => ({ n: i + 1, name: f.name, d: f.d })) }, { k: 'bot', t: "We'll check for charging as soon as you're done." }],
+        [{ id: 'pAll', label: rest.length > 1 ? "I've done these" : "I've done this", primary: true }, this.reqOpt(rows, rest.length > 1 ? "I can't do these" : "I can't do this")], true, { ptried: ptried });
+      return;
+    }
+    if (id === 'pAll') { this.recheck(L); return; }
+    if (id === 'spYes') { this.step(L, [{ k: 'bot', t: 'Then ', b: 'the charger or cable is faulty', t2: ". We'll send a replacement." }, this.sum(this.chargeRows().concat([{ a: 'Part to replace', b: 'Charger or cable' }, { a: 'Diagnostic report', b: 'Attached' }]))], this.raiseOpts(), true); return; }
+    if (id === 'spNo' || id === 'spNone') { this.step(L, [{ k: 'bot', t: 'Then ', b: 'the charging port most likely needs a repair', t2: '.' }, this.sum(this.chargeRows().concat([{ a: 'Part to check', b: 'Charging port' }, { a: 'Diagnostic report', b: 'Attached' }]))], this.raiseOpts(), true); return; }
+    if (id === 'chgRe') {
       this.busyThen(L, 'Checking for charging…', 1800, (hist) => {
-        if (this.state.scen === 'socket' && i === 0) this.setState({ hist: hist.concat([{ k: 'done', title: 'Charging now', d: "The wall socket was the problem. Your device is charging normally. We'll check in tomorrow." }]), opts: done });
-        else if (i < 2) this.setState({ hist: hist.concat([{ k: 'bot', t: '', b: 'Still no charging detected.', t2: '' }]), opts: [{ id: 'pNext', label: 'Try another fix', primary: true }] });
-        else this.setState({ hist: hist.concat([{ k: 'bot', t: '', b: 'Still no charging detected.', t2: ' Do you have another Pine Labs charger or cable to try?' }]), opts: [{ id: 'spYes', label: 'Yes, it charges with the other one' }, { id: 'spNo', label: 'Yes, but still not charging' }, { id: 'spNone', label: "No, I don't have a spare" }] });
+        if (this.state.scen === 'chargerBad') this.setState({ hist: hist.concat([{ k: 'bot', t: '', b: "It's still not charging", t2: ', even with the Pine Labs charger. Have you already tried any of these?' }]), opts: this.triedOpts(), ticks: {}, ptried: [] });
+        else this.setState({ hist: hist.concat([{ k: 'done', title: 'Charging now', d: 'The Pine Labs charger is working. Use only this charger from now on.' }]), opts: done });
       });
       return;
     }
-    if (id === 'pNext') { const i = this.state.pfixI + 1; const f = this.offerP(i); this.step(L, f.entries, f.opts, true, { pfixI: i }); return; }
-    if (id === 'spYes') { this.step(L, [{ k: 'bot', t: 'Then ', b: 'the charger or cable is faulty', t2: ". We'll send a replacement." }, this.sum([{ a: 'Problem', b: "Won't charge" }, { a: 'Part to replace', b: 'Charger or cable' }, { a: 'Already tried', b: 'Other socket, cable reconnected, port cleaned' }, { a: 'Diagnostic report', b: 'Attached' }])], this.raiseOpts(true), true); return; }
-    if (id === 'spNo' || id === 'spNone') { this.step(L, [{ k: 'bot', t: 'Then ', b: 'the charging port most likely needs a repair', t2: '.' }, this.sum([{ a: 'Problem', b: "Won't charge" }, { a: 'Part to check', b: 'Charging port' }, { a: 'Already tried', b: 'Other socket, cable reconnected, port cleaned' }, { a: 'Diagnostic report', b: 'Attached' }])], this.raiseOpts(true), true); return; }
-    if (id === 'chgRe') { this.busyThen(L, 'Checking for charging…', 1800, (hist) => this.setState({ hist: hist.concat([{ k: 'done', title: 'Charging now', d: "The Pine Labs charger is working. Use only this charger from now on. We'll check in tomorrow." }]), opts: done })); return; }
-    if (id === 'chgNo') { this.step(L, [{ k: 'bot', t: "We'll send you a Pine Labs charger. ", b: 'No engineer visit is needed.', t2: '' }, this.sum([{ a: 'Problem', b: 'Wrong charger in use' }, { a: 'Needs', b: 'Pine Labs charger' }, { a: 'Diagnostic report', b: 'Attached' }])], this.raiseOpts(false), false); return; }
+    if (id === 'chgNo') { this.step(L, [{ k: 'bot', t: "We'll send you a Pine Labs charger. ", b: 'No engineer visit is needed.', t2: '' }, this.sum([{ a: 'Problem', b: 'Wrong charger in use' }, { a: 'Needs', b: 'Pine Labs charger' }, { a: 'Diagnostic report', b: 'Attached' }])], this.raiseOpts(), false); return; }
     if (id === 'dStart' || id === 'toDrain') { this.runDrain(L); return; }
-    if (id === 'dFix') { this.busyThen(L, 'Lowering brightness and closing apps…', 1800, (hist) => this.setState({ hist: hist.concat([{ k: 'done', title: 'Battery saver applied', d: "Brightness is lower and background apps are closed. We'll check your battery use tomorrow." }]), opts: done })); return; }
+    if (id === 'dFix') { this.busyThen(L, 'Lowering brightness and closing apps…', 1800, (hist) => this.setState({ hist: hist.concat([{ k: 'done', title: 'Battery saver applied', d: 'Brightness is lower and background apps are closed. It can take a day to see the difference.' }]), opts: done.concat([this.reqOpt([{ a: 'Problem', b: 'Battery runs out fast' }, { a: 'Battery health', b: 'Good' }, { a: 'Already tried', b: 'Brightness lowered, apps closed' }], 'Still not fixed', false)]) })); return; }
 
-    /* request */
-    if (id === 'raise') { this.step(L, [{ k: 'bot', t: 'Which number should we call?' }], [{ id: 'numThis', label: '98XXX XXXXX (registered)' }, { id: 'numOther', label: 'A different number' }], false); return; }
+    /* request: describe it, then the number */
+    if (id === 'raise') { this._desc = ''; this.step(L, [{ k: 'bot', t: 'Want to add anything in your own words? This is optional.' }], [], false, { descOn: true }); return; }
     if (id === 'numOther') { this.step(L, [{ k: 'bot', t: 'Type the number we should call.' }], [], true, { pad: { mode: 'num', val: '', num: '' } }); return; }
     if (id === 'numThis') { this.raiseNow(L, '98XXX XXXXX'); return; }
     if (id === 'retryRaise') { this.raiseNow(L, this.state.num); return; }
@@ -667,7 +738,7 @@ class Component extends DCLogic {
     const tones = { info: ['#8CCBEA', '#EAF6FC'], ok: ['#A8DDBF', '#EEF9F2'], plain: ['#DBDDE4', '#FFFFFF'] };
     const msgs = st.hist.map((h, i) => {
       const m = { anim: i >= (this._seen || 0) ? 'fadeUp 0.28s ease-out' : 'none', t: h.t || '', b: h.b || '', t2: h.t2 || '', cap: h.cap || '', title: h.title, d: h.d, img: h.img, rows: h.rows || [],
-        isBot: h.k === 'bot', isErr: h.k === 'err', isUser: h.k === 'user', isBusy: h.k === 'busy', isStep: h.k === 'step', isResult: h.k === 'result', isCard: h.k === 'card', isDone: h.k === 'done', isTicket: h.k === 'ticket',
+        isBot: h.k === 'bot', isErr: h.k === 'err', isUser: h.k === 'user', isBusy: h.k === 'busy', isStep: h.k === 'step', isResult: h.k === 'result', isCard: h.k === 'card', isDone: h.k === 'done', isTicket: h.k === 'ticket', isAlert: h.k === 'alert', isFixlist: h.k === 'fixlist', items: h.items || [],
         canChange: h.k === 'user' && i === topUndo, fixedReply: h.k === 'user' && i !== topUndo, changeAria: 'Change answer: ' + (h.t || ''), change: () => this.change(), zones: [] };
       if (h.k === 'result') m.zones = h.zones.map((ok) => ({ bg: ok ? '#1E8E4F' : '#FBE3E1', col: ok ? '#FFFFFF' : '#B3261E', mark: ok ? '✓' : '✕' }));
       if (h.k === 'card') { const c = tones[h.tone] || tones.plain; m.border = c[0]; m.bg = c[1]; }
@@ -676,17 +747,19 @@ class Component extends DCLogic {
 
     /* the selection sizes itself: pills for up to 3 answers, a list for more, a More row from 7 */
     const mk = (o) => ({ label: o.label, op: o.off ? 0.45 : 1, pick: () => this.pick(o) });
-    const actions = st.opts.filter((o) => o.primary && o.id !== 'raise').map(mk);
+    const anyTick = Object.keys(st.ticks).some((k) => st.ticks[k]);
+    const actions = st.opts.filter((o) => o.primary && o.id !== 'raise').map((o) => ({ label: o.id === 'triedGo' && !anyTick ? "I haven't tried these" : o.label, op: 1, pick: () => this.pick(o) }));
+    const checks = st.opts.filter((o) => o.check).map((o) => ({ label: o.label, on: st.ticks[o.key] ? 'true' : 'false', box: st.ticks[o.key] ? '#003323' : '#FFFFFF', mark: st.ticks[o.key] ? '✓' : '', tap: () => this.pick(o) }));
     const reqPills = st.opts.filter((o) => o.primary && o.id === 'raise').map(mk);
     const quiet = st.opts.filter((o) => o.quiet).map(mk);
-    const allAnswers = st.opts.filter((o) => !o.primary && !o.quiet);
+    const allAnswers = st.opts.filter((o) => !o.primary && !o.quiet && !o.check);
     const isList = allAnswers.length > 3;
     const collapsed = allAnswers.length >= 7 && !st.more;
     const answers = (collapsed ? allAnswers.slice(0, 5) : allAnswers).map(mk);
 
     const T = (label, key, items) => ({ label: label, items: items.map((x) => ({ label: x[1], border: st[key] === x[0] ? '#003323' : '#DBDDE4', bg: st[key] === x[0] ? '#FFFFFF' : 'transparent', pick: () => { const u = {}; u[key] = x[0]; this.setState(u); } })) });
     const toggles = [
-      T('The power check finds:', 'scen', [['battery', 'Battery failing'], ['charger', 'Wrong charger'], ['socket', 'Socket was the problem'], ['port', 'Faulty part'], ['fine', 'Charging is fine']]),
+      T('The power check finds:', 'scen', [['battery', 'Battery failing'], ['charger', 'Wrong charger'], ['chargerBad', 'Right charger, still no charge'], ['socket', 'Socket was the problem'], ['port', 'Faulty part'], ['fine', 'Charging is fine']]),
       T('Open request on this device:', 'openReq', [['no', 'None'], ['yes', 'One is open']]),
       T('Raising a request:', 'failMode', [['no', 'Works'], ['yes', 'Fails the first time']])
     ];
@@ -699,7 +772,8 @@ class Component extends DCLogic {
       back: () => { if (scr === 'start') this.restart(); else if (scr === 'flow') { if (st.undo.length && !st.pad) this.change(); else if (answered) this.setState({ sheet: true }); else this.restart(); } },
       startOver: () => this.enterFlow(),
       helpItems: helpItems, cells: cells, testCount: testCount,
-      msgs: msgs, hasOpts: st.opts.length > 0, actions: actions, reqPills: reqPills, answers: answers, quiet: quiet,
+      msgs: msgs, hasOpts: st.opts.length > 0, actions: actions, reqPills: reqPills, answers: answers, checks: checks, hasChecks: checks.length > 0,
+      descOn: st.descOn && scr === 'flow', descInput: (e) => { this._desc = e.target.value; }, descGo: () => this.descDone(false), descSkip: () => this.descDone(true), quiet: quiet,
       isPills: !isList && answers.length > 0, isList: isList, showMore: collapsed, moreGo: () => this.setState({ more: true }),
       optsTop: st.optsTop, optOrder: st.optsTop ? -1 : 0, optPos: st.optsTop ? 'sticky' : 'static',
       sheet: st.sheet && scr === 'flow', stay: () => this.setState({ sheet: false }), leave: () => this.restart(),
