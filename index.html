@@ -386,7 +386,7 @@ function draw(c) {
 class Component extends DCLogic {
   constructor(p) {
     super(p);
-    this.state = Object.assign(this.fresh(), { scen: 'port', openReq: 'no', failMode: 'no' });
+    this.state = Object.assign(this.fresh(), { scen: 'port', openReq: 'no', failMode: 'no', sw: 'old', lowBatt: 'no' });
   }
   fresh() {
     return { screen: 'help', hist: [], opts: [], undo: [], more: false, tq: [], tpos: 0, tmap: {}, tpass: 1, pad: null, descOn: false, ticks: {}, note: '', ptried: [], failedNames: [], run: 0, optsTop: false, sheet: false, fixI: 0, pfixI: 0, failedOnce: false, num: '', ftitle: 'Log a complaint', fsub: '' };
@@ -458,11 +458,11 @@ class Component extends DCLogic {
     if (kind === 'crack') return { title: 'Screen cracked', sub: S, entries: [{ k: 'bot', t: 'A cracked screen ', b: 'has to be replaced', t2: '. If any glass is loose, stop using the device.' }, this.sum([{ a: 'Problem', b: 'Screen cracked' }, { a: 'Needs', b: 'Device replacement' }, { a: 'Diagnostic report', b: 'Attached' }])], opts: this.raiseOpts() };
     if (kind === 'charge') return { title: "Won't charge", sub: P, entries: [{ k: 'bot', t: "Let's find out why it isn't charging." }, plug], opts: pStart };
     if (kind === 'chargeAny') return { title: 'Power check', sub: P, entries: [{ k: 'bot', t: "No problem. We'll run the power check for you." }, plug], opts: pStart };
-    if (kind === 'drain') return { title: 'Battery runs out fast', sub: P, entries: [{ k: 'bot', t: "Let's see what is using your battery. It takes a few seconds." }], opts: [{ id: 'dStart', label: 'Start check', primary: true }] };
+    if (kind === 'drain') return { title: 'Battery runs out fast', sub: P, entries: [{ k: 'bot', t: "Let's see what is using your battery. We'll check the battery, the charger and the software. It takes a few seconds." }], opts: [{ id: 'dStart', label: 'Start check', primary: true }] };
     if (kind === 'swollen') return { title: 'Battery swollen or hot', sub: P, entries: [{ k: 'alert', title: 'Stop using this device now', items: [{ name: 'Unplug it from the charger' }, { name: 'Do not charge it' }, { name: 'Keep it away from heat' }] }, { k: 'bot', t: "We're treating this as a ", b: 'safety priority', t2: '.' }, this.sum([{ a: 'Problem', b: 'Battery swollen or hot' }, { a: 'Priority', b: 'Safety' }, { a: 'Diagnostic report', b: 'Attached' }])], opts: this.raiseOpts() };
     return { title: 'Log a complaint', sub: '', entries: [{ k: 'bot', t: "That's okay. Our support team will call you to understand the problem." }, this.sum([{ a: 'Problem', b: 'Not identified' }, { a: 'Diagnostic report', b: 'Latest device readings attached' }])], opts: this.raiseOpts() };
   }
-  keep() { const st = this.state; return { scen: st.scen, openReq: st.openReq, failMode: st.failMode }; }
+  keep() { const st = this.state; return { scen: st.scen, openReq: st.openReq, failMode: st.failMode, sw: st.sw, lowBatt: st.lowBatt }; }
   enterStart() { this.clearAll(); this.setState(Object.assign(this.fresh(), this.keep(), { screen: 'start' })); }
   enterFlow() {
     this.clearAll();
@@ -583,16 +583,33 @@ class Component extends DCLogic {
     this.setState({ pad: null }); this.raiseNow('Code entered', p.num);
   }
   padCancel() { const st = this.state; this.setState({ pad: null, undo: [], hist: st.hist.concat([{ k: 'bot', t: 'Which number should we call?' }]), opts: [{ id: 'numThis', label: 'Call 98XXX XXXXX' }, { id: 'numOther', label: 'Call a different number' }] }); }
+  /* battery runs out fast: battery, charger, software and battery use, as in the Issue and Sub Issue matrix */
+  drainRows(extra) { const st = this.state; const wrong = st.scen === 'charger' || st.scen === 'chargerBad'; return [{ a: 'Problem', b: 'Battery runs out fast' }, { a: 'Battery health', b: 'Good' }, { a: 'Last 7 days', b: 'Draining faster than normal' }, { a: 'Charger', b: wrong ? 'Not a Pine Labs charger' : 'Pine Labs charger' }].concat(extra || []); }
   runDrain(L) {
-    this.busyThen(L, 'Checking battery health and battery use…', 2200, (hist) => {
-      if (this.state.scen === 'battery') {
-        this.setState({ hist: hist.concat([{ k: 'bot', t: '', b: 'The battery needs replacing.', t2: " Keep the device plugged in until it's replaced." }, { k: 'card', tone: 'plain', title: 'Battery check', rows: [{ a: 'Battery health', b: '38%' }] }, this.sum([{ a: 'Problem', b: 'Battery runs out fast' }, { a: 'Part to replace', b: 'Battery' }, { a: 'Diagnostic report', b: 'Attached' }])]), opts: this.raiseOpts() });
-      } else {
-        this.setState({ hist: hist.concat([{ k: 'bot', t: 'Your battery is healthy. ', b: 'The screen and background apps are using most of the power.', t2: '' }, { k: 'card', tone: 'plain', title: 'Battery check', rows: [{ a: 'Battery health', b: 'Good' }, { a: 'Screen brightness', b: '100%' }, { a: 'Background apps', b: 'Many running' }] }, { k: 'card', tone: 'plain', title: 'We can fix this for you', rows: [{ a: 'What happens', b: 'Lower brightness, close background apps' }, { a: 'Takes', b: 'A few seconds' }] }]), opts: [{ id: 'dFix', label: 'Fix it for me', primary: true }] });
+    this.busyThen(L, 'Checking battery, charger, software and battery use…', 2400, (hist) => {
+      const st = this.state; const wrong = st.scen === 'charger' || st.scen === 'chargerBad';
+      if (st.scen === 'battery') {
+        this.setState({ hist: hist.concat([{ k: 'bot', t: '', b: 'The battery needs replacing.', t2: " Keep the device plugged in until it's replaced." }, { k: 'card', tone: 'plain', title: 'Battery check', rows: [{ a: 'Battery health', b: '38%' }, { a: 'Last 7 days', b: 'Draining much faster than normal' }] }, this.sum([{ a: 'Problem', b: 'Battery runs out fast' }, { a: 'Part to replace', b: 'Battery' }, { a: 'Diagnostic report', b: 'Attached' }])]), opts: this.raiseOpts() });
+        return;
       }
+      const found = ['the screen and background apps are using most of the power'].concat(st.sw === 'old' ? ['the software is out of date'] : [], wrong ? ["the charger isn't a Pine Labs charger"] : []);
+      const line = found.length === 1 ? found[0] : found.slice(0, -1).join(', ') + ' and ' + found[found.length - 1];
+      this.setState({ hist: hist.concat([{ k: 'bot', t: 'Your battery is healthy. ', b: 'We found ' + found.length + (found.length > 1 ? ' things' : ' thing') + ' draining it:', t2: ' ' + line + '.' },
+        { k: 'card', tone: 'plain', title: 'Battery check', rows: [{ a: 'Battery health', b: 'Good' }, { a: 'Last 7 days', b: 'Draining faster than normal' }, { a: 'Screen brightness', b: '100%' }, { a: 'Background apps', b: 'Many running' }, { a: 'Software', b: st.sw === 'old' ? 'Update available' : 'Up to date' }, { a: 'Charger', b: wrong ? 'Not a Pine Labs charger' : 'Pine Labs charger' }] },
+        { k: 'bot', t: "Let's start with the quick one." }, { k: 'card', tone: 'plain', title: 'Battery saver', rows: [{ a: 'What happens', b: 'Lower brightness, close background apps' }, { a: 'Takes', b: 'A few seconds' }] }]), opts: [{ id: 'dFix', label: 'Fix it for me', primary: true }] });
     });
   }
-  /* ---------- slow-screen fix ladder ---------- */
+  drainUpdate() {
+    return { entries: [{ k: 'bot', t: 'Next, ', b: 'a software update is available.', t2: ' Older versions can use more battery.' }, { k: 'card', tone: 'plain', title: 'Update the software', rows: [{ a: 'Takes', b: 'About 10 minutes' }, { a: 'During the update', b: "The device can't take payments" }, { a: 'Needs', b: 'Charger connected' }] }],
+      opts: [{ id: 'dUpd', label: 'Update now', primary: true }, { id: 'dUpdLater', label: 'Update after closing' }, this.reqOpt(this.drainRows([{ a: 'Already tried', b: 'Brightness lowered, apps closed' }, { a: 'Software', b: 'Update available, not installed' }]))] };
+  }
+  drainEnd(hist, swLine) {
+    const st = this.state; const wrong = st.scen === 'charger' || st.scen === 'chargerBad';
+    const e = wrong ? [{ k: 'step', img: '[Photo: the Pine Labs charger]', cap: 'From now on', title: 'Charge only with the Pine Labs charger', d: 'Other chargers charge slowly and wear the battery out. Charge it fully tonight.' }] : [{ k: 'bot', t: 'Charge it fully tonight with the Pine Labs charger. ', b: 'It can take a day to see the difference.', t2: '' }];
+    this.setState({ hist: hist.concat(e), opts: [{ id: 'close', label: 'Done', primary: true }, this.reqOpt(this.drainRows([{ a: 'Already tried', b: 'Brightness lowered, apps closed' }, { a: 'Software', b: swLine }]), 'Still not fixed', false)] });
+  }
+  drainInstall(L) { this.busyThen(L, 'Updating the software…', 2600, (hist) => this.drainEnd(hist.concat([{ k: 'done', title: 'Software updated', d: 'You are on the latest version.' }]), 'Updated today')); }
+
   /* device-run fixes for a slow screen: quick one first, disruptive ones only if needed */
   fixes() {
     return [
@@ -704,7 +721,20 @@ class Component extends DCLogic {
     }
     if (id === 'chgNo') { this.step(L, [{ k: 'bot', t: "We'll send you a Pine Labs charger. ", b: 'No engineer visit is needed.', t2: '' }, this.sum([{ a: 'Problem', b: 'Wrong charger in use' }, { a: 'Needs', b: 'Pine Labs charger' }, { a: 'Diagnostic report', b: 'Attached' }])], this.raiseOpts(), false); return; }
     if (id === 'dStart' || id === 'toDrain') { this.runDrain(L); return; }
-    if (id === 'dFix') { this.busyThen(L, 'Lowering brightness and closing apps…', 1800, (hist) => this.setState({ hist: hist.concat([{ k: 'done', title: 'Battery saver applied', d: 'Brightness is lower and background apps are closed. It can take a day to see the difference.' }]), opts: done.concat([this.reqOpt([{ a: 'Problem', b: 'Battery runs out fast' }, { a: 'Battery health', b: 'Good' }, { a: 'Already tried', b: 'Brightness lowered, apps closed' }], 'Still not fixed', false)]) })); return; }
+    if (id === 'dFix') {
+      this.busyThen(L, 'Lowering brightness and closing apps…', 1800, (hist) => {
+        const h = hist.concat([{ k: 'done', title: 'Battery saver applied', d: 'Brightness is lower and background apps are closed.' }]);
+        if (this.state.sw === 'old') { const u = this.drainUpdate(); this.setState({ hist: h.concat(u.entries), opts: u.opts }); }
+        else this.drainEnd(h, 'Up to date');
+      });
+      return;
+    }
+    if (id === 'dUpd') {
+      if (st0.lowBatt === 'yes') { this.step(L, [{ k: 'bot', t: 'The battery is at 12%. ', b: 'Plug in the charger', t2: ' so the update can start safely.' }], [{ id: 'dPlug', label: "I've plugged it in", primary: true }, { id: 'dUpdLater', label: 'Update after closing' }], false); return; }
+      this.drainInstall(L); return;
+    }
+    if (id === 'dPlug') { this.drainInstall(L); return; }
+    if (id === 'dUpdLater') { this.setState({ undo: [], more: false }); this.drainEnd(st0.hist.concat([{ k: 'user', t: L }, { k: 'done', title: 'Update scheduled', d: "We'll update the software after closing tonight. Keep the charger connected." }]), 'Update scheduled for tonight'); return; }
 
     /* request: describe it, then the number */
     if (id === 'raise') { this._desc = ''; this.step(L, [{ k: 'bot', t: 'Want to add anything in your own words? This is optional.' }], [], false, { descOn: true }); return; }
@@ -714,7 +744,7 @@ class Component extends DCLogic {
     if (id === 'cancelReq') { this.step(L, [{ k: 'bot', t: 'No request was raised. You can come back anytime from Help & Support.' }], done, true); return; }
     if (id === 'close') { this.restart(); return; }
   }
-  restart() { this.clearAll(); const st = this.state; this.setState(Object.assign(this.fresh(), { scen: st.scen, openReq: st.openReq, failMode: st.failMode })); }
+  restart() { this.clearAll(); const st = this.state; this.setState(Object.assign(this.fresh(), { scen: st.scen, openReq: st.openReq, failMode: st.failMode, sw: st.sw, lowBatt: st.lowBatt })); }
 
   renderVals() {
     const st = this.state; const scr = st.screen;
@@ -760,6 +790,8 @@ class Component extends DCLogic {
     const T = (label, key, items) => ({ label: label, items: items.map((x) => ({ label: x[1], border: st[key] === x[0] ? '#003323' : '#DBDDE4', bg: st[key] === x[0] ? '#FFFFFF' : 'transparent', pick: () => { const u = {}; u[key] = x[0]; this.setState(u); } })) });
     const toggles = [
       T('The power check finds:', 'scen', [['battery', 'Battery failing'], ['charger', 'Wrong charger'], ['chargerBad', 'Right charger, still no charge'], ['socket', 'Socket was the problem'], ['port', 'Faulty part'], ['fine', 'Charging is fine']]),
+      T('Software on the device:', 'sw', [['old', 'Update available'], ['ok', 'Up to date']]),
+      T('Battery level for an update:', 'lowBatt', [['no', 'Enough charge'], ['yes', 'Too low']]),
       T('Open request on this device:', 'openReq', [['no', 'None'], ['yes', 'One is open']]),
       T('Raising a request:', 'failMode', [['no', 'Works'], ['yes', 'Fails the first time']])
     ];
