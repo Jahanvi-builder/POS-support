@@ -180,6 +180,15 @@ textarea:focus,.inp:focus{border-color:var(--g600);box-shadow:0 0 0 3px rgba(30,
 .tt-timer{width:80px;height:4px;border-radius:2px;background:#2A3038;overflow:hidden}.tt-timer div{height:100%;background:var(--g400)}
 
 /* ---------- Toast ---------- */
+.scrim{position:absolute;inset:0;background:rgba(16,20,24,.45);z-index:6;display:flex;align-items:flex-end;animation:fadeUp .15s}
+.sheet{background:#fff;width:100%;border-radius:16px 16px 0 0;padding:20px 16px 16px;display:flex;flex-direction:column;gap:12px}
+.cbox{width:20px;height:20px;border-radius:5px;border:2px solid var(--ink4);flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.radio.on .cbox{border-color:var(--red);background:var(--red)}
+.tl{display:flex;flex-direction:column}.tl>div{display:flex;gap:12px;position:relative;padding-bottom:16px}
+.tl>div:not(:last-child)::before{content:"";position:absolute;left:9px;top:22px;bottom:0;width:2px;background:var(--line)}
+.tl .d{width:20px;height:20px;border-radius:10px;border:2px solid var(--line);background:#fff;flex-shrink:0}.tl .d.on{background:var(--g600);border-color:var(--g600)}
+.openreq{display:flex;align-items:center;gap:12px;border-radius:var(--r12);background:var(--blue50);padding:12px 14px;border:none;width:100%;text-align:left}
+.sim{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}.sim label{display:flex;gap:8px;align-items:center;font-size:13px;cursor:pointer}
 .toast{position:absolute;left:50%;bottom:92px;background:#1F2633;color:#fff;font-size:13px;padding:10px 16px;border-radius:20px;white-space:nowrap;animation:toast 2.4s ease forwards;pointer-events:none;z-index:5}
 </style>
 </head>
@@ -205,7 +214,9 @@ textarea:focus,.inp:focus{border-color:var(--g600);box-shadow:0 0 0 3px rgba(30,
       <li>Device › Battery › Swollen</li>
       <li>Search "settlement"</li>
     </ul>
-    <p class="cap">OTP for demo: any 4 digits.</p>
+    <h3>Simulate</h3>
+    <div class="sim"><label><input type="checkbox" id="simOff"> Device can't be reached</label><label><input type="checkbox" id="simFail"> A fix fails</label></div>
+    <p class="cap">OTP: any 4 digits. Use 0000 to see the wrong-code state.</p>
   </aside>
 </div>
 
@@ -362,7 +373,8 @@ const ISSUE_VISIBLE = 6;
 /* =====================================================================
    STATE + ROUTER
    ===================================================================== */
-let st = {open:null, q:'', stack:[{s:'home'}], toast:null};
+let st = {open:null, q:'', stack:[{s:'home'}], toast:null, sheet:null, reqs:[]};
+const SIM = () => ({off:document.getElementById('simOff').checked, fail:document.getElementById('simFail').checked});
 let timers = [];
 const clearTimers = () => { timers.forEach(clearTimeout); timers = []; };
 const later = (fn, ms) => timers.push(setTimeout(fn, ms));
@@ -375,7 +387,7 @@ const toast = t => { st.toast = t; render(); setTimeout(()=>{ st.toast=null; }, 
 
 /* the "case" travels through a flow and becomes the request summary */
 function newCase(cat, sub, issue){ return {cat, sub, issue, found:[], fixed:[], tried:[], resolvedBy:null, priority:false, note:'', photo:false}; }
-function catName(id){ return id==='device'?'Device':NONDEV[id].n; }
+function catName(id){ return !id?'Not sure':id==='device'?'Device':NONDEV[id].n; }
 function subName(c, s){ return c==='device'?DEVICE[s].n:NONDEV[c].subs[s].n; }
 
 /* =====================================================================
@@ -384,7 +396,7 @@ function subName(c, s){ return c==='device'?DEVICE[s].n:NONDEV[c].subs[s].n; }
 const Btn = (label, act, kind='primary', extra='') => `<button class="btn ${kind}" data-act="${act}" ${extra}>${label}</button>`;
 function AppBar(title, crumbs, opts={}){
   const c = crumbs && crumbs.length ? `<div class="crumbs">${crumbs.map((x,i)=> (i?'<span class="sep">›</span>':'') + (x.act?`<button data-act="${x.act}">${esc(x.l)}</button>`:`<span>${esc(x.l)}</span>`)).join('')}</div>` : '';
-  const left = opts.noBack ? `<div style="width:12px"></div>` : `<button class="iconbtn" data-act="${opts.close?'home':'back'}" aria-label="${opts.close?'Close':'Back'}">${ic(opts.close?'close':'back',22)}</button>`;
+  const left = opts.noBack ? `<div style="width:12px"></div>` : `<button class="iconbtn" data-act="${opts.closeAct||(opts.close?'home':'back')}" aria-label="${opts.close||opts.closeAct?'Close':'Back'}">${ic(opts.close||opts.closeAct?'close':'back',22)}</button>`;
   return `<div class="appbar">${left}<div class="ab-title"><div class="t">${esc(title)}</div>${c}</div>${opts.right||''}</div>`;
 }
 const Footer = (inner, row) => `<div class="footer ${row?'row':''}">${inner}</div>`;
@@ -416,7 +428,8 @@ const screens = {
     body = `<div style="display:flex;flex-direction:column;gap:8px"><div class="label">Common issues</div><div class="chips" style="margin:0 -16px;padding:0 16px">${SHORTCUTS.map((s,i)=>`<button class="chip" data-act="short:${i}">${esc(s.l)}</button>`).join('')}</div></div>
     <div style="display:flex;flex-direction:column;gap:8px"><div class="label">What do you need help with?</div><div class="cats">${CAT_ORDER.map(Category).join('')}</div></div>`;
   }
-  return AppBar('Log a complaint',null) + `<div class="body">
+  const open = st.reqs.length ? `<button class="openreq" data-act="track:0">${ic('ticket',22,'#1F4FB8')}<div style="flex:1;min-width:0"><div class="h2" style="font-size:14px;color:#1B3A80">You have ${st.reqs.length} open request${st.reqs.length>1?'s':''}</div><div class="cap" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(st.reqs[0].c._id)} · ${esc(issueName(st.reqs[0].c))}</div></div>${ic('right',18,'#1F4FB8')}</button>` : '';
+  return AppBar('Log a complaint',null,{noBack:true}) + `<div class="body">${q?'':open}
     <div class="search">${ic('search',20,'#5A6580')}<input id="q" placeholder="Search e.g. charger, settlement" value="${esc(st.q)}" autocomplete="off">${st.q?`<button class="iconbtn" style="width:32px;height:32px" data-act="clearq" aria-label="Clear">${ic('close',16)}</button>`:''}</div>
     ${body}</div>`;
  },
@@ -465,7 +478,7 @@ const screens = {
   const rows = cs.map((c,i)=>CheckRow(c, i<s.i?'done':i===s.i?'run':'pending')).join('');
   const pct = Math.round(s.i/cs.length*100);
   return AppBar('Checking your device', crumbsFor(s.c),{close:true}) + `<div class="body">
-    <div><div class="h2" style="margin-bottom:8px">Running health check…</div><div class="bar"><div style="width:${pct}%"></div></div></div>
+    <div role="status" aria-live="polite"><div class="h2" style="margin-bottom:8px">Running health check…</div><div class="bar"><div style="width:${pct}%"></div></div></div>
     <div class="checks">${rows}</div></div>`;
  },
 
@@ -491,7 +504,7 @@ const screens = {
  fixing(s){
   const fx = s.c.issue.fixes;
   const rows = fx.map((f,i)=>CheckRow({l:f,r:'Done',bad:false}, i<s.i?'done':i===s.i?'run':'pending')).join('');
-  return AppBar('Fixing your device', crumbsFor(s.c),{close:true}) + `<div class="body">
+  return AppBar('Fixing your device', crumbsFor(s.c),{closeAct:'leave-fix'}) + `<div class="body">
     <div><div class="h2" style="margin-bottom:8px">${s.i<fx.length?'Applying fixes…':'All fixes applied'}</div><div class="bar"><div style="width:${Math.round(s.i/fx.length*100)}%"></div></div></div>
     <div class="checks">${rows}</div>
     ${Notice('info','info','','Please don\'t remove the charger until this finishes.')}</div>`;
@@ -536,9 +549,9 @@ const screens = {
  /* ---------- Resolution confirm (end of A/B/C/D) ---------- */
  resolve(s){
   return AppBar(s.c.issue.n, crumbsFor(s.c)) + `<div class="body">
-    ${Hero('g','check','Is the issue fixed?','Try using the device as you normally would.')}
+    ${Hero('g','check',s.next?'Fixes applied. Is it working now?':'Is the issue fixed?', s.next?'If not, we\'ll try a couple of quick checks on your side.':'Try using the device as you normally would.')}
     ${s.c.fixed.length?`<div class="card soft">${s.c.fixed.map(f=>`<div class="kv"><span class="k">${esc(f)}</span><span class="v" style="color:var(--g700)">Done</span></div>`).join('')}</div>`:''}
-    <div class="choice">${Opt('Yes, it\'s working now','res:y','check','#1E8E4F','#E8F7EE')}${Opt('No, still not working','res:n','close','#B3261E','#FDECEA')}</div>
+    <div class="choice">${Opt('Yes, it\'s working now','res:y','check','#1E8E4F','#E8F7EE')}${Opt(s.next?'No, show me what to try':'No, still not working','res:n','close','#B3261E','#FDECEA')}</div>
   </div>`;
  },
 
@@ -580,7 +593,7 @@ const screens = {
     <div class="notice danger" style="flex-direction:column;gap:12px;padding:16px">
       <div style="display:flex;align-items:center;gap:10px">${ic('alert',24,'#B3261E',2.4)}<b style="margin:0;font-size:16px">This isn't safe to use</b></div>
       <div>${it.danger.map(d=>`<div style="display:flex;gap:8px;margin-top:6px">${ic('close',16,'#B3261E',2.6)}<span>${esc(d)}</span></div>`).join('')}</div></div>
-    <button class="radio ${s.ack?'on':''}" data-act="ack"><span class="rb" style="border-radius:4px"></span><span style="font-size:14px;font-weight:500">I've stopped using it</span></button>
+    <button class="radio ${s.ack?'on':''}" data-act="ack" role="checkbox" aria-checked="${!!s.ack}" style="${s.ack?'border-color:var(--red);background:var(--red50)':''}"><span class="cbox">${s.ack?ic('check',14,'#fff',3):''}</span><span style="font-size:14px;font-weight:500">I've stopped using it</span></button>
     <p class="cap">We'll treat this as urgent and send a technician.</p>
   </div>` + Footer(Btn('Raise urgent request','raise-urgent','danger', s.ack?'':'disabled style="opacity:.45"'));
  },
@@ -616,10 +629,16 @@ const screens = {
   if (c.tried.length) rows.push(['Steps tried', c.tried.map(t=>t.s).join(', ')]);
   if (c.photo) rows.push(['Photo','Attached']);
   if (c.cat==='device' && c.issue && c.issue.checks) rows.push(['Device report','Attached']);
+  const dup = st.reqs.find(r=>r.c.cat===c.cat && r.c.sub===c.sub && issueName(r.c)===issueName(c));
+  const ctx = c.cat==='transaction' ? [['tdate','Transaction date','date'],['tamt','Amount (₹)','number']] : c.cat==='settlement' ? [['tdate','Settlement date','date'],['tamt','Expected amount (₹)','number']] : [];
+  c.extra = c.extra||{};
+  const ctxHtml = ctx.length ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">${ctx.map(([id,l,t])=>`<div class="field"><label for="${id}" style="font-size:12px">${l}</label><input class="inp" id="${id}" type="${t}" ${t==='number'?'inputmode="decimal" placeholder="0"':''} value="${esc(c.extra[id]||'')}"></div>`).join('')}</div><div class="cap" style="margin-top:-8px">Optional, but helps us find it faster.</div>` : '';
   return AppBar('Raise a request', crumbsFor(c)) + `<div class="body">
+    ${dup?Notice('info','info','You already raised this',`Request ${esc(dup.c._id)} is open. <button class="btn ghost sm" data-act="track:${st.reqs.indexOf(dup)}" style="display:inline-flex;min-height:24px;padding:0">View status</button>`):''}
     ${c.priority?Notice('danger','alert','Urgent request','A technician will be assigned first.'):''}
     <div class="card"><div class="label">Summary</div>${rows.map(([k,v])=>`<div class="kv"><span class="k">${k}</span><span class="v">${esc(v)}</span></div>`).join('')}</div>
     <div class="field"><label for="note">Anything else we should know? <span style="font-weight:400;color:var(--ink3)">(optional)</span></label><textarea id="note" rows="3" placeholder="e.g. Happens mostly in the afternoon">${esc(c.note)}</textarea></div>
+    ${ctxHtml}
   </div>` + Footer(Btn('Continue','to-phone'));
  },
 
@@ -640,8 +659,8 @@ const screens = {
   return AppBar('Enter OTP', crumbsFor(s.c)) + `<div class="body">
     <p class="p">We've sent a 4-digit code to <b>${n}</b>.</p>
     <div class="otp ${s.err?'err':''}">${[0,1,2,3].map(i=>`<input inputmode="numeric" maxlength="1" data-otp="${i}" aria-label="Digit ${i+1}">`).join('')}</div>
-    ${s.err?`<div class="cap" style="color:var(--red);text-align:center">Enter all 4 digits</div>`:''}
-    <div class="cap" style="text-align:center">Didn't get it? <button class="btn ghost sm" data-act="resend" style="display:inline-flex;min-height:28px;padding:0 4px">Resend code</button></div>
+    ${s.err?`<div class="cap" style="color:var(--red);text-align:center" role="alert">${s.err}</div>`:''}
+    <div class="cap" style="text-align:center" id="rs"></div>
   </div>` + Footer(Btn('Verify and raise request','verify'));
  },
 
@@ -650,6 +669,33 @@ const screens = {
   return AppBar('Request raised',null,{close:true}) + `<div class="body">
     ${Hero('g','check','Request raised','We\'ve sent the details to the right team. You\'ll get updates by SMS.')}
     ${TicketCard(s.c)}
+  </div>` + Footer(Btn('Back to home','home'));
+ },
+
+ /* ---------- Device unreachable ---------- */
+ unreach(s){
+  const it=s.c.issue;
+  return AppBar(it.n, crumbsFor(s.c)) + `<div class="body">
+    ${Hero('a','wifi',"We couldn't reach your device",'The device needs internet for a health check.')}
+    <div class="card soft"><div class="label">Try this</div><div class="kv"><span class="k">Turn on WiFi or mobile data, then try again</span></div></div>
+  </div>` + Footer(Btn('Try again','start-check') + (it.steps?Btn('Skip to steps I can do','to-steps','secondary'):'') + Btn('Raise a request','raise','ghost'));
+ },
+ fixfail(s){
+  return AppBar(s.c.issue.n, crumbsFor(s.c)) + `<div class="body">
+    ${Hero('r','alert',"We couldn't finish the fix",esc(s.f)+' didn\'t complete.')}
+    ${s.c.fixed.length?`<div class="card soft">${s.c.fixed.map(f=>`<div class="kv"><span class="k">${esc(f)}</span><span class="v" style="color:var(--g700)">Done</span></div>`).join('')}</div>`:''}
+    ${Notice('info','info','','We\'ll attach the device report so the team doesn\'t ask you to repeat this.')}
+  </div>` + Footer(Btn('Raise a request','raise') + Btn('Try again','fix-start','ghost'));
+ },
+ track(s){
+  const r=st.reqs[s.i]; const c=r.c;
+  return AppBar('Your request',null) + `<div class="body">
+    ${TicketCard(c)}
+    <div class="card"><div class="label">Status</div><div class="tl">
+      <div><span class="d on"></span><div><div class="h2" style="font-size:14px">Request raised</div><div class="cap">Just now</div></div></div>
+      <div><span class="d"></span><div><div class="h2" style="font-size:14px;color:var(--ink3)">Assigned to ${esc((c.issue&&c.issue.route||'support team').split(';')[0])}</div><div class="cap">You'll get an SMS</div></div></div>
+      <div><span class="d"></span><div><div class="h2" style="font-size:14px;color:var(--ink3)">Resolved</div></div></div></div></div>
+    <div class="card soft"><div class="kv"><span class="k">Issue</span><span class="v">${esc(issueName(c))}</span></div><div class="kv"><span class="k">Category</span><span class="v">${esc(catName(c.cat))}${c.sub?' › '+esc(subName(c.cat,c.sub)):''}</span></div></div>
   </div>` + Footer(Btn('Back to home','home'));
  },
 
@@ -670,8 +716,9 @@ function TicketCard(c){
     <div class="kv"><span class="k">Sent to</span><span class="v">${esc(route)}</span></div>
     <div class="kv"><span class="k">Expected update</span><span class="v">${c.priority?'Within 4 hours':'Within 24 hours'}</span></div></div>`;
 }
+const issueName = c => c.issue&&c.issue.n ? c.issue.n : 'Described by you';
 const tagFor = t => t==='E' ? '<span class="tag r">Safety</span>' : (t==='A'||t==='C'||t==='D'||t==='G') ? '<span class="tag g">Quick check</span>' : '';
-function crumbsFor(c){ if(!c) return null; const a=[{l:catName(c.cat)}]; if(c.sub) a.push({l:subName(c.cat,c.sub)}); return a; }
+function crumbsFor(c){ if(!c||!c.cat) return [{l:'Help',act:'home'}]; const a=[{l:catName(c.cat)}]; if(c.sub) a.push({l:subName(c.cat,c.sub)}); return a; }
 function Category(cat){
   const open = st.open===cat.id;
   const subs = cat.id==='device' ? Object.entries(DEVICE).map(([k,v])=>({k,n:v.n,ic:v.ic})) : Object.entries(NONDEV[cat.id].subs).map(([k,v])=>({k,n:v.n,ic:v.ic}));
@@ -679,11 +726,13 @@ function Category(cat){
     <span class="cat-ic">${ic(cat.ic,22,'#1E8E4F')}</span><span class="cat-txt"><div class="n">${esc(cat.n)}</div><div class="d">${esc(cat.d)}</div></span><span class="chev">${ic('chev',20,'#5A6580')}</span></button>
     ${open?`<div class="subgrid">${subs.map(s=>`<button class="sub" data-act="sub:${cat.id}:${s.k}"><span class="si">${ic(s.ic,16,'#1E8E4F')}</span>${esc(s.n)}</button>`).join('')}<button class="sub other" data-act="other-cat:${cat.id}"><span class="si">${ic('more',16,'#5A6580')}</span>Other</button></div>`:''}</div>`;
 }
+const KW = {battery:'drain backup power dies',power:'charging charge adapter plug socket',cable:'wire port pin charging',display:'screen touch black blank cracked',printer:'print receipt slip paper roll',card:'swipe chip tap insert',hang:'slow freeze stuck restart crash',damage:'broken lost stolen water',network:'internet wifi sim signal offline connection',
+ credit:'money not received payout credited',batch:'settle close day',upi:'qr scan gpay phonepe paytm',paper:'roll receipt',charges:'fee deducted debit bill',login:'password pine one app'};
 function searchAll(q){
   const out=[]; const words=q.split(/\s+/);
   const m = s => words.every(w=>s.toLowerCase().includes(w));
-  Object.entries(DEVICE).forEach(([sk,sv])=>sv.issues.forEach((it,i)=>{ if(m(it.n+' '+sv.n)) out.push({cat:'device',sub:sk,i,label:it.n}); }));
-  Object.entries(NONDEV).forEach(([ck,cv])=>Object.entries(cv.subs).forEach(([sk,sv])=>sv.issues.forEach(x=>{ if(m(x+' '+sv.n+' '+cv.n)) out.push({cat:ck,sub:sk,label:x}); })));
+  Object.entries(DEVICE).forEach(([sk,sv])=>sv.issues.forEach((it,i)=>{ if(m(it.n+' '+sv.n+' '+(KW[sk]||''))) out.push({cat:'device',sub:sk,i,label:it.n}); }));
+  Object.entries(NONDEV).forEach(([ck,cv])=>Object.entries(cv.subs).forEach(([sk,sv])=>sv.issues.forEach(x=>{ if(m(x+' '+sv.n+' '+cv.n+' '+(KW[sk]||''))) out.push({cat:ck,sub:sk,label:x}); })));
   return out;
 }
 const hl = (t,q) => { let s=esc(t); q.split(/\s+/).filter(Boolean).forEach(w=>{ s=s.replace(new RegExp('('+w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','ig'),'<b>$1</b>'); }); return s; };
@@ -699,15 +748,18 @@ function startIssue(cat, sub, i){
 }
 function runChecks(c){
   const n=c.issue.checks.length; let i=0; replace({s:'checking',c,i:0});
-  const tick=()=>{ i++; replace({s:'checking',c,i}); if(i<n) later(tick,800); else { c.found = c.issue.checks.map(parseCheck).filter(x=>x.bad).map(x=>x.r); later(()=>replace({s:'report',c}),600);} };
+  const off = SIM().off;
+  const tick=()=>{ i++; if(off && i===1){ c.found=['Device not reachable']; return later(()=>replace({s:'unreach',c}),700); } replace({s:'checking',c,i}); if(i<n) later(tick,800); else { c.found = c.issue.checks.map(parseCheck).filter(x=>x.bad).map(x=>x.r); later(()=>replace({s:'report',c}),600);} };
   later(tick,900);
 }
 function runFixes(c){
   const fx=c.issue.fixes; let i=0; go({s:'fixing',c,i:0});
-  const tick=()=>{ i++; replace({s:'fixing',c,i}); if(i<fx.length) later(tick,1300); else { c.fixed=[...fx]; later(()=>afterFix(c),900);} };
+  const fail = SIM().fail;
+  const tick=()=>{ if(fail && i===fx.length-1){ c.fixed=fx.slice(0,i); c.found.push('Fix failed: '+fx[i]); return replace({s:'fixfail',c,f:fx[i]}); }
+    i++; replace({s:'fixing',c,i}); if(i<fx.length) later(tick,1300); else { c.fixed=[...fx]; later(()=>afterFix(c),900);} };
   later(tick,1300);
 }
-function afterFix(c){ const it=c.issue; if(it.tips) replace({s:'tips',c}); else if(it.steps) replace({s:'step',c,i:0,phase:'do'}); else replace({s:'resolve',c}); }
+function afterFix(c){ const it=c.issue; if(it.tips) replace({s:'tips',c}); else if(it.steps && it.steps[0].act) replace({s:'step',c,i:0,phase:'do'}); else replace({s:'resolve',c,next:it.steps?'steps':null}); }
 function stepAnswer(s, ok, couldnt){
   const x = s.c.issue.steps[s.i];
   if (ok){ s.c.tried.push({s:x.t,ok:true}); s.c.resolvedBy = x.t; return go({s:'resolved',c:s.c}); }
@@ -726,6 +778,10 @@ app.addEventListener('click', e=>{
   const [a,...p] = b.dataset.act.split(':'); const s = cur();
   switch(a){
     case 'back': return back();
+    case 'leave-fix': st.sheet={t:'Leave while we fix?',d:"The fix will keep running in the background. Don't remove the charger until it finishes.",yes:'Stay here',no:'Leave anyway'}; return render();
+    case 'sheet-no': if(e.target.closest('.sheet') && !e.target.closest('.btn')) return; st.sheet=null; return render();
+    case 'sheet-yes': st.sheet=null; return home();
+    case 'track': return go({s:'track',i:+p[0]});
     case 'home': return home();
     case 'clearq': st.q=''; return render(true);
     case 'cat': st.open = st.open===p[0]?null:p[0]; return render();
@@ -737,7 +793,7 @@ app.addEventListener('click', e=>{
     case 'pick': { const r=st._res[+p[0]]; return startIssue(r.cat,r.sub,r.cat==='device'?r.i:r.label); }
     case 'other': return go({s:'describe',c:newCase(s.cat,s.sub,null)});
     case 'other-cat': return go({s:'describe',c:newCase(p[0],null,null)});
-    case 'describe': return go({s:'describe',c:newCase('account',null,null),text:st.q});
+    case 'describe': return go({s:'describe',c:newCase(null,null,null),text:st.q});
     case 'describe-next': { const v=document.getElementById('d').value.trim(); if(!v) return toast('Tell us a little about the issue'); s.c.note=v; return go({s:'request',c:s.c}); }
     case 'start-check': return runChecks(s.c);
     case 'fix-start': return runFixes(s.c);
@@ -748,7 +804,7 @@ app.addEventListener('click', e=>{
     case 'did': if(p[0]==='y') return replace({...s,phase:'check'}); return stepAnswer(s,false,true);
     case 'fixed': return stepAnswer(s, p[0]==='y');
     case 'sim': return toast(p[0]==='print'?'Printing test slip…':'Insert or tap a card on the device');
-    case 'res': if(p[0]==='y'){ s.c.resolvedBy = s.c.fixed.length?'Fix it for me':null; return go({s:'resolved',c:s.c}); } return go({s:'request',c:s.c});
+    case 'res': if(p[0]==='n' && s.next==='steps') return go({s:'step',c:s.c,i:0,phase:'do'}); if(p[0]==='y'){ s.c.resolvedBy = s.c.fixed.length?'Fix it for me':null; return go({s:'resolved',c:s.c}); } return go({s:'request',c:s.c});
     case 'tt-start': case 'tt-again': return startTouch(s.c, a==='tt-again'?(s.attempt||1)+1:1);
     case 'tt-tap': return touchTap(+p[0]);
     case 'tt': if(p[0]==='ok'){ s.c.resolvedBy='Removing screen guard / cleaning'; return go({s:'resolved',c:s.c}); } if(p[0]==='slow'){ s.c.note='Touch works but is slow to respond'; return go({s:'request',c:s.c}); } return home();
@@ -756,11 +812,11 @@ app.addEventListener('click', e=>{
     case 'raise-urgent': s.c.priority=true; return go({s:'request',c:s.c});
     case 'photo': s.c.photo=!s.c.photo; return render();
     case 'raise': return go({s:'request',c:s.c});
-    case 'to-phone': s.c.note=document.getElementById('note').value; return go({s:'phone',c:s.c,mode:'own'});
+    case 'to-phone': s.c.note=document.getElementById('note').value; ['tdate','tamt'].forEach(k=>{const el=document.getElementById(k); if(el) s.c.extra[k]=el.value;}); return go({s:'phone',c:s.c,mode:'own'});
     case 'ph': return replace({...s,mode:p[0]});
     case 'send-otp': { if(s.mode==='new'){ const v=(document.getElementById('ph').value||'').replace(/\D/g,''); if(v.length!==10) return toast('Enter a 10-digit number'); return go({s:'otp',c:s.c,mode:'new',num:v}); } return go({s:'otp',c:s.c,mode:'own'}); }
-    case 'resend': return toast('New code sent');
-    case 'verify': { const v=[...document.querySelectorAll('[data-otp]')].map(i=>i.value).join(''); if(v.length<4) return replace({...s,err:true}); return go({s:'done',c:s.c}); }
+    case 'resend': s.sent=Date.now(); return toast('New code sent');
+    case 'verify': { const v=[...document.querySelectorAll('[data-otp]')].map(i=>i.value).join(''); if(v.length<4) return replace({...s,err:'Enter all 4 digits'}); if(v==='0000') return replace({...s,err:"That code doesn't match. Check the SMS and try again."}); st.reqs.unshift({c:s.c}); return go({s:'done',c:s.c}); }
   }
 });
 app.addEventListener('input', e=>{
@@ -796,7 +852,11 @@ function render(keepFocus){
   const pos = keepFocus && document.activeElement && document.activeElement.id==='q' ? document.activeElement.selectionStart : null;
   app.innerHTML = scr(s) + (st.toast?`<div class="toast">${esc(st.toast)}</div>`:'');
   if (pos!=null){ const q=document.getElementById('q'); q.focus(); q.setSelectionRange(pos,pos); }
-  if (s.s==='otp') { const f=document.querySelector('[data-otp="0"]'); f&&f.focus(); }
+  if (s.s==='otp') { const f=document.querySelector('[data-otp="0"]'); f&&f.focus(); s.sent=s.sent||Date.now();
+    const rs=()=>{ const el=document.getElementById('rs'); if(!el) return; const left=30-Math.floor((Date.now()-s.sent)/1000);
+      el.innerHTML = left>0 ? `Resend code in 0:${String(left).padStart(2,'0')}` : `Didn't get it? <button class="btn ghost sm" data-act="resend" style="display:inline-flex;min-height:28px;padding:0 4px">Resend code</button>`;
+      if(left>0) later(rs,1000); }; rs(); }
+  if (st.sheet) app.insertAdjacentHTML('beforeend', `<div class="scrim" data-act="sheet-no"><div class="sheet"><div class="h2" style="font-size:17px">${st.sheet.t}</div><p class="p">${st.sheet.d}</p>${Btn(st.sheet.yes,'sheet-no')}${Btn(st.sheet.no,'sheet-yes','ghost')}</div></div>`);
 }
 render();
 </script>
