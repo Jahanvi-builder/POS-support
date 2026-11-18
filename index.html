@@ -579,17 +579,19 @@ async function direct(){
 }
 async function touchTest(attempt){
   if (attempt===1){
-    await bot('Let\'s test your touch screen. <b>6 green spots</b> will appear one by one. Tap each one within 5 seconds.');
-    await bot('Before you start, <b>remove any screen guard</b> and wipe the screen with a dry cloth.');
+    await bot('Let\'s test your touch screen. First, <b>remove any screen guard</b> and wipe the screen with a dry cloth. Both can stop touch from registering.');
+    const g = await ask({type:'pills',items:[{t:'Done, screen is clean',go:true},{t:'There\'s no screen guard'}]}); me(g);
+    C.tried.push(g.startsWith('Done')?'Removed screen guard and wiped screen':'No screen guard on the device');
+    await bot('<b>6 green spots</b> will appear one by one. Tap each one within 5 seconds.');
   }
-  const a = await ask({type:'pills',items:[{t:attempt===1?'Start touch test':'Run the test again',go:true}]}); me(a);
+  const a = attempt===1 ? await ask({type:'pills',items:[{t:'Start touch test',go:true}]}) : 'Run the test again'; me(a);
   const res = await runTouch();
   card({type:'tmap',res,time:now()});
   const fail = res.filter(x=>x==='f').length;
   if (!fail){
     await bot('All <b>6 spots responded</b>. How is the touch screen now?');
     const b = await ask({type:'pills',items:[{t:'It\'s working now',go:true},{t:'It\'s slow to respond'},{t:'I have a different issue'},{t:'Raise support ticket',ticket:true}]}); me(b);
-    if (b.startsWith('It\'s working')){ C.fixedBy='Removing the screen guard and wiping the screen'; return resolved(); }
+    if (b.startsWith('It\'s working')){ C.fixedBy='Cleaning the screen'; return resolved(); }
     if (b.startsWith('I have')) return start();
     C.found=[b.startsWith('It\'s slow')?'Touch works but is slow to respond':'Touch test passed'];
     C.reason = b.startsWith('It\'s slow') ? 'Slow touch can be hardware or software, so I\'ll ask the <b>field service team</b> to check it.' : '';
@@ -597,12 +599,12 @@ async function touchTest(attempt){
   }
   C.found=[`${fail} of 6 touch spots didn't respond`];
   if (attempt===1){
-    await bot(`<b>${fail} spot${fail>1?'s':''} didn't respond</b>. This often happens because of a screen guard or a dirty screen.`);
-    const b = await ask({type:'pills',items:[{t:'I\'ll clean it and retry',go:true},{t:'Already did that'}]}); me(b);
-    if (b.startsWith('I\'ll')) return touchTest(2);
-    C.tried.push('Removed screen guard and wiped screen (merchant reported)');
-  } else C.tried.push('Removed screen guard and wiped screen');
-  C.reason = 'Since some areas still don\'t respond, the screen needs a check. I\'ll raise a request for the <b>field service team</b>.';
+    await bot(`<b>${fail} spot${fail>1?'s':''} didn't respond</b>. Let's run the test once more to be sure.`);
+    const b = await ask({type:'pills',items:[{t:'Run the test again',go:true},{t:'Raise support ticket',ticket:true}]});
+    if (b.startsWith('Run')){ PROMPT=null; return touchTest(2); }
+    me(b); C.reason=''; return confirmTicket();
+  }
+  C.reason = `The same area${fail>1?'s':''} didn't respond twice, so the screen needs a check. I'll raise a request for the <b>field service team</b>.`;
   return confirmTicket();
 }
 function runTouch(){ const r=RUN; return new Promise(res=>{
