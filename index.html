@@ -57,7 +57,7 @@ input{font-family:inherit;color:inherit}
 .tabs{position:relative;display:flex;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none;flex-shrink:0}
 .tab{flex-shrink:0;height:40px;border-radius:20px;border:1px solid var(--line);background:#fff;padding:0 14px;font-size:14px;font-weight:500;display:flex;align-items:center;gap:6px}
 .tab{transition:background .25s,color .25s,border-color .25s}
-.tab.on{background:var(--g900);border-color:var(--g900);color:#fff}
+.tab.on{position:relative;z-index:1;background:var(--g900);border-color:var(--g900);color:#fff}
 .picklist.swap{animation:in .25s ease-out}
 .picklist{flex:1;overflow-y:auto}
 .picklist .ph{padding:14px 16px 6px;font-size:12px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em}
@@ -213,36 +213,36 @@ const ST = (t,d) => ({t,d});
 const DEVICE = {
  battery:{n:'Battery',ic:'battery',issues:[
   {n:'Draining fast / low backup',t:'A',route:'Field – battery replacement',verify:'later',
-   checks:['Charger type|Pine Labs charger','Payment app|!Update available','Background apps|!4 apps using battery','Battery drain, last 7 days|!18% an hour'],
+   checks:['Charger type|Eligible charger','Payment app|!Update available','Background apps|!4 apps using battery','Battery drain, last 7 days|!18% an hour'],
    finding:'Your battery is draining <b>faster than normal</b>. 4 background apps are using power and the payment app is out of date.',
    fixes:['Close 4 background apps','Update the payment app'],
-   tips:[['sun','Lower the screen brightness','It\'s at 100%. Lower it if you work indoors.'],['plug','Charge fully with the Pine Labs charger','Other chargers can wear the battery faster.']]},
+   tips:[['sun','Lower the screen brightness','It\'s at 100%. Lower it if you work indoors.'],['plug','Charge fully with an eligible charger','Other chargers can wear the battery faster.']]},
   {n:'Not charging / not holding charge',t:'C',route:'Field',verify:'charge',
-   checks:['Charging current|!No current coming in','Charger type|Pine Labs charger','Battery health|Good (86%)'],
+   checks:['Charging current|!No current coming in','Charger type|Eligible charger','Battery health|Good (86%)'],
    finding:'Your device <b>isn\'t getting any charging current</b>. The battery itself looks healthy.',
-   steps:[ST('Try a different wall socket','Use one you know is working.'),ST('Reconnect the cable at both ends','Push it in firmly at the device and the adapter.'),ST('Try another Pine Labs charger','If you have a spare one.')]},
+   steps:[ST('Try a different wall socket','Use one you know is working.'),ST('Reconnect the cable at both ends','Push it in firmly at the device and the adapter.'),ST('Try another eligible charger','If you have a spare one.')]},
   {n:'Device not charging',t:'C',route:'Field',verify:'charge',
-   checks:['Charging current|!No current coming in','Charger type|Pine Labs charger','Battery health|Good (86%)'],
+   checks:['Charging current|!No current coming in','Charger type|Eligible charger','Battery health|Good (86%)'],
    finding:'Your device <b>isn\'t getting any charging current</b>. The battery itself looks healthy.',
-   steps:[ST('Try a different wall socket','Use one you know is working.'),ST('Reconnect the cable at both ends','Push it in firmly at the device and the adapter.'),ST('Try another Pine Labs charger','If you have a spare one.')]},
+   steps:[ST('Try a different wall socket','Use one you know is working.'),ST('Reconnect the cable at both ends','Push it in firmly at the device and the adapter.'),ST('Try another eligible charger','If you have a spare one.')]},
   {n:'Switches off on battery / sudden shutdown',t:'C',route:'Field – battery replacement',verify:'later',
    checks:['Battery health|72%','Overheating errors|None in 7 days'],
    finding:'Battery health is <b>72%</b> and there are no heating errors.',
-   steps:[ST('Charge it to 100%','Keep it on the Pine Labs charger until full.'),ST('Unplug and use as normal','Use it on battery for about 10 minutes.')]},
+   steps:[ST('Charge it to 100%','Keep it on an eligible charger until full.'),ST('Unplug and use as normal','Use it on battery for about 10 minutes.')]},
   {n:'Dead / replacement needed',t:'G',route:'Field – battery replacement',checks:['Battery health|!12%'],finding:'Battery health is <b>12%</b>. The battery has failed and needs to be replaced.'},
   {n:'Swollen / bulging / heating',t:'E',route:'Field',danger:['Stop using the device','Unplug it from the charger','Don\'t charge it again','Keep it away from heat and water']}
  ]},
  power:{n:'Power & Charging',ic:'plug',issues:[
   {n:'Charger / adapter not working',t:'C',route:'Field – adapter',verify:'charge',
-   checks:['Charging current|!No current coming in','Charger type|!Not a Pine Labs charger','Battery health|Good (88%)'],
-   finding:'No charging current, and the charger <b>isn\'t recognised as a Pine Labs charger</b>.',
-   steps:[ST('Try a different wall socket','Use one you know is working.'),ST('Use a Pine Labs charger','Other chargers may not supply enough power.')]},
-  {n:'Charger cable damaged',t:'E',route:'Field',danger:['Stop using the damaged cable','Unplug it from the wall socket','Use another Pine Labs charger if you have one']}
+   checks:['Charging current|!No current coming in','Charger type|!Not an eligible charger','Battery health|Good (88%)'],
+   finding:'No charging current, and the charger <b>isn\'t recognised as an eligible charger</b>.',
+   steps:[ST('Try a different wall socket','Use one you know is working.'),ST('Use an eligible charger','Other chargers may not supply enough power.')]},
+  {n:'Charger cable damaged',t:'E',route:'Field',danger:['Stop using the damaged cable','Unplug it from the wall socket','Use another eligible charger if you have one']}
  ]},
  cable:{n:'Charger cable',ic:'cable',issues:[
   {n:'Cable loose / connection problem',t:'C',route:'Field',verify:'charge',checks:['Charging status|!Keeps stopping and starting','Battery health|Good (90%)'],
    finding:'Charging <b>keeps stopping and starting</b>, which usually means a loose connection.',
-   steps:[ST('Reconnect both ends firmly','At the device and at the adapter.'),ST('Try another Pine Labs charger','If you have a spare one.')]},
+   steps:[ST('Reconnect both ends firmly','At the device and at the adapter.'),ST('Try another eligible charger','If you have a spare one.')]},
   {n:'Charging port / pin loose or damaged',t:'B',route:'Field – port repair',verify:'charge',
    steps:[ST('Clean the charging port','Remove dust gently with a dry brush.'),ST('Check the pin isn\'t bent','It should sit straight in the middle.'),ST('Reconnect the cable firmly','Push until it clicks.'),ST('Try another charger','If you have a spare one.')]},
   {n:'Charger missing / new charger needed',t:'F',route:'Field'}
@@ -280,8 +280,8 @@ const DEVICE = {
   {n:'Hanging / freezing / slow',t:'A',route:'RTT',verify:'ask',restart:'remote',checks:['Memory|!92% full','Background apps|!6 running','App & firmware|Up to date'],
    finding:'Memory is <b>92% full</b> and 6 apps are running in the background.',fixes:['Settle open transactions and save logs','Clear memory','Close background apps'],note:'Your payments are settled first. Nothing is lost.'},
   {n:'Auto restart / reboot',t:'C',route:'Field – battery / EDC',verify:'later',checks:['Battery health|78%','Overheating|!3 times in 24 hours','Firmware|Up to date'],
-   finding:'The device <b>overheated 3 times</b> in the last 24 hours.',steps:[ST('Charge it to 100%','Keep it on the Pine Labs charger until full.'),ST('Keep it ventilated','Out of direct sun and off hot surfaces.')]},
-  {n:'Stuck on logo / boot loop',t:'B',route:'Field – EDC replacement',verify:'ask',restart:'manual',steps:[ST('Charge it for 30 minutes','Use the Pine Labs charger.')]},
+   finding:'The device <b>overheated 3 times</b> in the last 24 hours.',steps:[ST('Charge it to 100%','Keep it on an eligible charger until full.'),ST('Keep it ventilated','Out of direct sun and off hot surfaces.')]},
+  {n:'Stuck on logo / boot loop',t:'B',route:'Field – EDC replacement',verify:'ask',restart:'manual',steps:[ST('Charge it for 30 minutes','Use an eligible charger.')]},
   {n:'App crash',t:'A',route:'RTT first, then Field',verify:'ask',restart:'remote',checks:['Payment app|!Older version','Memory|!88% full'],
    finding:'The payment app is <b>out of date</b> and memory is almost full.',fixes:['Update the payment app','Clear memory']}
  ]},
@@ -343,7 +343,7 @@ const CATS = [
 ];
 
 /* ============================ CHAT ENGINE ============================ */
-let T=[], PROMPT=null, C={}, LAYER=null, RUN=0, PROMPT_ERR='', VIEW='pick', TAB='device', TABX=0, SWAP=false;
+let SEEN=0, LASTP=null; let T=[], PROMPT=null, C={}, LAYER=null, RUN=0, PROMPT_ERR='', VIEW='pick', TAB='device', TABX=0, SWAP=false;
 const REQS=[];
 const sim = k => document.getElementById(k).checked;
 const now = () => new Date().toLocaleTimeString('en-IN',{hour:'numeric',minute:'2-digit'});
@@ -357,9 +357,9 @@ function snap(){ return {len:T.length, prompt:PROMPT, C:Object.assign({},C)}; }
 function ask(p){ PROMPT=p; render(); return new Promise(res=>{ p.resolve=res; }); }
 async function go(fn){ try{ await fn(); }catch(e){ if(e!=='stale') throw e; } }
 
-function start(){ RUN++; T=[]; PROMPT=null; C={}; LAYER=null; VIEW='pick'; render(); }
+function start(){ SEEN=0; RUN++; T=[]; PROMPT=null; C={}; LAYER=null; VIEW='pick'; render(); }
 function openSub(cat, sub){
-  RUN++; T=[]; PROMPT=null; LAYER=null; C={cat}; VIEW='flow';
+  SEEN=0; RUN++; T=[]; PROMPT=null; LAYER=null; C={cat}; VIEW='flow';
   if (sub==='other'){ render(); return go(somethingElse); }
   C.sub=sub; render(); go(()=>pickIssue());
 }
@@ -653,7 +653,7 @@ async function confirmTicket(auto){
 }
 async function submitTicket(){
   const r0=RUN; const k=card({type:'check',rows:[{l:'Creating your request',st:'run'}],bare:true}); await sleep(1100); guard(r0);
-  T.splice(T.indexOf(k),1);
+  T.splice(T.indexOf(k),1); SEEN=Math.min(SEEN,T.length);
   const r = {id:'SR-'+(2614000+Math.floor(Math.random()*999)), key:caseKey(), name:C.issue?C.issue.n:C.issueName||'Call me back',
     team: C.issue?teamOf(C.issue.route).replace(/^./,x=>x.toUpperCase()) : C.callback?'Support team':NONDEV[C.cat].n+' team',
     eta: C.priority?'Within 4 hours':C.callback?'Call within 1–2 hours':'Within 24 hours', priority:C.priority};
@@ -720,7 +720,7 @@ function renderPicker(){
   const short={device:'Device',transaction:'Payments',settlement:'Settlement',account:'Account'};
   const open = REQS.length ? `<div style="padding:12px 16px 0"><div class="notice info">${ic('ticket',18)}<span>You have <b>${REQS.length} open request${REQS.length>1?'s':''}</b>. Latest: ${esc(REQS[0].id)} · ${esc(REQS[0].name)}</span></div></div>` : '';
   return `<div class="appbar"><button class="iconbtn" aria-label="Back">${ic('back',22)}</button><div class="ab-t">Log a complaint</div></div>
-   <div class="tabs" role="tablist">${CATS.map(c=>`<button class="tab ${TAB===c.id?'on':''}" role="tab" aria-selected="${TAB===c.id}" data-act="tab:${c.id}">${ic(c.ic,16)}${short[c.id]}</button>`).join('')}<span aria-hidden="true" style="flex:0 0 230px"></span></div>
+   <div class="tabs" role="tablist">${[...CATS.filter(c=>c.id===TAB),...CATS.filter(c=>c.id!==TAB)].map(c=>`<button class="tab ${TAB===c.id?'on':''}" role="tab" aria-selected="${TAB===c.id}" data-act="tab:${c.id}">${ic(c.ic,16)}${short[c.id]}</button>`).join('')}</div>
    <div class="picklist">${open}<div class="ph">What's the issue about?</div>
    <div style="padding:0 16px 16px"><div class="olist">${subs.map(x=>`<button class="orow" data-act="sub:${x.k}"><span class="oi">${ic(x.ic,17,'#1E8E4F')}</span><div style="flex:1;min-width:0"><div class="ot">${esc(x.n)}</div><div class="od" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(x.d)}</div></div>${ic('right',16,'#8A93A8')}</button>`).join('')}
    <button class="orow muted" data-act="sub:other"><span class="oi" style="background:var(--line2)">${ic('more',17,'#5A6580')}</span><div class="ot">Something else</div>${ic('right',16,'#8A93A8')}</button></div></div></div>`;
@@ -739,25 +739,30 @@ function renderLayer(){
 }
 function render(){
   const msgs = T.map((m,idx)=>{
-    if (m.k==='typing') return `<div class="m"><div class="typing"><i></i><i></i><i></i></div></div>`;
-    if (m.k==='bot') return `<div class="m bot ${m.err?'err':''} ${m.q?'q':''}">${m.html}</div>`;
-    if (m.k==='me') return `<div class="m me">${m.edit?`<button data-act="edit:${idx}" aria-label="Change answer: ${esc(m.text)}">${esc(m.text)}${ic('edit',13,'#8A93A8')}</button>`:`<div>${esc(m.text)}</div>`}</div>`;
-    if (m.k==='divider') return `<div class="m divider">${esc(m.text)}</div>`;
-    if (m.k==='card') return `<div class="m">${renderCard(m, PROMPT && PROMPT.card===m)}</div>`;
+    const A = idx>=SEEN?'m':'';
+    if (m.k==='typing') return `<div class="${A}"><div class="typing"><i></i><i></i><i></i></div></div>`;
+    if (m.k==='bot') return `<div class="${A} bot ${m.err?'err':''} ${m.q?'q':''}">${m.html}</div>`;
+    if (m.k==='me') return `<div class="${A} me">${m.edit?`<button data-act="edit:${idx}" aria-label="Change answer: ${esc(m.text)}">${esc(m.text)}${ic('edit',13,'#8A93A8')}</button>`:`<div>${esc(m.text)}</div>`}</div>`;
+    if (m.k==='divider') return `<div class="${A} divider">${esc(m.text)}</div>`;
+    if (m.k==='card') return `<div class="${A}">${renderCard(m, PROMPT && PROMPT.card===m)}</div>`;
   }).join('');
   if (VIEW==='pick'){
-    const old=app.querySelector('.tabs'); if(old) TABX=old.scrollLeft;
+    const before={}; app.querySelectorAll('.tab').forEach(t=>before[t.dataset.act]=t.getBoundingClientRect().left);
     app.innerHTML = renderPicker();
-    const tabs=app.querySelector('.tabs'), on=tabs.querySelector('.tab.on');
-    tabs.scrollLeft=TABX;
-    requestAnimationFrame(()=>tabs.scrollTo({left:Math.max(0,on.offsetLeft-16),behavior:'smooth'}));
+    const tabs=app.querySelector('.tabs'); tabs.scrollLeft=0;
+    tabs.querySelectorAll('.tab').forEach(t=>{ const b=before[t.dataset.act]; if(b==null) return; const d=b-t.getBoundingClientRect().left; if(!d) return;
+      t.style.transition='none'; t.style.transform=`translateX(${d}px)`; requestAnimationFrame(()=>requestAnimationFrame(()=>{ t.style.transition='transform .35s cubic-bezier(.2,.8,.2,1), background .25s, color .25s, border-color .25s'; t.style.transform=''; })); });
     if (SWAP){ app.querySelector('.picklist').classList.add('swap'); SWAP=false; }
     return; }
-  const inline = PROMPT && !PROMPT.card ? renderPrompt(PROMPT) : '';
+  let inline = PROMPT && !PROMPT.card ? renderPrompt(PROMPT) : '';
+  if (PROMPT===LASTP) inline = inline.replace(/ m"/,'"');
+  const oldTh = app.querySelector('.thread'); const oldTop = oldTh ? oldTh.scrollTop : 0;
   const cat = CATS.find(c=>c.id===C.cat), subN = C.sub ? (C.cat==='device'?DEVICE[C.sub].n:NONDEV[C.cat].subs[C.sub].n) : 'Something else';
   app.innerHTML = `<div class="appbar"><button class="iconbtn" data-act="to-pick" aria-label="Back">${ic('back',22)}</button><div class="ab-t">Log a complaint</div></div>
    <div class="thread" role="log" aria-live="polite"><div class="pinned"><span style="width:28px;height:28px;border-radius:8px;background:var(--g100);display:flex;align-items:center;justify-content:center;flex-shrink:0">${ic(cat.ic,15,'#1E8E4F')}</span><div class="pt">${esc(cat.n)} › <b>${esc(subN)}</b></div><button class="linkbtn" data-act="to-pick">Change</button></div>${msgs}${inline}</div>${renderLayer()}`;
-  const th=app.querySelector('.thread'); th.scrollTop=th.scrollHeight;
+  SEEN=T.length; LASTP=PROMPT;
+  const th=app.querySelector('.thread'); th.scrollTop=oldTop;
+  if (th.scrollHeight-th.clientHeight-oldTop>4) requestAnimationFrame(()=>th.scrollTo({top:th.scrollHeight,behavior:'smooth'}));
   if (PROMPT&&PROMPT.type==='otp'){ const f=app.querySelector('[data-otp="0"]'); f&&f.focus(); PROMPT.sent=PROMPT.sent||Date.now(); otpTimer(); }
   if (PROMPT&&PROMPT.type==='phone'){ const f=document.getElementById('ph'); f&&f.focus(); }
 }
@@ -772,7 +777,7 @@ app.addEventListener('click', e=>{
   if (a==='sub') return openSub(TAB, v);
   if (a==='resume' && LAYER && LAYER.resume) return LAYER.resume();
   if (a==='tt' && LAYER && LAYER.tap) return LAYER.tap(+v);
-  if (a==='edit'){ const m=T[+v]; if(!m||!m.edit) return; RUN++; LAYER=null; const s=m.edit; T=T.slice(0,s.len); C=Object.assign({},s.C); PROMPT=s.prompt; render(); return; }
+  if (a==='edit'){ const m=T[+v]; if(!m||!m.edit) return; RUN++; LAYER=null; const s=m.edit; T=T.slice(0,s.len); SEEN=T.length; LASTP=null; C=Object.assign({},s.C); PROMPT=s.prompt; render(); return; }
   if (!p) return;
   if (a==='pick'){ return p.onPick(p.items[+v]); }
   if (a==='pill'){ const x=p.items[+v]; PROMPT=null; return p.resolve(typeof x==='string'?x:x.t); }
