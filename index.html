@@ -11,327 +11,281 @@
 :root{
   --g900:#003323;--g700:#1E7A45;--g600:#1E8E4F;--g400:#50D387;--g100:#E8F7EE;--g50:#F3FBF6;
   --ink:#2C3448;--ink2:#495678;--ink3:#5A6580;--ink4:#8A93A8;
-  --line:#DBDDE4;--line2:#ECEEF2;--bg:#F7F8FA;--page:#EEF0F3;--white:#fff;
+  --line:#DBDDE4;--line2:#ECEEF2;--bg:#F4F5F7;--page:#EEF0F3;
   --red:#B3261E;--red50:#FDECEA;--amber:#8A5A00;--amber50:#FFF4D6;--blue:#1F4FB8;--blue50:#EAF0FD;
-  --r8:8px;--r12:12px;--r16:16px;
 }
 *{box-sizing:border-box}
 html,body{height:100%;margin:0}
 body{background:var(--page);font-family:Inter,system-ui,sans-serif;color:var(--ink);display:flex;align-items:center;justify-content:center;min-height:100vh;-webkit-font-smoothing:antialiased}
 button{font-family:inherit;cursor:pointer;color:inherit}
-input,textarea{font-family:inherit;color:inherit}
+input{font-family:inherit;color:inherit}
 @keyframes spin{to{transform:rotate(360deg)}}
-@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-@keyframes pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+@keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
 @keyframes drain{from{width:100%}to{width:0}}
-@keyframes slideIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
-@keyframes toast{0%{opacity:0;transform:translate(-50%,8px)}10%,85%{opacity:1;transform:translate(-50%,0)}100%{opacity:0}}
+@keyframes blink{0%,80%,100%{opacity:.25}40%{opacity:1}}
+@keyframes pop{0%{transform:scale(.5);opacity:0}70%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
 
-/* ---------- Frame ---------- */
 .stage{display:flex;gap:32px;align-items:flex-start;padding:32px}
-.device{width:360px;height:640px;background:var(--white);border-radius:6px;box-shadow:0 10px 30px rgba(0,0,0,.14);display:flex;flex-direction:column;overflow:hidden;position:relative;flex-shrink:0}
+.device{width:360px;height:640px;background:#fff;border-radius:6px;box-shadow:0 10px 30px rgba(0,0,0,.14);display:flex;flex-direction:column;overflow:hidden;position:relative;flex-shrink:0}
 .statusbar{height:24px;background:var(--g900);flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 10px;color:#CFE9DA;font-size:11px;font-weight:500}
 .notes{width:280px;font-size:13px;line-height:19px;color:var(--ink2)}
-.notes h3{font-size:13px;margin:0 0 6px;color:var(--ink);text-transform:uppercase;letter-spacing:.04em}
+.notes h3{font-size:12px;margin:0 0 6px;color:var(--ink);text-transform:uppercase;letter-spacing:.05em}
 .notes ul{margin:0 0 16px;padding-left:18px}.notes li{margin-bottom:4px}
 .notes .v{display:inline-block;background:var(--g100);color:var(--g700);font-weight:600;font-size:11px;padding:2px 8px;border-radius:10px;margin-bottom:10px}
+.sim{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}.sim label{display:flex;gap:8px;align-items:center;cursor:pointer}
 @media (max-width:720px){.stage{flex-direction:column;align-items:center;padding:12px}.notes{width:360px}}
 
-/* ---------- App bar ---------- */
-.appbar{min-height:56px;flex-shrink:0;display:flex;align-items:center;gap:4px;padding:6px 8px;border-bottom:1px solid var(--line)}
+.appbar{height:56px;flex-shrink:0;display:flex;align-items:center;gap:4px;padding:0 8px;border-bottom:1px solid var(--line)}
 .iconbtn{width:44px;height:44px;border:none;background:none;border-radius:22px;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0}
 .iconbtn:active{background:var(--line2)}
-.ab-title{flex:1;min-width:0}
-.ab-title .t{font-size:17px;font-weight:600;line-height:22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.crumbs{display:flex;align-items:center;gap:2px;font-size:12px;color:var(--ink3);margin-top:1px;white-space:nowrap;overflow:hidden}
-.crumbs button{border:none;background:none;padding:0;font-size:12px;color:var(--g600);font-weight:500}
-.crumbs .sep{color:var(--ink4);padding:0 2px}
+.ab-t{flex:1;font-size:17px;font-weight:600}
 
-/* ---------- Body / footer ---------- */
-.body{flex:1;min-height:0;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:16px}
-.enter .body{animation:slideIn .22s ease-out}
-.body.flush{padding:0;gap:0}
-.footer{flex-shrink:0;padding:12px 16px 14px;border-top:1px solid var(--line2);display:flex;flex-direction:column;gap:8px;background:var(--white)}
-.footer.row{flex-direction:row}
-.footer.row>*{flex:1}
+.thread{flex:1;min-height:0;overflow-y:auto;padding:16px 16px 20px;display:flex;flex-direction:column;gap:14px}
+.m{animation:in .25s ease-out}
+.bot{font-size:14px;line-height:21px;max-width:312px}
+.bot b{font-weight:600}
+.bot.err{color:var(--red)}
+.me{align-self:flex-end;display:flex;justify-content:flex-end;max-width:270px}
+.me>*{background:var(--line2);border-radius:20px 20px 4px 20px;padding:10px 14px;font-size:14px;line-height:19px;border:none;text-align:left;display:inline-flex;align-items:center;gap:8px}
+.me button:active{background:var(--line)}
+.typing{display:flex;gap:4px;padding:6px 0}.typing i{width:7px;height:7px;border-radius:4px;background:var(--ink4);animation:blink 1.2s infinite}.typing i:nth-child(2){animation-delay:.2s}.typing i:nth-child(3){animation-delay:.4s}
+.divider{display:flex;align-items:center;gap:10px;font-size:11px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line)}
 
-/* ---------- Buttons ---------- */
-.btn{min-height:48px;border-radius:24px;border:none;font-size:15px;font-weight:600;padding:0 20px;display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;transition:background .15s}
-.btn.primary{background:var(--g900);color:#fff}.btn.primary:active{background:#00241A}
-.btn.primary[disabled]{background:#B9C2BE;cursor:not-allowed}
-.btn.secondary{background:var(--white);color:var(--g900);box-shadow:inset 0 0 0 1.5px var(--g900)}
-.btn.ghost{background:none;color:var(--g600);min-height:44px}
-.btn.danger{background:var(--red);color:#fff}
-.btn.sm{min-height:36px;font-size:13px;padding:0 14px;width:auto;border-radius:18px}
+.olist{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.orow{width:100%;border:none;background:#fff;display:flex;align-items:center;gap:12px;padding:12px 14px;text-align:left;min-height:52px;border-bottom:1px solid var(--line2)}
+.orow:last-child{border-bottom:none}
+.orow:active{background:var(--g50)}
+.orow .oi{width:32px;height:32px;border-radius:9px;background:var(--g100);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.orow .ot{flex:1;font-size:14px;font-weight:500;line-height:19px}.orow .od{font-size:12px;color:var(--ink3);font-weight:400;margin-top:1px}
+.orow.muted .ot{color:var(--ink2);font-weight:400}
 
-/* ---------- Text ---------- */
-.h1{font-size:20px;font-weight:600;line-height:26px;margin:0}
-.h2{font-size:15px;font-weight:600;margin:0}
-.p{font-size:14px;line-height:21px;color:var(--ink2);margin:0}
-.cap{font-size:12px;color:var(--ink3);line-height:17px}
-.label{font-size:12px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em}
+.pills{display:flex;flex-wrap:wrap;gap:8px}
+.pill{min-height:40px;border-radius:20px;border:1px solid var(--line);background:#fff;padding:0 14px;font-size:14px;font-weight:500;display:inline-flex;align-items:center;gap:6px}
+.pill:active{background:var(--g50);border-color:var(--g600)}
+.pill.go{background:var(--g900);border-color:var(--g900);color:#fff}
+.pill.ticket{background:var(--g100);border-color:var(--g100);color:var(--g700)}
+.pill.cancel{background:var(--red50);border-color:var(--red50);color:var(--red)}
 
-/* ---------- Search ---------- */
-.search{display:flex;align-items:center;gap:10px;height:48px;border-radius:24px;background:var(--bg);box-shadow:inset 0 0 0 1px var(--line);padding:0 16px}
-.search input{border:none;background:none;outline:none;font-size:15px;flex:1;min-width:0}
-.search:focus-within{box-shadow:inset 0 0 0 2px var(--g600);background:#fff}
-
-/* ---------- Chips ---------- */
-.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
-.chip{flex-shrink:0;height:36px;border-radius:18px;border:1px solid var(--line);background:#fff;padding:0 14px;font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px}
-.chip:active{background:var(--g50)}
-
-/* ---------- Category accordion (L1 + L2 on one screen) ---------- */
-.cats{display:flex;flex-direction:column;gap:10px}
-.cat{border:1px solid var(--line);border-radius:var(--r12);background:#fff;overflow:hidden;transition:box-shadow .2s,border-color .2s}
-.cat.open{border-color:var(--g600);box-shadow:0 2px 10px rgba(30,142,79,.12)}
-.cat-head{width:100%;border:none;background:none;display:flex;align-items:center;gap:12px;padding:12px 12px 12px 14px;text-align:left;min-height:64px}
-.cat-ic{width:40px;height:40px;border-radius:12px;background:var(--g100);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.cat-txt{flex:1;min-width:0}.cat-txt .n{font-size:15px;font-weight:600}.cat-txt .d{font-size:12px;color:var(--ink3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.chev{transition:transform .2s;flex-shrink:0}.cat.open .chev{transform:rotate(180deg)}
-.subgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 12px 12px;animation:fadeUp .2s ease-out}
-.sub{border:none;background:var(--bg);border-radius:10px;min-height:56px;padding:10px;display:flex;align-items:center;gap:8px;text-align:left;font-size:13px;font-weight:500;line-height:17px}
-.sub:active{background:var(--g100)}
-.sub .si{width:28px;height:28px;border-radius:8px;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.sub.other{background:#fff;box-shadow:inset 0 0 0 1px var(--line);color:var(--ink2)}
-
-/* ---------- List rows (L3) ---------- */
-.list{display:flex;flex-direction:column}
-.row{width:100%;border:none;background:none;display:flex;align-items:center;gap:12px;padding:14px 16px;text-align:left;min-height:56px;border-bottom:1px solid var(--line2)}
-.row:active{background:var(--bg)}
-.row .rt{flex:1;font-size:15px;line-height:20px}
-.row .rd{font-size:12px;color:var(--ink3);margin-top:2px}
-.row.muted .rt{color:var(--ink2)}
-.tag{font-size:11px;font-weight:600;padding:3px 8px;border-radius:10px;white-space:nowrap}
-.tag.g{background:var(--g100);color:var(--g700)}.tag.r{background:var(--red50);color:var(--red)}.tag.b{background:var(--blue50);color:var(--blue)}
-
-/* ---------- Cards ---------- */
-.card{border:1px solid var(--line);border-radius:var(--r12);padding:14px;background:#fff;display:flex;flex-direction:column;gap:10px}
+.card{border:1px solid var(--line);border-radius:12px;background:#fff;padding:14px;display:flex;flex-direction:column;gap:10px}
 .card.soft{background:var(--bg);border-color:transparent}
-.kv{display:flex;justify-content:space-between;gap:12px;font-size:13px}.kv .k{color:var(--ink3)}.kv .v{font-weight:500;text-align:right}
-.notice{display:flex;gap:12px;border-radius:var(--r12);padding:14px;font-size:13px;line-height:19px}
-.notice.info{background:var(--blue50);color:#1B3A80}.notice.warn{background:var(--amber50);color:var(--amber)}.notice.ok{background:var(--g100);color:var(--g700)}.notice.danger{background:var(--red50);color:#8C1D18}
-.notice b{display:block;font-size:14px;margin-bottom:2px}
+.card .ch{display:flex;align-items:center;gap:10px}
+.ct{font-size:14px;font-weight:600}
+.cs{font-size:12px;color:var(--ink3);line-height:17px}
+.kv{display:flex;justify-content:space-between;gap:12px;font-size:13px;line-height:18px}.kv .k{color:var(--ink3);flex-shrink:0}.kv .v{font-weight:500;text-align:right}
+.btnrow{display:flex;gap:8px}
+.btn{flex:1;min-height:44px;border-radius:22px;border:none;font-size:14px;font-weight:600;padding:0 16px;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.btn.primary{background:var(--g900);color:#fff}.btn.sec{background:#fff;color:var(--g900);box-shadow:inset 0 0 0 1.5px var(--g900)}
+.btn.light{background:var(--g400);color:var(--g900)}
+.btn[disabled]{opacity:.4;cursor:default}
 
-/* ---------- Hero / illustration ---------- */
-.hero{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;padding:8px 0}
-.hero-ic{width:72px;height:72px;border-radius:36px;display:flex;align-items:center;justify-content:center;animation:pop .35s ease-out}
-.hero-ic.g{background:var(--g100)}.hero-ic.r{background:var(--red50)}.hero-ic.b{background:var(--blue50)}.hero-ic.a{background:var(--amber50)}
+.chk{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-top:1px solid var(--line2)}
+.chk:first-child{border-top:none}
+.chk .st{width:20px;height:20px;flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.chk .l{font-size:13px}.chk .r{font-size:12px;color:var(--ink3);margin-top:1px}
+.chk.wait .l{color:var(--ink4)}
+.spin{width:16px;height:16px;border-radius:8px;border:2.5px solid var(--line);border-top-color:var(--g600);animation:spin .8s linear infinite;display:inline-block;flex-shrink:0}
+.dot{width:7px;height:7px;border-radius:4px;background:var(--line)}
 
-/* ---------- Diagnostic checklist ---------- */
-.checks{display:flex;flex-direction:column}
-.chk{display:flex;align-items:flex-start;gap:12px;padding:11px 0;border-bottom:1px solid var(--line2);animation:fadeUp .25s ease-out}
-.chk:last-child{border-bottom:none}
-.chk .st{width:22px;height:22px;flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:1px}
-.chk .ct{flex:1;font-size:14px}.chk .cr{font-size:12px;color:var(--ink3);margin-top:2px}
-.chk.pending .ct{color:var(--ink4)}
-.spinner{width:18px;height:18px;border-radius:9px;border:2.5px solid var(--line);border-top-color:var(--g600);animation:spin .8s linear infinite}
-.dot{width:8px;height:8px;border-radius:4px;background:var(--line)}
-.bar{height:6px;border-radius:3px;background:var(--line2);overflow:hidden}.bar>div{height:100%;background:var(--g600);border-radius:3px;transition:width .4s ease}
+.fixcard{background:var(--g900);color:#fff;border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.fixcard .ct{color:#fff}.fixcard .cs{color:#9FC9B2}
+.fixcard .li{display:flex;gap:8px;font-size:13px;color:#CFE9DA;line-height:18px;align-items:center}
 
-/* ---------- Fix card ---------- */
-.fix{border-radius:var(--r12);background:var(--g900);color:#fff;padding:16px;display:flex;flex-direction:column;gap:12px}
-.fix .h2{color:#fff}.fix ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px}
-.fix li{display:flex;gap:10px;font-size:13px;color:#CFE9DA;line-height:18px}
-.fix .btn.primary{background:var(--g400);color:var(--g900)}
+.ledger{display:flex;flex-direction:column}
+.lrow{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--line2)}
+.lrow:first-child{border-top:none;padding-top:4px}
+.lnum{width:26px;height:26px;border-radius:13px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;background:var(--line2);color:var(--ink3)}
+.lrow.cur .lnum{background:var(--g900);color:#fff}
+.lrow.ok .lnum{background:var(--g600);color:#fff}
+.lrow.lock{opacity:.5}
+.lt{font-size:14px;font-weight:600}.ld{font-size:12px;color:var(--ink3);margin-top:2px;line-height:17px}
+.lres{font-size:12px;margin-top:4px;font-weight:500}
+.lact{display:flex;gap:8px;margin-top:10px}
+.sbtn{min-height:34px;border-radius:17px;font-size:13px;font-weight:600;padding:0 14px;border:none}
+.sbtn.p{background:var(--g900);color:#fff}.sbtn.q{background:none;color:var(--ink3)}
 
-/* ---------- Suggestion cards ---------- */
-.sugg{border:1px solid var(--line);border-radius:var(--r12);padding:14px;display:flex;gap:12px;background:#fff;transition:opacity .2s}
-.sugg.done{opacity:.55}
-.sugg .si{width:36px;height:36px;border-radius:10px;background:var(--amber50);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.sugg .acts{display:flex;gap:8px;margin-top:10px}
-
-/* ---------- Step (guided steps with confirm) ---------- */
-.stepper{display:flex;gap:4px}.stepper i{flex:1;height:4px;border-radius:2px;background:var(--line2)}.stepper i.on{background:var(--g600)}.stepper i.cur{background:var(--g400)}
-.stepcard{border-radius:var(--r16);background:var(--bg);padding:20px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;animation:fadeUp .25s ease-out}
-.stepcard .num{font-size:12px;font-weight:600;color:var(--g700)}
-.q{font-size:16px;font-weight:600;text-align:center}
-.choice{display:flex;flex-direction:column;gap:8px}
-.opt{width:100%;min-height:52px;border-radius:var(--r12);border:1px solid var(--line);background:#fff;display:flex;align-items:center;gap:12px;padding:0 14px;font-size:15px;font-weight:500;text-align:left}
-.opt:active{border-color:var(--g600);background:var(--g50)}
-.opt .oi{width:28px;height:28px;border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.tried{display:flex;flex-direction:column;gap:6px}
-.tried div{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink3)}
-
-/* ---------- Forms ---------- */
-.field{display:flex;flex-direction:column;gap:6px}
-.field label{font-size:13px;font-weight:600}
-.field .hint{font-size:12px;color:var(--ink3)}
-textarea,.inp{width:100%;border:1px solid var(--line);border-radius:var(--r8);padding:12px;font-size:15px;outline:none;background:#fff;resize:none}
-textarea:focus,.inp:focus{border-color:var(--g600);box-shadow:0 0 0 3px rgba(30,142,79,.12)}
-.radio{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:var(--r12);padding:12px 14px;background:#fff;width:100%;text-align:left;min-height:56px}
-.radio.on{border-color:var(--g600);background:var(--g50)}
-.radio .rb{width:20px;height:20px;border-radius:10px;border:2px solid var(--ink4);flex-shrink:0;display:flex;align-items:center;justify-content:center}
-.radio.on .rb{border-color:var(--g600)}.radio.on .rb::after{content:"";width:10px;height:10px;border-radius:5px;background:var(--g600)}
-.otp{display:flex;gap:10px;justify-content:center}
-.otp input{width:52px;height:56px;text-align:center;font-size:22px;font-weight:600;border:1px solid var(--line);border-radius:var(--r12);outline:none}
-.otp input:focus{border-color:var(--g600);box-shadow:0 0 0 3px rgba(30,142,79,.12)}
-.otp.err input{border-color:var(--red)}
-.upload{border:1.5px dashed var(--line);border-radius:var(--r12);padding:16px;display:flex;align-items:center;gap:12px;background:#fff;width:100%;text-align:left}
-.thumb{width:44px;height:44px;border-radius:8px;background:linear-gradient(135deg,#C9D2CE,#8FA39A);flex-shrink:0}
-
-/* ---------- Touch test ---------- */
-.tt{flex:1;display:flex;flex-direction:column;background:#101418;color:#fff;min-height:0}
-.tt-head{padding:14px 16px 10px;text-align:center}
-.tt-grid{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(3,1fr);gap:2px;background:#2A3038;min-height:0}
-.tt-cell{border:none;background:#101418;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:0}
-.tt-spot{width:80px;height:80px;border-radius:40px;background:var(--g400);color:var(--g900);font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;animation:pulse 1s ease-in-out infinite}
-.tt-timer{width:80px;height:4px;border-radius:2px;background:#2A3038;overflow:hidden}.tt-timer div{height:100%;background:var(--g400)}
-
-/* ---------- Toast ---------- */
-.scrim{position:absolute;inset:0;background:rgba(16,20,24,.45);z-index:6;display:flex;align-items:flex-end;animation:fadeUp .15s}
-.sheet{background:#fff;width:100%;border-radius:16px 16px 0 0;padding:20px 16px 16px;display:flex;flex-direction:column;gap:12px}
+.cl{display:flex;flex-direction:column}
+.clrow{display:flex;align-items:center;gap:10px;border:none;background:none;padding:10px 2px;text-align:left;font-size:14px;width:100%}
 .cbox{width:20px;height:20px;border-radius:5px;border:2px solid var(--ink4);flex-shrink:0;display:flex;align-items:center;justify-content:center}
-.radio.on .cbox{border-color:var(--red);background:var(--red)}
-.tl{display:flex;flex-direction:column}.tl>div{display:flex;gap:12px;position:relative;padding-bottom:16px}
-.tl>div:not(:last-child)::before{content:"";position:absolute;left:9px;top:22px;bottom:0;width:2px;background:var(--line)}
-.tl .d{width:20px;height:20px;border-radius:10px;border:2px solid var(--line);background:#fff;flex-shrink:0}.tl .d.on{background:var(--g600);border-color:var(--g600)}
-.openreq{display:flex;align-items:center;gap:12px;border-radius:var(--r12);background:var(--blue50);padding:12px 14px;border:none;width:100%;text-align:left}
-.sim{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}.sim label{display:flex;gap:8px;align-items:center;font-size:13px;cursor:pointer}
-.toast{position:absolute;left:50%;bottom:92px;background:#1F2633;color:#fff;font-size:13px;padding:10px 16px;border-radius:20px;white-space:nowrap;animation:toast 2.4s ease forwards;pointer-events:none;z-index:5}
+.clrow.on .cbox{background:var(--g600);border-color:var(--g600)}
+
+.danger{background:var(--red50);border-radius:12px;padding:14px;color:#8C1D18;font-size:13px;display:flex;flex-direction:column;gap:6px}
+.danger .ct{color:var(--red);font-size:15px;display:flex;gap:8px;align-items:center}
+.danger .x{display:flex;gap:8px;align-items:center}
+.notice{display:flex;gap:10px;border-radius:12px;padding:12px;font-size:13px;line-height:18px}
+.notice.info{background:var(--blue50);color:#1B3A80}.notice.warn{background:var(--amber50);color:var(--amber)}
+
+.tmap{display:grid;grid-template-columns:1fr 1fr;gap:4px;width:110px;flex-shrink:0}
+.tmap i{height:28px;border-radius:5px;display:flex;align-items:center;justify-content:center}
+.tmap i.p{background:var(--g100)}.tmap i.f{background:var(--red50)}
+
+.inp{width:100%;height:48px;border:1px solid var(--line);border-radius:10px;padding:0 12px;font-size:16px;outline:none;letter-spacing:.04em}
+.inp:focus{border-color:var(--g600);box-shadow:0 0 0 3px rgba(30,142,79,.12)}
+.otp{display:flex;gap:10px}
+.otp input{width:48px;height:52px;text-align:center;font-size:20px;font-weight:600;border:1px solid var(--line);border-radius:10px;outline:none}
+.otp input:focus{border-color:var(--g600);box-shadow:0 0 0 3px rgba(30,142,79,.12)}
+.otp.bad input{border-color:var(--red)}
+.okhead{display:flex;align-items:center;gap:10px}
+.okic{width:36px;height:36px;border-radius:18px;background:var(--g100);display:flex;align-items:center;justify-content:center;animation:pop .35s;flex-shrink:0}
+
+.layer{position:absolute;inset:24px 0 0 0;z-index:5;display:flex;flex-direction:column}
+.tt{background:#101418;color:#fff}
+.tt-grid{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(3,1fr);gap:2px;background:#2A3038}
+.tt-cell{border:none;background:#101418;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:0}
+.tt-spot{width:80px;height:80px;border-radius:40px;background:var(--g400);color:var(--g900);font-weight:700;display:flex;align-items:center;justify-content:center;animation:pulse 1s infinite}
+.tt-bar{width:80px;height:4px;border-radius:2px;background:#2A3038;overflow:hidden;display:block}.tt-bar div{height:100%;background:var(--g400)}
+.boot{background:#000;color:#fff;align-items:center;justify-content:center;gap:18px}
+.boot .logo{font-size:20px;font-weight:700;color:#CFE9DA}
+.poshome{background:var(--bg)}
+.tile{background:#fff;border-radius:12px;height:72px;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--ink3)}
+.notif{margin:12px;background:#fff;border-radius:14px;box-shadow:0 6px 20px rgba(0,0,0,.15);padding:14px;display:flex;flex-direction:column;gap:10px;animation:in .35s}
 </style>
 </head>
 <body>
 <div class="stage">
-  <div class="device"><div class="statusbar"><span>Pine Labs</span><span>4G · 82%</span></div><div id="app" style="flex:1;display:flex;flex-direction:column;min-height:0"></div></div>
+  <div class="device"><div class="statusbar"><span>Pine Labs</span><span>4G · 82%</span></div><div id="app" style="flex:1;display:flex;flex-direction:column;min-height:0;position:relative"></div></div>
   <aside class="notes">
-    <span class="v">v2 · 18 Nov feedback</span>
-    <h3>What's new</h3>
+    <span class="v">v2.1 · chat flow</span>
+    <h3>How it works</h3>
     <ul>
-      <li>Category › Sub-category on one screen, then Issue. Max 3 taps.</li>
-      <li>Search + one-tap shortcuts for the most common issues.</li>
-      <li><b>Fix it for me</b> only for backend actions (update, clear apps). Brightness, socket, charger are suggestions.</li>
-      <li>Guided steps confirm each action, so we know which one fixed it.</li>
-      <li>Raise a request inside every flow; summary pre-filled, OTP verified.</li>
-      <li>Transaction, Settlement, Account: navigation → request (routed by category).</li>
+      <li>One chat from the first question. Every tap becomes your reply, so the whole history stays on screen. Tap a reply with ✎ to change it.</li>
+      <li>Checks, fixes and steps all happen inside the chat.</li>
+      <li>Fix before request: the request only appears once fixes run out, or straight away for safety and damage.</li>
+      <li>Your steps: "Already tried any?" first, then one list that unlocks in order. The device checks itself where it can.</li>
+      <li>Restart: the chat picks up again after the device boots.</li>
     </ul>
     <h3>Try</h3>
     <ul>
       <li>Device › Power &amp; Charging › Charger not working</li>
-      <li>Device › Battery › Draining fast</li>
+      <li>Device › Device hanging / restarting › Hanging</li>
+      <li>Device › Printer › Not printing</li>
+      <li>Device › Card reader › Chip card</li>
       <li>Device › Display and touch › Touch not working</li>
       <li>Device › Battery › Swollen</li>
-      <li>Search "settlement"</li>
+      <li>Settlement › Settlement credit</li>
     </ul>
     <h3>Simulate</h3>
-    <div class="sim"><label><input type="checkbox" id="simOff"> Device can't be reached</label><label><input type="checkbox" id="simFail"> A fix fails</label></div>
-    <p class="cap">OTP: any 4 digits. Use 0000 to see the wrong-code state.</p>
+    <div class="sim">
+      <label><input type="checkbox" id="simOff"> Device can't be reached</label>
+      <label><input type="checkbox" id="simFix"> Fixes don't solve it</label>
+    </div>
+    <p style="font-size:12px;color:var(--ink3)">OTP: any 4 digits · 0000 shows the wrong-code state.</p>
   </aside>
 </div>
 
 <script>
-/* =====================================================================
-   ICONS
-   ===================================================================== */
 const P = {
-  back:'<path d="M19 12H5M11 6l-6 6 6 6"/>', close:'<path d="M6 6l12 12M18 6L6 18"/>',
-  chev:'<path d="M6 9l6 6 6-6"/>', right:'<path d="M9 6l6 6-6 6"/>', search:'<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>',
-  check:'<path d="M5 12l5 5 9-10"/>', alert:'<path d="M12 3l10 18H2L12 3z"/><path d="M12 10v5M12 18h.01"/>', info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/>',
+  back:'<path d="M19 12H5M11 6l-6 6 6 6"/>', right:'<path d="M9 6l6 6-6 6"/>', check:'<path d="M5 12l5 5 9-10"/>', close:'<path d="M6 6l12 12M18 6L6 18"/>',
+  alert:'<path d="M12 3l10 18H2L12 3z"/><path d="M12 10v5M12 18h.01"/>', info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/>',
+  edit:'<path d="M4 20h4L19 9l-4-4L4 16v4z"/>', lock:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/>', refresh:'<path d="M20 11a8 8 0 10-2 6"/><path d="M20 4v7h-7"/>',
   device:'<rect x="6" y="2" width="12" height="20" rx="2"/><path d="M9 6h6M10 18h4"/>', battery:'<rect x="3" y="7" width="16" height="10" rx="2"/><path d="M22 11v2M7 10v4M10 10v4"/>',
   plug:'<path d="M9 2v5M15 2v5M6 7h12v4a6 6 0 01-12 0V7zM12 17v5"/>', cable:'<path d="M4 20c4 0 4-6 8-6s4 6 8 6M12 14V4M9 4h6"/>',
-  screen:'<rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 13l3-3M10 15h.01"/>', printer:'<path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/>',
-  card:'<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/>', refresh:'<path d="M20 11a8 8 0 10-2 6"/><path d="M20 4v7h-7"/>',
-  damage:'<rect x="5" y="2" width="14" height="20" rx="2"/><path d="M9 7l3 4-2 3 3 3"/>', wifi:'<path d="M2 9a15 15 0 0120 0M5 12.5a10 10 0 0114 0M8.5 16a5 5 0 017 0"/><path d="M12 19.5h.01"/>',
-  txn:'<path d="M4 7h14l-3-3M20 17H6l3 3"/>', rupee:'<path d="M6 4h12M6 9h12M6 4c7 0 7 9 0 9h0l8 8"/>', user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/>',
-  more:'<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>', camera:'<path d="M4 7h4l2-3h4l2 3h4v13H4z"/><circle cx="12" cy="13" r="4"/>',
-  phone:'<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/>', sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.4 1.4M17.6 17.6L19 19M5 19l1.4-1.4M17.6 6.4L19 5"/>',
-  bolt:'<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>', apps:'<rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/>',
-  shield:'<path d="M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/>', ticket:'<path d="M3 8a2 2 0 002-2h14a2 2 0 002 2v2a2 2 0 000 4v2a2 2 0 00-2 2H5a2 2 0 00-2-2v-2a2 2 0 000-4z"/><path d="M13 6v12" stroke-dasharray="2 2"/>',
-  edit:'<path d="M4 20h4L19 9l-4-4L4 16v4z"/>', bank:'<path d="M3 10l9-6 9 6M5 10v8M10 10v8M14 10v8M19 10v8M3 20h18"/>', clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'
+  touch:'<path d="M9 11V5a2 2 0 014 0v6"/><path d="M13 9a2 2 0 014 0v3a7 7 0 01-7 7h-.5A5.5 5.5 0 014 13.5V12a2 2 0 014 0"/>', printer:'<path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/>',
+  card:'<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/>', hang:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  damage:'<path d="M12 3l9 16H3z"/><path d="M10 9l2 3-2 2 2 3"/>', wifi:'<path d="M2 9a15 15 0 0120 0M5 12.5a10 10 0 0114 0M8.5 16a5 5 0 017 0"/><path d="M12 19.5h.01"/>',
+  txn:'<path d="M4 7h14l-3-3M20 17H6l3 3"/>', rupee:'<path d="M6 4h12M6 9h12M6 4c7 0 7 9 0 9l8 8"/>', user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/>',
+  bank:'<path d="M3 10l9-6 9 6M5 10v8M10 10v8M14 10v8M19 10v8M3 20h18"/>', more:'<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>',
+  ticket:'<path d="M3 8a2 2 0 002-2h14a2 2 0 002 2v2a2 2 0 000 4v2a2 2 0 00-2 2H5a2 2 0 00-2-2v-2a2 2 0 000-4z"/>', shield:'<path d="M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/>',
+  bolt:'<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>', sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.4 1.4M17.6 17.6L19 19M5 19l1.4-1.4M17.6 6.4L19 5"/>',
+  phone:'<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/>', apps:'<rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/>',
+  camera:'<path d="M4 7h4l2-3h4l2 3h4v13H4z"/><circle cx="12" cy="13" r="4"/>', chat:'<path d="M4 5h16v11H8l-4 4z"/>'
 };
-const ic = (n, s=20, c='currentColor', w=2) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]||P.info}</svg>`;
-const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const ic = (n,s=18,c='currentColor',w=2) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]||P.info}</svg>`;
+const esc = s => String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
-/* =====================================================================
-   DATA — from "Log a Complaint – Workflow Templates" sheet
-   Templates: A check & auto-fix · B guided steps · C check → steps
-              D guided test · E safety stop · F direct request · G auto-raised
-   check syntax: "Label|Result"  · prefix "!" = problem found
-   ===================================================================== */
-const S = (t,d,ic,act) => ({t,d,ic,act});
+/* ===== DATA: issues from EDC sheet, steps from Confluence + fix-plan pattern =====
+   fixes = device does it, quick (one "Fix it for me")   restart = remote | manual
+   update = firmware update (Now / After closing)        steps = merchant does it
+   verify = charge | net | print | txn | ask | later */
+const ST = (t,d) => ({t,d});
 const DEVICE = {
  battery:{n:'Battery',ic:'battery',issues:[
-  {n:'Draining fast / low backup',t:'A',route:'Field – battery replacement',
-   checks:['Charger type|Pine Labs charger (OEM)','App & firmware|!Payment app update available','Background apps|!4 apps using battery','Battery drain, last 7 days|18% per hour (higher than normal)'],
-   fixes:['Close 4 background apps using battery','Update payment app to the latest version'],
-   tips:[S('Lower screen brightness','Brightness is at 100%. Lower it when you work indoors.','sun'),S('Charge fully with the Pine Labs charger','A full charge once a day keeps the battery healthy.','plug'),S('Avoid other chargers','Non-Pine Labs chargers can drain the battery faster.','bolt')]},
-  {n:'Not charging / not holding charge',t:'C',route:'Field',
-   checks:['Charging current|!No current detected','Charger type|Pine Labs charger (OEM)','Battery drain, last 7 days|Normal'],
-   steps:[S('Use the Pine Labs charger','Unplug any other charger and connect the one that came with the device.','plug'),S('Try a different socket','Plug the charger into another wall socket that you know works.','plug'),S('Try another charger','If you have another Pine Labs charger, try that one.','bolt')]},
-  {n:'Device not charging',t:'C',route:'Field',
-   checks:['Charging current|!No current detected','Charger type|Pine Labs charger (OEM)','Battery health|Good (86%)'],
-   steps:[S('Use the Pine Labs charger','Unplug any other charger and connect the one that came with the device.','plug'),S('Try a different socket','Plug the charger into another wall socket that you know works.','plug'),S('Try another charger','If you have another Pine Labs charger, try that one.','bolt')]},
-  {n:'Switches off on battery / sudden shutdown',t:'C',route:'Field – battery replacement',
-   checks:['Battery health|72%','Overheating errors|None in last 7 days'],
-   steps:[S('Charge the device fully','Keep it on charge until it shows 100%.','battery'),S('Test it unplugged','Unplug the charger and use the device as normal for 10 minutes.','bolt')]},
-  {n:'Dead / replacement needed',t:'G',route:'Field – battery replacement',checks:['Battery health|!12% · battery has failed'],autoMsg:'Battery health is below the safe limit. We\'ve raised a battery replacement request for you.'},
-  {n:'Swollen / bulging / heating',t:'E',route:'Field',danger:['Stop using the device','Unplug it from the charger','Do not charge it again','Keep it away from heat and water']}
+  {n:'Draining fast / low backup',t:'A',route:'Field – battery replacement',verify:'later',
+   checks:['Charger type|Pine Labs charger','Payment app|!Update available','Background apps|!4 apps using battery','Battery drain, last 7 days|!18% an hour'],
+   finding:'Your battery is draining <b>faster than normal</b>. 4 background apps are using power and the payment app is out of date.',
+   fixes:['Close 4 background apps','Update the payment app'],
+   tips:[['sun','Lower the screen brightness','It\'s at 100%. Lower it if you work indoors.'],['plug','Charge fully with the Pine Labs charger','Other chargers can wear the battery faster.']]},
+  {n:'Not charging / not holding charge',t:'C',route:'Field',verify:'charge',
+   checks:['Charging current|!No current coming in','Charger type|Pine Labs charger','Battery health|Good (86%)'],
+   finding:'Your device <b>isn\'t getting any charging current</b>. The battery itself looks healthy.',
+   steps:[ST('Try a different wall socket','Use one you know is working.'),ST('Reconnect the cable at both ends','Push it in firmly at the device and the adapter.'),ST('Try another Pine Labs charger','If you have a spare one.')]},
+  {n:'Device not charging',t:'C',route:'Field',verify:'charge',
+   checks:['Charging current|!No current coming in','Charger type|Pine Labs charger','Battery health|Good (86%)'],
+   finding:'Your device <b>isn\'t getting any charging current</b>. The battery itself looks healthy.',
+   steps:[ST('Try a different wall socket','Use one you know is working.'),ST('Reconnect the cable at both ends','Push it in firmly at the device and the adapter.'),ST('Try another Pine Labs charger','If you have a spare one.')]},
+  {n:'Switches off on battery / sudden shutdown',t:'C',route:'Field – battery replacement',verify:'later',
+   checks:['Battery health|72%','Overheating errors|None in 7 days'],
+   finding:'Battery health is <b>72%</b> and there are no heating errors.',
+   steps:[ST('Charge it to 100%','Keep it on the Pine Labs charger until full.'),ST('Unplug and use as normal','Use it on battery for about 10 minutes.')]},
+  {n:'Dead / replacement needed',t:'G',route:'Field – battery replacement',checks:['Battery health|!12%'],finding:'Battery health is <b>12%</b>. The battery has failed and needs to be replaced.'},
+  {n:'Swollen / bulging / heating',t:'E',route:'Field',danger:['Stop using the device','Unplug it from the charger','Don\'t charge it again','Keep it away from heat and water']}
  ]},
  power:{n:'Power & Charging',ic:'plug',issues:[
-  {n:'Charger / adapter not working',t:'C',route:'Field – adapter',
-   checks:['Charging current|!No current detected','Charger type|!Unknown charger','Battery health|Good (88%)'],
-   steps:[S('Try a different socket','Plug the charger into another wall socket that you know works.','plug'),S('Try another charger','If you have another Pine Labs charger, try that one.','bolt')],
-   recheck:'Checking charging status…'},
-  {n:'Charger cable damaged',t:'E',route:'Field',danger:['Stop using the damaged cable','Unplug it from the wall','Use another Pine Labs charger if you have one']}
+  {n:'Charger / adapter not working',t:'C',route:'Field – adapter',verify:'charge',
+   checks:['Charging current|!No current coming in','Charger type|!Not a Pine Labs charger','Battery health|Good (88%)'],
+   finding:'No charging current, and the charger <b>isn\'t recognised as a Pine Labs charger</b>.',
+   steps:[ST('Try a different wall socket','Use one you know is working.'),ST('Use a Pine Labs charger','Other chargers may not supply enough power.')]},
+  {n:'Charger cable damaged',t:'E',route:'Field',danger:['Stop using the damaged cable','Unplug it from the wall socket','Use another Pine Labs charger if you have one']}
  ]},
  cable:{n:'Charger cable',ic:'cable',issues:[
-  {n:'Cable loose / connection problem',t:'C',route:'Field',checks:['Charging status|!Charging stops and starts','Battery health|Good (90%)'],
-   steps:[S('Reseat both ends','Unplug the cable from the device and the adapter, then plug both back in firmly.','cable'),S('Check the port with another charger','Connect a different Pine Labs charger to the device.','plug')]},
-  {n:'Charging port / pin loose or damaged',t:'B',route:'Field – port repair',
-   steps:[S('Clean the port','Gently remove dust from the charging port with a dry brush.','device'),S('Check the pin','Look inside the port. The pin should be straight and not loose.','device'),S('Reseat the cable','Plug the cable in firmly until it clicks.','cable'),S('Try another charger','Connect a different Pine Labs charger.','plug'),S('Try another socket','Plug the charger into another wall socket.','plug')]},
+  {n:'Cable loose / connection problem',t:'C',route:'Field',verify:'charge',checks:['Charging status|!Keeps stopping and starting','Battery health|Good (90%)'],
+   finding:'Charging <b>keeps stopping and starting</b>, which usually means a loose connection.',
+   steps:[ST('Reconnect both ends firmly','At the device and at the adapter.'),ST('Try another Pine Labs charger','If you have a spare one.')]},
+  {n:'Charging port / pin loose or damaged',t:'B',route:'Field – port repair',verify:'charge',
+   steps:[ST('Clean the charging port','Remove dust gently with a dry brush.'),ST('Check the pin isn\'t bent','It should sit straight in the middle.'),ST('Reconnect the cable firmly','Push until it clicks.'),ST('Try another charger','If you have a spare one.')]},
   {n:'Charger missing / new charger needed',t:'F',route:'Field'}
  ]},
- display:{n:'Display and touch',ic:'screen',issues:[
+ display:{n:'Display and touch',ic:'touch',issues:[
   {n:'Touch not working / unresponsive',t:'D',route:'Field – EDC replacement'},
-  {n:'Display not working',t:'C',route:'Field – EDC replacement',checks:['Brightness|!Set to 5%','Display driver|Responding'],fixes:['Reset brightness to 60%'],
-   steps:[S('Restart the device','Hold the power button for 3 seconds, then tap Restart.','refresh'),S('Check the brightness','Swipe down from the top and drag brightness up.','sun')]},
-  {n:'Blank / black / white screen',t:'C',route:'Field – EDC replacement',checks:['Device status|Online','Firmware|Stable version'],fixes:['Restart the device remotely'],
-   steps:[S('Long-press to restart','Hold the power button for 10 seconds until the device restarts.','refresh')]},
-  {n:'Lines / flicker / dim / partial display',t:'C',route:'Field – EDC replacement',photo:true,checks:['Brightness|Normal','Firmware|!Update available'],fixes:['Reset brightness','Update firmware'],
-   steps:[S('Restart the device','Hold the power button for 3 seconds, then tap Restart.','refresh')]},
-  {n:'Power button not working',t:'C',route:'Field – EDC replacement',checks:['Device status|Online'],fixes:['Restart the device remotely'],
-   steps:[S('Check if the button is stuck','Press it gently a few times. It should click and spring back.','device'),S('Long-press the button','Hold it for 3 seconds.','device')]},
-  {n:'Broken / cracked screen',t:'F',route:'Field – EDC replacement',photo:true}
+  {n:'Display not working properly',t:'C',route:'Field – EDC replacement',verify:'ask',restart:'remote',checks:['Brightness|!Set to 5%','Display driver|Responding'],
+   finding:'Screen brightness was set to <b>5%</b>.',fixes:['Reset brightness to 60%']},
+  {n:'Lines / flicker / dim',t:'C',route:'Field – EDC replacement',verify:'ask',restart:'remote',photo:true,checks:['Brightness|Normal','Firmware|!Update available'],
+   finding:'A <b>firmware update</b> is available that fixes display issues.',fixes:['Reset brightness','Install the firmware update']},
+  {n:'Power button not working',t:'C',route:'Field – EDC replacement',verify:'ask',restart:'remote',checks:['Device status|Online','Button signal|!No press detected'],
+   finding:'The device <b>isn\'t detecting power button presses</b>.',steps:[ST('Check the button isn\'t stuck','Press it gently a few times. It should click back.')]},
+  {n:'Screen broken / cracked',t:'F',route:'Field – EDC replacement',photo:true}
  ]},
  printer:{n:'Printer',ic:'printer',issues:[
-  {n:'Not printing',t:'C',route:'Field',checks:['Paper sensor|Paper detected','Print head temperature|Normal','Printer service|!Not responding'],fixes:['Reset print darkness','Restart the printer service'],
-   steps:[S('Check the paper roll','The roll should feed from underneath, shiny side facing up.','printer'),S('Close the flap firmly','Press down until you hear a click.','printer'),S('Print a test slip','Tap below to print a test slip.','printer','print')]},
-  {n:'Blank / half / faint print',t:'C',route:'Field – printer',checks:['Paper sensor|Paper detected','Print darkness|!Set too low','Print head temperature|Normal'],fixes:['Reset print darkness','Restart the printer service'],
-   steps:[S('Check the paper roll','The roll should feed from underneath, shiny side facing up.','printer'),S('Close the flap firmly','Press down until you hear a click.','printer'),S('Print a test slip','Tap below to print a test slip.','printer','print')]},
-  {n:'Printer error message',t:'C',route:'Field – printer',checks:['Printer error code|!E-04 · cover open','Paper sensor|Paper detected'],fixes:['Restart the printer service'],
-   steps:[S('Check the paper roll','The roll should feed from underneath, shiny side facing up.','printer'),S('Close the flap firmly','Press down until you hear a click.','printer'),S('Print a test slip','Tap below to print a test slip.','printer','print')]},
-  {n:'Flap issue / paper roll jam',t:'B',route:'Field – printer part',
-   steps:[S('Open the flap','Lift the printer cover.','printer'),S('Clear the jam','Remove any torn paper stuck inside.','printer'),S('Reseat the roll','Place the roll back, shiny side up, and close the flap.','printer')]}
+  {n:'Not printing',t:'C',route:'Field',verify:'print',checks:['Paper sensor|Paper detected','Print head temperature|Normal','Printer service|!Not responding'],
+   finding:'The <b>printer service stopped responding</b>.',fixes:['Restart the printer service','Reset print darkness'],
+   steps:[ST('Load the roll the right way','Shiny side up, feeding from underneath.'),ST('Close the flap firmly','Press until it clicks.')]},
+  {n:'Blank / half / faint print',t:'C',route:'Field – printer',verify:'print',checks:['Paper sensor|Paper detected','Print darkness|!Set too low'],
+   finding:'Print darkness is <b>set too low</b>.',fixes:['Reset print darkness','Restart the printer service'],
+   steps:[ST('Load the roll the right way','Shiny side up. Thermal paper only prints on one side.'),ST('Close the flap firmly','Press until it clicks.')]},
+  {n:'Printer error message',t:'C',route:'Field – printer',verify:'print',checks:['Printer error|!E-04 · cover open','Paper sensor|Paper detected'],
+   finding:'The printer reports <b>error E-04: cover open</b>.',fixes:['Restart the printer service'],
+   steps:[ST('Close the flap firmly','Press both corners until it clicks.')]},
+  {n:'Flap issue / paper roll jam',t:'B',route:'Field – printer part',verify:'print',
+   steps:[ST('Open the flap','Lift the printer cover.'),ST('Clear the jam','Remove any torn paper inside.'),ST('Reseat the roll and close','Shiny side up, press until it clicks.')]}
  ]},
  card:{n:'Card reader',ic:'card',issues:[
-  {n:'Chip card / mag stripe not working',t:'A',route:'Field – EDC replacement',fw:true,checks:['Card reader|Connected','Firmware stability|!Unstable version found'],fixes:['Install stable firmware'],steps:[S('Do a test transaction','Tap below and insert any card for a ₹1 test.','card','txn')]},
-  {n:'Card not reading (type not known)',t:'A',route:'RTT first, then Field',fw:true,checks:['Card reader|Connected','Firmware stability|!Unstable version found'],fixes:['Install stable firmware'],steps:[S('Do a test transaction','Tap below and insert any card for a ₹1 test.','card','txn')]},
-  {n:'Swipe not working',t:'A',route:'Field – EDC replacement',fw:true,checks:['Magstripe head|Connected','Firmware stability|!Unstable version found'],fixes:['Install stable firmware'],steps:[S('Do a test transaction','Tap below and swipe any card for a ₹1 test.','card','txn')]},
-  {n:'Card reader error message',t:'A',route:'RTT if config; Field if hardware',fw:true,checks:['Error code|!CR-12 · reader config','Firmware stability|Stable'],fixes:['Reload card reader configuration'],steps:[S('Do a test transaction','Tap below and insert any card for a ₹1 test.','card','txn')]}
+  {n:'Chip card / mag stripe not working',t:'A',route:'Field – EDC replacement',verify:'txn',update:true,checks:['Card reader|Connected','Firmware|!Unstable version'],finding:'Your card reader is on an <b>unstable firmware version</b>.'},
+  {n:'Card not reading (not sure which)',t:'A',route:'RTT first, then Field',verify:'txn',update:true,checks:['Card reader|Connected','Firmware|!Unstable version'],finding:'Your card reader is on an <b>unstable firmware version</b>.'},
+  {n:'Swipe not working',t:'A',route:'Field – EDC replacement',verify:'txn',update:true,checks:['Magstripe reader|Connected','Firmware|!Unstable version'],finding:'Your card reader is on an <b>unstable firmware version</b>.'},
+  {n:'Card reader error message',t:'A',route:'RTT if config; Field if hardware',verify:'txn',checks:['Reader error|!CR-12 · configuration','Firmware|Stable'],finding:'The reader shows <b>error CR-12</b>, a configuration problem.',fixes:['Reload the card reader configuration']}
  ]},
- hang:{n:'Device hanging / restarting',ic:'refresh',issues:[
-  {n:'Hanging / freezing / slow',t:'A',route:'RTT',checks:['Memory|!92% full','Background apps|!6 apps running','App & firmware|Stable'],fixes:['Settle open transactions and save logs','Clear memory and cache','Close background apps'],note:'Your payments are settled first. Nothing is lost.',
-   steps:[S('Restart the device','Hold the power button for 3 seconds, then tap Restart.','refresh')]},
-  {n:'Auto restart / reboot',t:'C',route:'Field – battery / EDC',checks:['Battery health|78%','Overheating errors|!3 in last 24 hours','Firmware|Stable'],
-   steps:[S('Charge the device fully','Keep it on charge until it shows 100%.','battery'),S('Keep it ventilated','Keep it out of direct sun and off hot surfaces.','sun')]},
-  {n:'Stuck on logo / boot loop',t:'B',route:'Field – EDC replacement',
-   steps:[S('Long-press to restart','Hold the power button for 10 seconds.','refresh'),S('Charge it','Connect the Pine Labs charger for 30 minutes, then try again.','plug')]},
-  {n:'App crash',t:'A',route:'RTT first, then Field',checks:['Payment app version|!Older version','Memory|!88% full'],fixes:['Update payment app','Clear memory'],steps:[S('Restart the device','Hold the power button for 3 seconds, then tap Restart.','refresh')]}
+ hang:{n:'Device hanging / restarting',ic:'hang',issues:[
+  {n:'Hanging / freezing / slow',t:'A',route:'RTT',verify:'ask',restart:'remote',checks:['Memory|!92% full','Background apps|!6 running','App & firmware|Up to date'],
+   finding:'Memory is <b>92% full</b> and 6 apps are running in the background.',fixes:['Settle open transactions and save logs','Clear memory','Close background apps'],note:'Your payments are settled first. Nothing is lost.'},
+  {n:'Auto restart / reboot',t:'C',route:'Field – battery / EDC',verify:'later',checks:['Battery health|78%','Overheating|!3 times in 24 hours','Firmware|Up to date'],
+   finding:'The device <b>overheated 3 times</b> in the last 24 hours.',steps:[ST('Charge it to 100%','Keep it on the Pine Labs charger until full.'),ST('Keep it ventilated','Out of direct sun and off hot surfaces.')]},
+  {n:'Stuck on logo / boot loop',t:'B',route:'Field – EDC replacement',verify:'ask',restart:'manual',steps:[ST('Charge it for 30 minutes','Use the Pine Labs charger.')]},
+  {n:'App crash',t:'A',route:'RTT first, then Field',verify:'ask',restart:'remote',checks:['Payment app|!Older version','Memory|!88% full'],
+   finding:'The payment app is <b>out of date</b> and memory is almost full.',fixes:['Update the payment app','Clear memory']}
  ]},
  damage:{n:'Physical damage',ic:'damage',issues:[
   {n:'Device broken / cracked',t:'F',route:'Field – EDC replacement',photo:true,policy:'Damage charges may apply as per your agreement.'},
   {n:'Base / stand / flap broken',t:'F',route:'Field – part replacement',photo:true},
-  {n:'Lost / stolen / misplaced',t:'F',route:'RTT / Ops – deactivate terminal',policy:'We\'ll block this terminal so nobody else can use it, and send a replacement.'},
-  {n:'Water / burn damage',t:'E',route:'Field – EDC replacement',danger:['Switch the device off','Unplug it from the charger','Do not charge it','Do not try to dry it with heat']}
+  {n:'Lost / stolen / misplaced',t:'F',route:'RTT / Ops',policy:'We\'ll block this terminal so nobody else can use it, and send a replacement.'},
+  {n:'Water / burn damage',t:'E',route:'Field – EDC replacement',danger:['Switch the device off','Unplug it from the charger','Don\'t charge it','Don\'t dry it with heat']}
  ]},
  network:{n:'Network & Connectivity',ic:'wifi',issues:[
-  {n:'Internet not connected',t:'C',route:'RTT',checks:['Signal strength|!Weak (1 bar)','Internet|!Not reachable','Pine Labs server|!Not reachable','APN settings|Correct'],
-   steps:[S('Switch on WiFi','Swipe down from the top and turn on WiFi.','wifi'),S('Move to a stronger signal','Move closer to the shop entrance or a window.','wifi')],recheck:'Checking connection…'}
+  {n:'Internet not connected',t:'C',route:'RTT',verify:'net',checks:['Signal strength|!Weak (1 bar)','Internet|!Not reachable','APN settings|Correct'],
+   finding:'Mobile signal is <b>weak (1 bar)</b>, so the device can\'t reach the internet.',fixes:['Reset connection settings'],
+   steps:[ST('Switch on WiFi','Swipe down from the top and turn it on.'),ST('Move to a stronger signal','Near the entrance or a window.')]}
  ]}
 };
-
-/* Non-device: navigation → raise request (from Merchant Complaint Categories sheet; sorted by tickets) */
 const NONDEV = {
  transaction:{n:'Payment / Transaction',ic:'txn',d:'Card, UPI/QR, EMI, disputes',subs:{
   card:{n:'Card payments',ic:'card',issues:['Transaction status query','Amex not accepted','Charge slip / receipt query','Credit cards failing','Card declined','All cards failing','Customer charged twice / payment failed','Void a transaction','International cards not working','Refund to customer','RuPay not accepted','Tap / contactless failing','Debit cards failing','Diners / JCB not accepted']},
@@ -370,495 +324,435 @@ const SHORTCUTS = [
 ];
 const ISSUE_VISIBLE = 6;
 
-/* =====================================================================
-   STATE + ROUTER
-   ===================================================================== */
-let st = {open:null, q:'', stack:[{s:'home'}], toast:null, sheet:null, reqs:[]};
-const SIM = () => ({off:document.getElementById('simOff').checked, fail:document.getElementById('simFail').checked});
-let timers = [];
-const clearTimers = () => { timers.forEach(clearTimeout); timers = []; };
-const later = (fn, ms) => timers.push(setTimeout(fn, ms));
-const cur = () => st.stack[st.stack.length-1];
-const go = scr => { clearTimers(); st.stack.push(scr); render(); };
-const replace = scr => { clearTimers(); st.stack[st.stack.length-1] = scr; render(); };
-const back = () => { clearTimers(); if (st.stack.length>1) st.stack.pop(); render(); };
-const home = () => { clearTimers(); st.stack=[{s:'home'}]; st.q=''; render(); };
-const toast = t => { st.toast = t; render(); setTimeout(()=>{ st.toast=null; }, 2400); };
+const CATS = [
+ {id:'device',n:'Device',d:'Battery, charging, printer, screen, card reader',ic:'device'},
+ {id:'transaction',n:'Payment / Transaction',d:'Card, UPI / QR, EMI, disputes',ic:'txn'},
+ {id:'settlement',n:'Settlement',d:'Money not credited, batch, reports',ic:'bank'},
+ {id:'account',n:'Accounts, services & charges',d:'Paper rolls, charges, add-ons, login',ic:'user'}
+];
 
-/* the "case" travels through a flow and becomes the request summary */
-function newCase(cat, sub, issue){ return {cat, sub, issue, found:[], fixed:[], tried:[], resolvedBy:null, priority:false, note:'', photo:false}; }
-function catName(id){ return !id?'Not sure':id==='device'?'Device':NONDEV[id].n; }
-function subName(c, s){ return c==='device'?DEVICE[s].n:NONDEV[c].subs[s].n; }
+/* ============================ CHAT ENGINE ============================ */
+let T=[], PROMPT=null, C={}, LAYER=null, RUN=0, PROMPT_ERR='';
+const REQS=[];
+const sim = k => document.getElementById(k).checked;
+const now = () => new Date().toLocaleTimeString('en-IN',{hour:'numeric',minute:'2-digit'});
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+const guard = r => { if(r!==RUN) throw 'stale'; };
 
-/* =====================================================================
-   COMPONENTS
-   ===================================================================== */
-const Btn = (label, act, kind='primary', extra='') => `<button class="btn ${kind}" data-act="${act}" ${extra}>${label}</button>`;
-function AppBar(title, crumbs, opts={}){
-  const c = crumbs && crumbs.length ? `<div class="crumbs">${crumbs.map((x,i)=> (i?'<span class="sep">›</span>':'') + (x.act?`<button data-act="${x.act}">${esc(x.l)}</button>`:`<span>${esc(x.l)}</span>`)).join('')}</div>` : '';
-  const left = opts.noBack ? `<div style="width:12px"></div>` : `<button class="iconbtn" data-act="${opts.closeAct||(opts.close?'home':'back')}" aria-label="${opts.close||opts.closeAct?'Close':'Back'}">${ic(opts.close||opts.closeAct?'close':'back',22)}</button>`;
-  return `<div class="appbar">${left}<div class="ab-title"><div class="t">${esc(title)}</div>${c}</div>${opts.right||''}</div>`;
+async function bot(html, opt={}){ const r=RUN; T.push({k:'typing'}); render(); await sleep(opt.fast?350:650); guard(r); T.pop(); T.push({k:'bot',html,err:opt.err}); render(); await sleep(150); guard(r); }
+function card(o){ T.push({k:'card',...o}); render(); return T[T.length-1]; }
+function me(text, editable){ T.push({k:'me',text,edit:editable?snap():null}); PROMPT=null; render(); }
+function snap(){ return {len:T.length, prompt:PROMPT, C:Object.assign({},C)}; }
+function ask(p){ PROMPT=p; render(); return new Promise(res=>{ p.resolve=res; }); }
+async function go(fn){ try{ await fn(); }catch(e){ if(e!=='stale') throw e; } }
+
+async function start(){
+  RUN++; T=[]; PROMPT=null; C={}; LAYER=null; render();
+  await go(async()=>{
+    if (REQS.length) card({type:'openreq'});
+    await bot('Hi! I\'m here to help. What do you need help with?');
+    pickCategory();
+  });
 }
-const Footer = (inner, row) => `<div class="footer ${row?'row':''}">${inner}</div>`;
-const Notice = (kind, icon, title, text) => `<div class="notice ${kind}"><div style="flex-shrink:0;margin-top:1px">${ic(icon,20)}</div><div>${title?`<b>${title}</b>`:''}${text}</div></div>`;
-const Hero = (kind, icon, title, text) => `<div class="hero"><div class="hero-ic ${kind}">${ic(icon,34,kind==='r'?'#B3261E':kind==='b'?'#1F4FB8':kind==='a'?'#8A5A00':'#1E8E4F',2.2)}</div><h1 class="h1">${title}</h1>${text?`<p class="p">${text}</p>`:''}</div>`;
-function parseCheck(s){ const [l,r]=s.split('|'); const bad=r&&r[0]==='!'; return {l, r:bad?r.slice(1):r, bad}; }
-function CheckRow(c, state){
-  const st_ = state==='pending'?'<div class="dot"></div>':state==='run'?'<div class="spinner"></div>':c.bad?ic('alert',20,'#B26A00'):ic('check',20,'#1E8E4F',2.6);
-  return `<div class="chk ${state}"><div class="st">${st_}</div><div style="flex:1"><div class="ct">${esc(c.l)}</div>${state==='done'?`<div class="cr" style="color:${c.bad?'#8A5A00':''}">${esc(c.r)}</div>`:''}</div></div>`;
+function pickCategory(){
+  ask({type:'list',items:CATS.map(c=>({id:c.id,t:c.n,d:c.d,ic:c.ic})),onPick:it=>{ me(it.t,true); C={cat:it.id}; go(pickSub); }});
 }
-const Stepper = (n, i) => `<div class="stepper">${Array.from({length:n},(_,k)=>`<i class="${k<i?'on':k===i?'cur':''}"></i>`).join('')}</div>`;
-const Opt = (label, act, icon, color, bg) => `<button class="opt" data-act="${act}"><span class="oi" style="background:${bg}">${ic(icon,16,color,2.4)}</span>${label}</button>`;
-
-/* =====================================================================
-   SCREENS
-   ===================================================================== */
-const screens = {
-
- /* ---------- Home: search + shortcuts + L1/L2 accordion ---------- */
- home(){
-  const q = st.q.trim().toLowerCase();
-  let body;
-  if (q){
-    const res = searchAll(q);
-    body = `<div class="label">${res.length} result${res.length===1?'':'s'}</div><div class="list" style="margin:0 -16px">${res.slice(0,30).map((r,i)=>`<button class="row" data-act="pick:${i}"><div style="flex:1"><div class="rt">${hl(r.label,q)}</div><div class="rd">${esc(catName(r.cat))} › ${esc(subName(r.cat,r.sub))}</div></div>${ic('right',18,'#8A93A8')}</button>`).join('') || `<div class="p" style="padding:16px">No match. Try another word, or pick a category below.</div>`}</div>
-    <button class="row" data-act="describe" style="border:none;margin:0 -16px;width:calc(100% + 32px)"><div class="rt" style="color:var(--g600);font-weight:600">Describe your issue instead</div>${ic('edit',18,'#1E8E4F')}</button>`;
-    st._res = res;
-  } else {
-    body = `<div style="display:flex;flex-direction:column;gap:8px"><div class="label">Common issues</div><div class="chips" style="margin:0 -16px;padding:0 16px">${SHORTCUTS.map((s,i)=>`<button class="chip" data-act="short:${i}">${esc(s.l)}</button>`).join('')}</div></div>
-    <div style="display:flex;flex-direction:column;gap:8px"><div class="label">What do you need help with?</div><div class="cats">${CAT_ORDER.map(Category).join('')}</div></div>`;
-  }
-  const open = st.reqs.length ? `<button class="openreq" data-act="track:0">${ic('ticket',22,'#1F4FB8')}<div style="flex:1;min-width:0"><div class="h2" style="font-size:14px;color:#1B3A80">You have ${st.reqs.length} open request${st.reqs.length>1?'s':''}</div><div class="cap" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(st.reqs[0].c._id)} · ${esc(issueName(st.reqs[0].c))}</div></div>${ic('right',18,'#1F4FB8')}</button>` : '';
-  return AppBar('Log a complaint',null,{noBack:true}) + `<div class="body">${q?'':open}
-    <div class="search">${ic('search',20,'#5A6580')}<input id="q" placeholder="Search e.g. charger, settlement" value="${esc(st.q)}" autocomplete="off">${st.q?`<button class="iconbtn" style="width:32px;height:32px" data-act="clearq" aria-label="Clear">${ic('close',16)}</button>`:''}</div>
-    ${body}</div>`;
- },
-
- /* ---------- L3: issue list ---------- */
- issues(s){
-  const {cat, sub, all} = s;
+async function pickSub(){
+  const subs = C.cat==='device' ? Object.entries(DEVICE).map(([k,v])=>({id:k,t:v.n,ic:v.ic})) : Object.entries(NONDEV[C.cat].subs).map(([k,v])=>({id:k,t:v.n,ic:v.ic}));
+  await bot(C.cat==='device'?'What\'s the problem with your device?':'Which of these is it about?');
+  ask({type:'list',items:[...subs,{id:'other',t:'Something else',ic:'more',muted:true}],onPick:it=>{
+    me(it.t,true); if(it.id==='other') return go(somethingElse); C.sub=it.id; go(()=>pickIssue()); }});
+}
+async function pickIssue(all){
   let items;
-  if (cat==='device') items = DEVICE[sub].issues.map((x,i)=>({l:x.n,act:`issue:${i}`,tag:tagFor(x.t)}));
-  else {
-    const list = NONDEV[cat].subs[sub].issues;
-    const show = all ? list : list.slice(0,ISSUE_VISIBLE);
-    items = show.map(x=>({l:x,act:`nd:${encodeURIComponent(x)}`}));
-    if (!all && list.length>ISSUE_VISIBLE) items.push({l:`See all ${list.length} issues`,act:'seeall',more:true});
+  if (C.cat==='device') items = DEVICE[C.sub].issues.map((x,i)=>({id:i,t:x.n}));
+  else { const l=NONDEV[C.cat].subs[C.sub].issues; items=(all?l:l.slice(0,6)).map(x=>({id:x,t:x})); if(!all&&l.length>6) items.push({id:'_more',t:`Show all ${l.length}`,more:true}); }
+  if (!all) await bot('Which of these is happening?');
+  ask({type:'list',plain:true,items:[...items,{id:'other',t:'Something else',muted:true}],onPick:it=>{
+    if (it.id==='_more'){ PROMPT=null; return go(()=>pickIssue(true)); }
+    me(it.t,true); if(it.id==='other') return go(somethingElse);
+    if (C.cat==='device'){ C.issue=DEVICE[C.sub].issues[it.id]; go(runIssue); } else { C.issueName=it.t; go(nonDevice); }
+  }});
+}
+
+async function nonDevice(){
+  await bot(`Got it. I'll send this to our <b>${esc(NONDEV[C.cat].n)}</b> team.`);
+  if (C.cat==='transaction'||C.cat==='settlement'){
+    await bot(C.cat==='settlement'?'Which settlement is this about?':'When did this transaction happen?');
+    const w = await ask({type:'pills',items:['Today','Yesterday','Earlier this week','Older']}); me(w); C.when=w;
   }
-  items.push({l:'Something else',d:'Describe it in your own words',act:'other',other:true});
-  return AppBar(subName(cat,sub),[{l:'Help',act:'home'},{l:catName(cat)}]) + `<div class="body flush">
-    <div style="padding:16px 16px 8px"><div class="label">Select your issue</div></div>
-    <div class="list">${items.map(x=>`<button class="row ${x.other?'muted':''}" data-act="${x.act}">
-      <div style="flex:1"><div class="rt" style="${x.more?'color:var(--g600);font-weight:600':''}">${esc(x.l)}</div>${x.d?`<div class="rd">${x.d}</div>`:''}</div>
-      ${x.tag||''}${ic(x.more?'chev':'right',18,'#8A93A8')}</button>`).join('')}</div></div>`;
- },
-
- /* ---------- Free text / Other ---------- */
- describe(s){
-  return AppBar('Describe your issue', s.c?crumbsFor(s.c):[{l:'Help',act:'home'}]) + `<div class="body">
-    <p class="p">Tell us what's happening. We'll send it to the right team.</p>
-    <div class="field"><label for="d">What's the problem?</label><textarea id="d" rows="5" placeholder="e.g. The device shows 'Batch full' when I try to settle">${esc(s.text||'')}</textarea><span class="hint">A few words is enough.</span></div>
-  </div>` + Footer(Btn('Continue','describe-next'));
- },
-
- /* ---------- A/C: prerequisite notice ---------- */
- prep(s){
-  const it = s.c.issue;
-  const extra = it.fw ? Notice('warn','alert','If a firmware update is needed','The device can\'t take payments until it finishes, about 5 minutes. Keep the charger in and WiFi on.') :
-               Notice('info','info','Before we start','Keep the charger connected and WiFi on. If an update is needed, the device may be unusable for a few minutes.');
-  return AppBar(it.n, crumbsFor(s.c)) + `<div class="body">
-    ${Hero('g','shield','Let\'s check your device','We\'ll run a quick health check. It takes about 30 seconds and doesn\'t affect your payments.')}
-    ${extra}
-  </div>` + Footer(Btn('Start check','start-check') + Btn('Raise a request instead','raise','ghost'));
- },
-
- /* ---------- A/C: running diagnostics ---------- */
- checking(s){
-  const cs = s.c.issue.checks.map(parseCheck);
-  const rows = cs.map((c,i)=>CheckRow(c, i<s.i?'done':i===s.i?'run':'pending')).join('');
-  const pct = Math.round(s.i/cs.length*100);
-  return AppBar('Checking your device', crumbsFor(s.c),{close:true}) + `<div class="body">
-    <div role="status" aria-live="polite"><div class="h2" style="margin-bottom:8px">Running health check…</div><div class="bar"><div style="width:${pct}%"></div></div></div>
-    <div class="checks">${rows}</div></div>`;
- },
-
- /* ---------- A/C: report + Fix it for me ---------- */
- report(s){
-  const it = s.c.issue; const cs = it.checks.map(parseCheck); const bad = cs.filter(c=>c.bad);
-  const fixes = it.fixes||[];
-  const summary = bad.length ? Notice('warn','alert',`${bad.length} thing${bad.length>1?'s':''} need attention`, bad.map(b=>esc(b.r)).join(' · ')) : Notice('ok','check','Device looks healthy','No problems found on the device side.');
-  const fixCard = fixes.length ? `<div class="fix"><div style="display:flex;align-items:center;gap:8px">${ic('bolt',18,'#50D387')}<div class="h2">We can fix this for you</div></div>
-     <ul>${fixes.map(f=>`<li>${ic('check',16,'#50D387',2.6)}<span>${esc(f)}</span></li>`).join('')}</ul>
-     ${it.note?`<div class="cap" style="color:#9FC9B2">${esc(it.note)}</div>`:''}
-     ${Btn('Fix it for me','fix-start')}</div>` : '';
-  const next = fixes.length ? Btn('Skip, I\'ll try steps myself', it.steps?'to-steps':'to-tips','ghost') :
-               it.steps ? Btn('Next: quick checks on your side','to-steps') : Btn('Continue','to-tips');
-  return AppBar('Health check report', crumbsFor(s.c)) + `<div class="body">
-    ${summary}
-    <div class="card"><div class="checks">${cs.map(c=>CheckRow(c,'done')).join('')}</div></div>
-    ${fixCard}
-  </div>` + Footer(next);
- },
-
- /* ---------- A/C: running fixes ---------- */
- fixing(s){
-  const fx = s.c.issue.fixes;
-  const rows = fx.map((f,i)=>CheckRow({l:f,r:'Done',bad:false}, i<s.i?'done':i===s.i?'run':'pending')).join('');
-  return AppBar('Fixing your device', crumbsFor(s.c),{closeAct:'leave-fix'}) + `<div class="body">
-    <div><div class="h2" style="margin-bottom:8px">${s.i<fx.length?'Applying fixes…':'All fixes applied'}</div><div class="bar"><div style="width:${Math.round(s.i/fx.length*100)}%"></div></div></div>
-    <div class="checks">${rows}</div>
-    ${Notice('info','info','','Please don\'t remove the charger until this finishes.')}</div>`;
- },
-
- /* ---------- A: suggestions (never auto-applied) ---------- */
- tips(s){
-  const tips = s.c.issue.tips||[];
-  if (!tips.length) return screens.resolve(s);
-  return AppBar('Suggestions for you', crumbsFor(s.c)) + `<div class="body">
-    ${s.c.fixed.length?Notice('ok','check','Fixes applied',s.c.fixed.map(esc).join(' · ')):''}
-    <p class="p">These can help too. You know your shop best, so pick what works for you.</p>
-    ${tips.map((t,i)=>{const d=(s.ack||{})[i];return `<div class="sugg ${d?'done':''}"><div class="si">${ic(t.ic,18,'#8A5A00')}</div><div style="flex:1"><div class="h2" style="font-size:14px">${esc(t.t)}</div><div class="cap" style="margin-top:2px">${esc(t.d)}</div>
-      ${d?`<div class="cap" style="margin-top:8px;color:var(--g700);font-weight:600">${d==='y'?'✓ Got it':'Skipped'}</div>`:`<div class="acts"><button class="btn sm secondary" data-act="tip:${i}:y">Got it</button><button class="btn sm ghost" data-act="tip:${i}:n">Not for me</button></div>`}</div></div>`}).join('')}
-  </div>` + Footer(Btn('Continue','to-resolve'));
- },
-
- /* ---------- B/C: guided steps, one action per screen, confirm each ---------- */
- step(s){
-  const steps = s.c.issue.steps; const x = steps[s.i];
-  const phase = s.phase||'do';
-  let action = '';
-  if (x.act==='print') action = `<button class="btn sm secondary" data-act="sim:print" style="margin-top:4px">${ic('printer',16)} Print test slip</button>`;
-  if (x.act==='txn') action = `<button class="btn sm secondary" data-act="sim:txn" style="margin-top:4px">${ic('card',16)} Start ₹1 test</button>`;
-  const q = phase==='do'
-    ? `<div class="q">Did you do this?</div><div class="choice">${Opt('Yes, done','did:y','check','#1E8E4F','#E8F7EE')}${Opt('I couldn\'t do this','did:n','close','#5A6580','#ECEEF2')}</div>`
-    : `<div class="q">Is it working now?</div><div class="choice">${Opt('Yes, it\'s fixed','fixed:y','check','#1E8E4F','#E8F7EE')}${Opt('No, still not working','fixed:n','close','#B3261E','#FDECEA')}</div>`;
-  const tried = s.c.tried.length ? `<div class="tried"><div class="label">Tried so far</div>${s.c.tried.map(t=>`<div>${ic(t.ok?'check':'close',14,t.ok?'#1E8E4F':'#8A93A8',2.6)}${esc(t.s)}${t.ok||t.s.includes('couldn')?'':' — didn\'t help'}</div>`).join('')}</div>` : '';
-  return AppBar(s.c.issue.n, crumbsFor(s.c)) + `<div class="body">
-    <div style="display:flex;flex-direction:column;gap:8px">${Stepper(steps.length,s.i)}<div class="cap">Step ${s.i+1} of ${steps.length}</div></div>
-    <div class="stepcard"><div class="hero-ic g" style="width:56px;height:56px">${ic(x.ic,28,'#1E8E4F')}</div><div class="h2" style="font-size:17px">${esc(x.t)}</div><p class="p">${esc(x.d)}</p>${action}</div>
-    ${q}${tried}
-  </div>` + Footer(Btn('Raise a request','raise','ghost'));
- },
-
- /* ---------- C: re-check after steps (telemetry) ---------- */
- recheck(s){
-  return AppBar('Checking again', crumbsFor(s.c),{close:true}) + `<div class="body" style="justify-content:center">
-    <div class="hero"><div class="spinner" style="width:40px;height:40px;border-width:4px"></div><h1 class="h1">${esc(s.c.issue.recheck)}</h1><p class="p">Reading live status from your device.</p></div></div>`;
- },
-
- /* ---------- Resolution confirm (end of A/B/C/D) ---------- */
- resolve(s){
-  return AppBar(s.c.issue.n, crumbsFor(s.c)) + `<div class="body">
-    ${Hero('g','check',s.next?'Fixes applied. Is it working now?':'Is the issue fixed?', s.next?'If not, we\'ll try a couple of quick checks on your side.':'Try using the device as you normally would.')}
-    ${s.c.fixed.length?`<div class="card soft">${s.c.fixed.map(f=>`<div class="kv"><span class="k">${esc(f)}</span><span class="v" style="color:var(--g700)">Done</span></div>`).join('')}</div>`:''}
-    <div class="choice">${Opt('Yes, it\'s working now','res:y','check','#1E8E4F','#E8F7EE')}${Opt(s.next?'No, show me what to try':'No, still not working','res:n','close','#B3261E','#FDECEA')}</div>
-  </div>`;
- },
-
- /* ---------- D: touch test ---------- */
- ttprep(s){
-  return AppBar('Touch test', crumbsFor(s.c)) + `<div class="body">
-    ${Hero('g','screen','Let\'s test your screen','6 green spots will appear one by one. Tap each spot within 5 seconds.')}
-    <div class="card soft"><div class="label">Before you start</div>
-      <div class="kv"><span class="k">1. Remove the screen guard or cover</span></div>
-      <div class="kv"><span class="k">2. Wipe the screen with a dry cloth</span></div></div>
-  </div>` + Footer(Btn('Start test','tt-start') + Btn('Raise a request instead','raise','ghost'));
- },
- tt(s){
-  const names=['Top left','Top right','Middle left','Middle right','Bottom left','Bottom right'];
-  const cells = names.map((n,i)=>{
-    const r=s.res[i]; let inner='';
-    if (i===s.active) inner = `<div class="tt-spot">Tap</div><div class="tt-timer"><div style="animation:drain ${s.retry?1:5}s linear forwards"></div></div>`;
-    else if (r==='p') inner = ic('check',34,'#50D387',3); else if (r==='f') inner = ic('close',34,'#F28B82',3);
-    return `<button class="tt-cell" data-act="tt-tap:${i}" aria-label="${n}">${inner}</button>`;}).join('');
-  const done = s.res.filter(x=>x).length;
-  return `<div class="tt"><div class="tt-head"><div style="font-size:16px;font-weight:600">${s.retry?'One more try':'Tap the green spot'}</div><div style="font-size:13px;color:#B7BCC8;margin-top:2px">${done} of 6 checked</div></div><div class="tt-grid">${cells}</div><div style="padding:10px;text-align:center;font-size:12px;color:#B7BCC8">The test ends by itself.</div></div>`;
- },
- ttres(s){
-  const fail = s.res.filter(r=>r==='f').length;
-  if (!fail) return AppBar('Touch test', crumbsFor(s.c)) + `<div class="body">
-    ${Hero('g','check','All 6 spots worked','Your touch screen is responding. How is it now?')}
-    <div class="choice">${Opt('It\'s working now','tt:ok','check','#1E8E4F','#E8F7EE')}${Opt('It\'s slow to respond','tt:slow','clock','#8A5A00','#FFF4D6')}${Opt('I have a different issue','tt:other','more','#5A6580','#ECEEF2')}${Opt('Raise a request','raise','ticket','#1F4FB8','#EAF0FD')}</div></div>`;
-  const tried = s.attempt>1;
-  return AppBar('Touch test', crumbsFor(s.c)) + `<div class="body">
-    ${Hero('r','alert',`${fail} spot${fail>1?'s':''} didn't respond`, tried?'The screen still isn\'t responding in some areas. Let\'s get it looked at.':'This is often caused by a screen guard or a dirty screen.')}
-    ${tried?'':`<div class="card soft"><div class="kv"><span class="k">1. Remove the screen guard</span></div><div class="kv"><span class="k">2. Wipe the screen with a dry cloth</span></div></div>`}
-  </div>` + Footer((tried?'':Btn('Try the test again','tt-again')) + Btn('Raise a request', 'raise', tried?'primary':'secondary'));
- },
-
- /* ---------- E: safety stop ---------- */
- safety(s){
-  const it = s.c.issue;
-  return AppBar(it.n, crumbsFor(s.c)) + `<div class="body">
-    <div class="notice danger" style="flex-direction:column;gap:12px;padding:16px">
-      <div style="display:flex;align-items:center;gap:10px">${ic('alert',24,'#B3261E',2.4)}<b style="margin:0;font-size:16px">This isn't safe to use</b></div>
-      <div>${it.danger.map(d=>`<div style="display:flex;gap:8px;margin-top:6px">${ic('close',16,'#B3261E',2.6)}<span>${esc(d)}</span></div>`).join('')}</div></div>
-    <button class="radio ${s.ack?'on':''}" data-act="ack" role="checkbox" aria-checked="${!!s.ack}" style="${s.ack?'border-color:var(--red);background:var(--red50)':''}"><span class="cbox">${s.ack?ic('check',14,'#fff',3):''}</span><span style="font-size:14px;font-weight:500">I've stopped using it</span></button>
-    <p class="cap">We'll treat this as urgent and send a technician.</p>
-  </div>` + Footer(Btn('Raise urgent request','raise-urgent','danger', s.ack?'':'disabled style="opacity:.45"'));
- },
-
- /* ---------- F: direct request ---------- */
- direct(s){
-  const it = s.c.issue;
-  return AppBar(it.n, crumbsFor(s.c)) + `<div class="body">
-    ${Hero('b','ticket','We\'ll send this to our team','There\'s nothing to fix remotely for this one, so we\'ll raise a request straight away.')}
-    ${it.policy?Notice('info','info','',esc(it.policy)):''}
-    ${it.photo?`<div class="field"><label>Add a photo <span style="font-weight:400;color:var(--ink3)">(optional)</span></label>
-      <button class="upload" data-act="photo">${s.c.photo?'<div class="thumb"></div><div style="flex:1"><div class="h2" style="font-size:14px">photo_0418.jpg</div><div class="cap">Tap to replace</div></div>'+ic('check',20,'#1E8E4F',2.6):ic('camera',24,'#5A6580')+'<div><div class="h2" style="font-size:14px">Take or upload a photo</div><div class="cap">Helps the technician bring the right part</div></div>'}</button></div>`:''}
-  </div>` + Footer(Btn('Continue','raise'));
- },
-
- /* ---------- G: auto-raised ---------- */
- auto(s){
-  const c = parseCheck(s.c.issue.checks[0]);
-  if (!s.done) return AppBar('Checking your device', crumbsFor(s.c),{close:true}) + `<div class="body"><div class="checks">${CheckRow(c,'run')}</div></div>`;
-  return AppBar(s.c.issue.n, crumbsFor(s.c)) + `<div class="body">
-    <div class="card"><div class="checks">${CheckRow(c,'done')}</div></div>
-    ${Notice('warn','alert','Request raised automatically',esc(s.c.issue.autoMsg))}
-    ${TicketCard(s.c)}
-  </div>` + Footer(Btn('Done','home'));
- },
-
- /* ---------- Raise a request: summary + description ---------- */
- request(s){
-  const c = s.c; const path = `${catName(c.cat)} › ${c.sub?subName(c.cat,c.sub):'Other'}`;
-  const rows = [['Issue', c.issue?c.issue.n:'Described by you'],['Category', path]];
-  if (c.found.length) rows.push(['Diagnostics', c.found.join(', ')]);
-  if (c.fixed.length) rows.push(['Fixes applied', c.fixed.join(', ')]);
-  if (c.tried.length) rows.push(['Steps tried', c.tried.map(t=>t.s).join(', ')]);
-  if (c.photo) rows.push(['Photo','Attached']);
-  if (c.cat==='device' && c.issue && c.issue.checks) rows.push(['Device report','Attached']);
-  const dup = st.reqs.find(r=>r.c.cat===c.cat && r.c.sub===c.sub && issueName(r.c)===issueName(c));
-  const ctx = c.cat==='transaction' ? [['tdate','Transaction date','date'],['tamt','Amount (₹)','number']] : c.cat==='settlement' ? [['tdate','Settlement date','date'],['tamt','Expected amount (₹)','number']] : [];
-  c.extra = c.extra||{};
-  const ctxHtml = ctx.length ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">${ctx.map(([id,l,t])=>`<div class="field"><label for="${id}" style="font-size:12px">${l}</label><input class="inp" id="${id}" type="${t}" ${t==='number'?'inputmode="decimal" placeholder="0"':''} value="${esc(c.extra[id]||'')}"></div>`).join('')}</div><div class="cap" style="margin-top:-8px">Optional, but helps us find it faster.</div>` : '';
-  return AppBar('Raise a request', crumbsFor(c)) + `<div class="body">
-    ${dup?Notice('info','info','You already raised this',`Request ${esc(dup.c._id)} is open. <button class="btn ghost sm" data-act="track:${st.reqs.indexOf(dup)}" style="display:inline-flex;min-height:24px;padding:0">View status</button>`):''}
-    ${c.priority?Notice('danger','alert','Urgent request','A technician will be assigned first.'):''}
-    <div class="card"><div class="label">Summary</div>${rows.map(([k,v])=>`<div class="kv"><span class="k">${k}</span><span class="v">${esc(v)}</span></div>`).join('')}</div>
-    <div class="field"><label for="note">Anything else we should know? <span style="font-weight:400;color:var(--ink3)">(optional)</span></label><textarea id="note" rows="3" placeholder="e.g. Happens mostly in the afternoon">${esc(c.note)}</textarea></div>
-    ${ctxHtml}
-  </div>` + Footer(Btn('Continue','to-phone'));
- },
-
- /* ---------- Phone ---------- */
- phone(s){
-  const own = s.mode!=='new';
-  return AppBar('Confirm your number', crumbsFor(s.c)) + `<div class="body">
-    <p class="p">We'll send updates about this request to this number.</p>
-    <button class="radio ${own?'on':''}" data-act="ph:own"><span class="rb"></span><div><div style="font-size:15px;font-weight:600">+91 98••• ••210</div><div class="cap">Registered number</div></div></button>
-    <button class="radio ${!own?'on':''}" data-act="ph:new"><span class="rb"></span><div style="font-size:15px;font-weight:500">Use another number</div></button>
-    ${!own?`<div class="field" style="animation:fadeUp .2s"><input class="inp" id="ph" inputmode="numeric" maxlength="10" placeholder="10-digit mobile number" value="${esc(s.num||'')}"></div>`:''}
-  </div>` + Footer(Btn('Send OTP','send-otp'));
- },
-
- /* ---------- OTP ---------- */
- otp(s){
-  const n = s.mode==='new'?`+91 ${s.num}`:'+91 98••• ••210';
-  return AppBar('Enter OTP', crumbsFor(s.c)) + `<div class="body">
-    <p class="p">We've sent a 4-digit code to <b>${n}</b>.</p>
-    <div class="otp ${s.err?'err':''}">${[0,1,2,3].map(i=>`<input inputmode="numeric" maxlength="1" data-otp="${i}" aria-label="Digit ${i+1}">`).join('')}</div>
-    ${s.err?`<div class="cap" style="color:var(--red);text-align:center" role="alert">${s.err}</div>`:''}
-    <div class="cap" style="text-align:center" id="rs"></div>
-  </div>` + Footer(Btn('Verify and raise request','verify'));
- },
-
- /* ---------- Success ---------- */
- done(s){
-  return AppBar('Request raised',null,{close:true}) + `<div class="body">
-    ${Hero('g','check','Request raised','We\'ve sent the details to the right team. You\'ll get updates by SMS.')}
-    ${TicketCard(s.c)}
-  </div>` + Footer(Btn('Back to home','home'));
- },
-
- /* ---------- Device unreachable ---------- */
- unreach(s){
-  const it=s.c.issue;
-  return AppBar(it.n, crumbsFor(s.c)) + `<div class="body">
-    ${Hero('a','wifi',"We couldn't reach your device",'The device needs internet for a health check.')}
-    <div class="card soft"><div class="label">Try this</div><div class="kv"><span class="k">Turn on WiFi or mobile data, then try again</span></div></div>
-  </div>` + Footer(Btn('Try again','start-check') + (it.steps?Btn('Skip to steps I can do','to-steps','secondary'):'') + Btn('Raise a request','raise','ghost'));
- },
- fixfail(s){
-  return AppBar(s.c.issue.n, crumbsFor(s.c)) + `<div class="body">
-    ${Hero('r','alert',"We couldn't finish the fix",esc(s.f)+' didn\'t complete.')}
-    ${s.c.fixed.length?`<div class="card soft">${s.c.fixed.map(f=>`<div class="kv"><span class="k">${esc(f)}</span><span class="v" style="color:var(--g700)">Done</span></div>`).join('')}</div>`:''}
-    ${Notice('info','info','','We\'ll attach the device report so the team doesn\'t ask you to repeat this.')}
-  </div>` + Footer(Btn('Raise a request','raise') + Btn('Try again','fix-start','ghost'));
- },
- track(s){
-  const r=st.reqs[s.i]; const c=r.c;
-  return AppBar('Your request',null) + `<div class="body">
-    ${TicketCard(c)}
-    <div class="card"><div class="label">Status</div><div class="tl">
-      <div><span class="d on"></span><div><div class="h2" style="font-size:14px">Request raised</div><div class="cap">Just now</div></div></div>
-      <div><span class="d"></span><div><div class="h2" style="font-size:14px;color:var(--ink3)">Assigned to ${esc((c.issue&&c.issue.route||'support team').split(';')[0])}</div><div class="cap">You'll get an SMS</div></div></div>
-      <div><span class="d"></span><div><div class="h2" style="font-size:14px;color:var(--ink3)">Resolved</div></div></div></div></div>
-    <div class="card soft"><div class="kv"><span class="k">Issue</span><span class="v">${esc(issueName(c))}</span></div><div class="kv"><span class="k">Category</span><span class="v">${esc(catName(c.cat))}${c.sub?' › '+esc(subName(c.cat,c.sub)):''}</span></div></div>
-  </div>` + Footer(Btn('Back to home','home'));
- },
-
- /* ---------- Resolved ---------- */
- resolved(s){
-  const by = s.c.resolvedBy;
-  return AppBar('All sorted',null,{close:true}) + `<div class="body">
-    ${Hero('g','check','Great, it\'s working!', by?`Fixed by: ${esc(by)}`:'Glad we could help.')}
-    <p class="cap" style="text-align:center">If it happens again, come back to Help and we'll pick up from here.</p>
-  </div>` + Footer(Btn('Done','home'));
- }
-};
-
-function TicketCard(c){
-  const route = c.issue&&c.issue.route ? c.issue.route.split(';')[0] : `${catName(c.cat)} support team`;
-  const id = c._id || (c._id = 'SR-' + (2611000 + Math.floor(Math.random()*9000)));
-  return `<div class="card"><div class="kv"><span class="k">Request ID</span><span class="v" style="font-family:ui-monospace,monospace">${id}</span></div>
-    <div class="kv"><span class="k">Sent to</span><span class="v">${esc(route)}</span></div>
-    <div class="kv"><span class="k">Expected update</span><span class="v">${c.priority?'Within 4 hours':'Within 24 hours'}</span></div></div>`;
+  C.reason=''; await confirmTicket();
 }
-const issueName = c => c.issue&&c.issue.n ? c.issue.n : 'Described by you';
-const tagFor = t => t==='E' ? '<span class="tag r">Safety</span>' : (t==='A'||t==='C'||t==='D'||t==='G') ? '<span class="tag g">Quick check</span>' : '';
-function crumbsFor(c){ if(!c||!c.cat) return [{l:'Help',act:'home'}]; const a=[{l:catName(c.cat)}]; if(c.sub) a.push({l:subName(c.cat,c.sub)}); return a; }
-function Category(cat){
-  const open = st.open===cat.id;
-  const subs = cat.id==='device' ? Object.entries(DEVICE).map(([k,v])=>({k,n:v.n,ic:v.ic})) : Object.entries(NONDEV[cat.id].subs).map(([k,v])=>({k,n:v.n,ic:v.ic}));
-  return `<div class="cat ${open?'open':''}"><button class="cat-head" data-act="cat:${cat.id}" aria-expanded="${open}">
-    <span class="cat-ic">${ic(cat.ic,22,'#1E8E4F')}</span><span class="cat-txt"><div class="n">${esc(cat.n)}</div><div class="d">${esc(cat.d)}</div></span><span class="chev">${ic('chev',20,'#5A6580')}</span></button>
-    ${open?`<div class="subgrid">${subs.map(s=>`<button class="sub" data-act="sub:${cat.id}:${s.k}"><span class="si">${ic(s.ic,16,'#1E8E4F')}</span>${esc(s.n)}</button>`).join('')}<button class="sub other" data-act="other-cat:${cat.id}"><span class="si">${ic('more',16,'#5A6580')}</span>Other</button></div>`:''}</div>`;
-}
-const KW = {battery:'drain backup power dies',power:'charging charge adapter plug socket',cable:'wire port pin charging',display:'screen touch black blank cracked',printer:'print receipt slip paper roll',card:'swipe chip tap insert',hang:'slow freeze stuck restart crash',damage:'broken lost stolen water',network:'internet wifi sim signal offline connection',
- credit:'money not received payout credited',batch:'settle close day',upi:'qr scan gpay phonepe paytm',paper:'roll receipt',charges:'fee deducted debit bill',login:'password pine one app'};
-function searchAll(q){
-  const out=[]; const words=q.split(/\s+/);
-  const m = s => words.every(w=>s.toLowerCase().includes(w));
-  Object.entries(DEVICE).forEach(([sk,sv])=>sv.issues.forEach((it,i)=>{ if(m(it.n+' '+sv.n+' '+(KW[sk]||''))) out.push({cat:'device',sub:sk,i,label:it.n}); }));
-  Object.entries(NONDEV).forEach(([ck,cv])=>Object.entries(cv.subs).forEach(([sk,sv])=>sv.issues.forEach(x=>{ if(m(x+' '+sv.n+' '+cv.n+' '+(KW[sk]||''))) out.push({cat:ck,sub:sk,label:x}); })));
-  return out;
-}
-const hl = (t,q) => { let s=esc(t); q.split(/\s+/).filter(Boolean).forEach(w=>{ s=s.replace(new RegExp('('+w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','ig'),'<b>$1</b>'); }); return s; };
+async function somethingElse(){ await bot('No problem. I\'ll ask our support team to <b>call you</b> and understand the issue.'); C.callback=true; C.reason=''; await confirmTicket(); }
 
-/* =====================================================================
-   FLOW ENGINE — template → first screen
-   ===================================================================== */
-function startIssue(cat, sub, i){
-  if (cat!=='device'){ const c=newCase(cat,sub,{n:i}); return go({s:'request',c}); }
-  const it = DEVICE[sub].issues[i]; const c = newCase(cat,sub,it);
-  ({A:()=>go({s:'prep',c}), C:()=>go({s:'prep',c}), B:()=>go({s:'step',c,i:0}), D:()=>go({s:'ttprep',c}),
-    E:()=>go({s:'safety',c}), F:()=>go({s:'direct',c}), G:()=>{ go({s:'auto',c}); later(()=>{ c.found.push(parseCheck(it.checks[0]).r); c.priority=true; replace({s:'auto',c,done:true}); },1600); }})[it.t]();
+/* ---------- device issue ---------- */
+async function runIssue(){
+  const it=C.issue; C.done=[]; C.tried=[]; C.fixedBy=null; C.found=[];
+  if (it.t==='E') return safety();
+  if (it.t==='F') return direct();
+  if (it.t==='D') return touchTest(1);
+  if (it.t==='B'){ const r=await merchantSteps(); return r?resolved():escalate(); }
+  if (!await diagnose()) return;
+  if (it.t==='G'){ await bot('I\'ve raised a <b>battery replacement</b> request for you, so you don\'t need to do anything.'); C.priority=true; return confirmTicket(true); }
+  return afterDiagnosis();
 }
-function runChecks(c){
-  const n=c.issue.checks.length; let i=0; replace({s:'checking',c,i:0});
-  const off = SIM().off;
-  const tick=()=>{ i++; if(off && i===1){ c.found=['Device not reachable']; return later(()=>replace({s:'unreach',c}),700); } replace({s:'checking',c,i}); if(i<n) later(tick,800); else { c.found = c.issue.checks.map(parseCheck).filter(x=>x.bad).map(x=>x.r); later(()=>replace({s:'report',c}),600);} };
-  later(tick,900);
+async function afterDiagnosis(){
+  const it=C.issue;
+  if (it.fixes){ const r=await deviceFix(); if(r) return resolved(); }
+  if (it.update){ const r=await firmware(); if(r) return resolved(); }
+  if (it.restart){ const r=await restart(); if(r) return resolved(); }
+  if (it.steps){ const r=await merchantSteps(); if(r) return resolved(); }
+  return escalate();
 }
-function runFixes(c){
-  const fx=c.issue.fixes; let i=0; go({s:'fixing',c,i:0});
-  const fail = SIM().fail;
-  const tick=()=>{ if(fail && i===fx.length-1){ c.fixed=fx.slice(0,i); c.found.push('Fix failed: '+fx[i]); return replace({s:'fixfail',c,f:fx[i]}); }
-    i++; replace({s:'fixing',c,i}); if(i<fx.length) later(tick,1300); else { c.fixed=[...fx]; later(()=>afterFix(c),900);} };
-  later(tick,1300);
+async function diagnose(){
+  const it=C.issue, r=RUN;
+  await bot('Let\'s check your device. <b>Don\'t close the chat</b> while I connect to it.');
+  const rows = it.checks.map(s=>{const [l,v]=s.split('|'); return {l, r:v.replace(/^!/,''), bad:v[0]==='!', st:'wait'};});
+  const k = card({type:'check',rows});
+  for (let i=0;i<rows.length;i++){
+    rows[i].st='run'; render(); await sleep(850); guard(r);
+    if (sim('simOff') && i===0){ rows[i].st='fail'; render(); await unreachable(); return false; }
+    rows[i].st='done'; render();
+  }
+  k.time=now(); render();
+  await bot(it.finding);
+  C.found = rows.filter(x=>x.bad).map(x=>x.l+': '+x.r);
+  return true;
 }
-function afterFix(c){ const it=c.issue; if(it.tips) replace({s:'tips',c}); else if(it.steps && it.steps[0].act) replace({s:'step',c,i:0,phase:'do'}); else replace({s:'resolve',c,next:it.steps?'steps':null}); }
-function stepAnswer(s, ok, couldnt){
-  const x = s.c.issue.steps[s.i];
-  if (ok){ s.c.tried.push({s:x.t,ok:true}); s.c.resolvedBy = x.t; return go({s:'resolved',c:s.c}); }
-  s.c.tried.push({s:x.t+(couldnt?' (couldn\'t do)':''),ok:false});
-  if (s.i+1 < s.c.issue.steps.length) return replace({s:'step',c:s.c,i:s.i+1,phase:'do'});
-  if (s.c.issue.recheck){ go({s:'recheck',c:s.c}); later(()=>replace({s:'request',c:s.c}),2200); return; }
-  go({s:'request',c:s.c});
+async function unreachable(){
+  await bot('I <b>couldn\'t reach your device</b>. It needs internet for the check.',{err:true});
+  await bot('Turn on WiFi or mobile data, then try again.');
+  const a = await ask({type:'pills',items:[{t:'Try again',go:true},...(C.issue.steps?[{t:'Skip to steps I can do'}]:[]),{t:'Raise support ticket',ticket:true}]}); me(a);
+  if (a==='Try again'){ if(await diagnose()) return afterDiagnosis(); return; }
+  C.found=['Device not reachable for a health check'];
+  if (a.startsWith('Skip')){ const r=await merchantSteps(); return r?resolved():escalate(); }
+  C.reason='Since I couldn\'t check the device remotely, I\'ll raise a request for the <b>remote support team</b>.'; return confirmTicket();
 }
 
-/* =====================================================================
-   EVENTS
-   ===================================================================== */
+/* Device does it, quick: one "Fix it for me" */
+async function deviceFix(){
+  const it=C.issue, r=RUN;
+  const k = card({type:'fix',items:it.fixes.map(t=>({t,st:'wait'})),note:it.note,state:'offer'});
+  const a = await ask({type:'card',card:k});
+  if (a==='no'){ k.state='skipped'; me('Not now'); return false; }
+  me('Fix it for me'); k.state='run'; render();
+  for (const x of k.items){ x.st='run'; render(); await sleep(1100); guard(r); x.st='done'; C.done.push(x.t); render(); }
+  k.state='done'; render();
+  await bot(it.fixes.length>1?`Done. I've applied <b>${it.fixes.length} fixes</b>.`:`Done. I've <b>${esc(it.fixes[0].charAt(0).toLowerCase()+it.fixes[0].slice(1))}</b>.`);
+  if (it.tips){ await bot('A couple of things can help too. You know your shop best, so these are up to you:'); card({type:'tips',tips:it.tips}); }
+  return verify('fix');
+}
+/* Firmware: disruptive, Now / After closing */
+async function firmware(){
+  const r=RUN;
+  await bot('A <b>firmware update</b> should fix this. It takes about 5 minutes and you can\'t take payments while it runs.');
+  card({type:'notice',kind:'warn',text:'Keep the charger connected and WiFi on until it finishes.'});
+  const a = await ask({type:'pills',items:[{t:'Update now',go:true},{t:'After I close for the day'}]}); me(a);
+  if (a!=='Update now'){ await bot('Okay. I\'ll install it <b>tonight at 11 PM</b>. If cards still don\'t work tomorrow, come back and I\'ll raise a request with everything we\'ve tried.'); C.done.push('Firmware update scheduled for tonight'); C.watch=true; return true; }
+  const k = card({type:'fix',title:'Updating firmware',items:[{t:'Downloading update',st:'wait'},{t:'Installing',st:'wait'},{t:'Restarting the card reader',st:'wait'}],state:'run'});
+  for (const x of k.items){ x.st='run'; render(); await sleep(1000); guard(r); x.st='done'; render(); }
+  k.state='done'; k.title='Firmware updated'; C.done.push('Firmware updated'); render();
+  await bot('Firmware updated. Let\'s check the card reader with a <b>₹1 test transaction</b>.');
+  return verify('fix');
+}
+/* Restart: chat resumes after boot */
+async function restart(){
+  const it=C.issue;
+  if (it.restart==='remote'){
+    await bot('Let\'s try a <b>restart</b>. It takes about a minute and you can\'t take payments meanwhile. I\'ll pick up right here when the device is back on.');
+    const a = await ask({type:'pills',items:[{t:'Restart now',go:true},{t:'Not now'}]}); me(a);
+    if (a!=='Restart now') return false;
+  } else {
+    await bot('Hold the <b>power button for 10 seconds</b> until the device restarts. I\'ll pick up right here when it\'s back on.');
+    const a = await ask({type:'pills',items:[{t:'Okay, restarting',go:true},{t:'I can\'t do this'}]}); me(a);
+    if (a!=='Okay, restarting') return false;
+  }
+  C.done.push('Device restarted');
+  await reboot();
+  T.push({k:'divider',text:'Device restarted · '+now()}); render();
+  await bot('Welcome back. Your device has restarted.',{fast:true});
+  return verify('restart');
+}
+function reboot(){ const r=RUN; return new Promise(res=>{ LAYER={type:'boot'}; render();
+  setTimeout(()=>{ if(r!==RUN) return; LAYER={type:'poshome',resume:()=>{ LAYER=null; render(); res(); }}; render(); },2600); }); }
+
+/* Merchant does it: "already tried?" → ledger unlocking in order */
+async function merchantSteps(){
+  const it=C.issue, r=RUN; let steps=it.steps.map((s,i)=>({...s,i}));
+  if (steps.length>1){
+    await bot('Here are a few things to try on your side. <b>Have you already tried any of these?</b>');
+    const picked = await ask({type:'checklist',items:steps.map(s=>s.t),sel:[]});
+    me(picked.length?'Already tried: '+picked.map(i=>steps[i].t.charAt(0).toLowerCase()+steps[i].t.slice(1)).join(', '):'None of these');
+    picked.forEach(i=>C.tried.push(steps[i].t+' (merchant reported)'));
+    steps = steps.filter(s=>!picked.includes(s.i));
+    if (!steps.length){ await bot('Thanks. Since you\'ve tried all of these, let me check the device once more.'); return verify('recheck'); }
+    await bot(steps.length===it.steps.length?'Let\'s go through them. Each one unlocks after you finish the one before:':'Let\'s try the rest. Each one unlocks after you finish the one before:');
+  } else await bot('Try this on your side:');
+  const k = card({type:'ledger',steps:steps.map(s=>({...s,st:'lock'})),watch:it.verify}); k.steps[0].st='cur'; render();
+  const fixAt = Math.min(1,k.steps.length-1);
+  for (let i=0;i<k.steps.length;i++){
+    const a = await ask({type:'ledger',card:k}); const s=k.steps[i];
+    if (a==='cant'){ s.st='no'; s.res='Couldn\'t do this'; C.tried.push(s.t+' (couldn\'t do)'); }
+    else if (['charge','net'].includes(it.verify)){
+      s.st='checking'; render(); await sleep(1600); guard(r);
+      if (!sim('simFix') && i===fixAt){ s.st='ok'; s.res=it.verify==='charge'?'Charging started':'Back online'; C.tried.push(s.t); C.fixedBy=s.t; render();
+        await bot(`${it.verify==='charge'?'Charging started':'Your device is back online'}. It was fixed by <b>${esc(s.t.charAt(0).toLowerCase()+s.t.slice(1))}</b>.`); return true; }
+      s.st='ok'; s.res=it.verify==='charge'?'Done · still not charging':'Done · still offline'; C.tried.push(s.t);
+    } else { s.st='ok'; s.res='Done'; C.tried.push(s.t); }
+    if (k.steps[i+1]) k.steps[i+1].st='cur'; render();
+  }
+  if (['charge','net'].includes(it.verify)){ await bot(it.verify==='charge'?'The device <b>still isn\'t charging</b> after these steps.':'The device <b>still can\'t connect</b> after these steps.'); return false; }
+  return verify('steps');
+}
+
+/* How a fix is confirmed */
+async function verify(after){
+  const v=C.issue.verify, r=RUN;
+  if (v==='print'){
+    const a = await ask({type:'pills',items:[{t:'Print a test slip',go:true}]}); me(a);
+    const k=card({type:'check',rows:[{l:'Printing test slip',st:'run'}]}); await sleep(1500); guard(r);
+    const ok=!sim('simFix'); k.rows[0]={l:'Test slip',r:ok?'Printed clearly':'Came out blank',bad:!ok,st:'done'}; k.time=now(); render();
+    if (ok){ C.fixedBy=after==='fix'?'Fix it for me':'Your steps'; await bot('The test slip <b>printed clearly</b>. Your printer is working.'); return true; }
+    await bot('The test slip <b>came out blank</b>.'); return false;
+  }
+  if (v==='txn'){
+    const a = await ask({type:'pills',items:[{t:'Start ₹1 test',go:true}]}); me(a);
+    await bot('Insert, swipe or tap any card on the device now.',{fast:true});
+    const k=card({type:'check',rows:[{l:'Waiting for card',st:'run'}]}); await sleep(2000); guard(r);
+    const ok=!sim('simFix'); k.rows[0]={l:'₹1 test transaction',r:ok?'Approved · refunded automatically':'Card not read',bad:!ok,st:'done'}; k.time=now(); render();
+    if (ok){ C.fixedBy=C.done.includes('Firmware updated')?'Firmware update':'Fix it for me'; await bot('The test transaction <b>went through</b>. The ₹1 is refunded automatically.'); return true; }
+    await bot('The card reader <b>still couldn\'t read the card</b>.'); return false;
+  }
+  if (v==='later'){
+    await bot('This one takes a little time to show. Keep using the device as normal.');
+    const a = await ask({type:'pills',items:[{t:'Okay, I\'ll keep an eye on it'},{t:'It\'s still happening'}]}); me(a);
+    if (a.startsWith('Okay')){ await bot('Great. If it happens again, come back and I\'ll raise a request with everything we\'ve tried.'); C.watch=true; return true; }
+    return false;
+  }
+  if (v==='charge'||v==='net'){
+    const k=card({type:'check',rows:[{l:v==='charge'?'Charging current':'Internet',st:'run'}]}); await sleep(1500); guard(r);
+    const ok = after==='fix' && !sim('simFix') && v==='net';
+    k.rows[0]={l:k.rows[0].l,r:ok?'Connected':v==='charge'?'No current coming in':'Not reachable',bad:!ok,st:'done'}; k.time=now(); render();
+    if (ok){ C.fixedBy='Fix it for me'; await bot('Your device is <b>back online</b>.'); return true; }
+    return false;
+  }
+  await bot(after==='restart'?'Is it working normally now?':'Is it working now?');
+  const a = await ask({type:'pills',items:[{t:'It\'s working now',go:true},{t:'Still having problem'}]}); me(a);
+  if (a.startsWith('It\'s working')){ C.fixedBy = after==='restart'?'Restart':after==='fix'?'Fix it for me':'Your steps'; return true; }
+  return false;
+}
+
+/* ---------- endings ---------- */
+async function resolved(){
+  if (C.fixedBy && !C.watch) card({type:'resolved'});
+  await bot(C.watch?'Did this chat help?':'Glad it\'s sorted. Did this chat help?');
+  const a = await ask({type:'pills',items:[{t:'It solved my problem'},{t:'It needs improvement'}]}); me(a);
+  await bot(a.startsWith('It solved')?'Thanks for letting us know!':'Thanks. We\'ll use this to improve.',{fast:true});
+  return endPills();
+}
+async function endPills(){
+  const a = await ask({type:'pills',items:[{t:'Need help with something else'},{t:'Done'}]}); me(a);
+  if (a.startsWith('Need')) return start();
+  await bot('Have a good day!',{fast:true});
+}
+const teamOf = r => /^Field/.test(r) ? 'field service team' : /^RTT/.test(r) ? 'remote support team' : 'support team';
+async function escalate(){
+  const last = C.done.includes('Device restarted') ? 'restarting' : (C.done.length||C.tried.length) ? 'these fixes' : 'the check';
+  C.reason = `Since ${last} didn't fix it, I'll raise a request so the <b>${teamOf(C.issue.route)}</b> can take over. I'll attach the device report, so you won't need to explain again.`;
+  return confirmTicket();
+}
+async function safety(){
+  card({type:'danger',items:C.issue.danger});
+  await bot('This <b>isn\'t safe</b>. I\'ll raise an <b>urgent request</b> so a technician reaches you first.');
+  C.priority=true; C.reason=''; return confirmTicket();
+}
+async function direct(){
+  const it=C.issue;
+  await bot('There\'s nothing I can fix remotely for this one, so I\'ll send it straight to our team.');
+  if (it.policy) card({type:'notice',kind:'info',text:it.policy});
+  if (it.photo){
+    await bot('A photo helps the technician bring the right part. Want to add one?');
+    const a = await ask({type:'pills',items:[{t:'Take a photo',go:true},{t:'Skip'}]}); me(a);
+    if (a==='Take a photo'){ card({type:'photo'}); C.photo=true; }
+  }
+  C.reason=''; return confirmTicket();
+}
+async function touchTest(attempt){
+  if (attempt===1){
+    await bot('Let\'s test your touch screen. <b>6 green spots</b> will appear one by one. Tap each one within 5 seconds.');
+    await bot('Before you start, <b>remove any screen guard</b> and wipe the screen with a dry cloth.');
+  }
+  const a = await ask({type:'pills',items:[{t:attempt===1?'Start touch test':'Run the test again',go:true}]}); me(a);
+  const res = await runTouch();
+  card({type:'tmap',res,time:now()});
+  const fail = res.filter(x=>x==='f').length;
+  if (!fail){
+    await bot('All <b>6 spots responded</b>. How is the touch screen now?');
+    const b = await ask({type:'pills',items:[{t:'It\'s working now',go:true},{t:'It\'s slow to respond'},{t:'I have a different issue'},{t:'Raise support ticket',ticket:true}]}); me(b);
+    if (b.startsWith('It\'s working')){ C.fixedBy='Removing the screen guard and wiping the screen'; return resolved(); }
+    if (b.startsWith('I have')) return start();
+    C.found=[b.startsWith('It\'s slow')?'Touch works but is slow to respond':'Touch test passed'];
+    C.reason = b.startsWith('It\'s slow') ? 'Slow touch can be hardware or software, so I\'ll ask the <b>field service team</b> to check it.' : '';
+    return confirmTicket();
+  }
+  C.found=[`${fail} of 6 touch spots didn't respond`];
+  if (attempt===1){
+    await bot(`<b>${fail} spot${fail>1?'s':''} didn't respond</b>. This often happens because of a screen guard or a dirty screen.`);
+    const b = await ask({type:'pills',items:[{t:'I\'ll clean it and retry',go:true},{t:'Already did that'}]}); me(b);
+    if (b.startsWith('I\'ll')) return touchTest(2);
+    C.tried.push('Removed screen guard and wiped screen (merchant reported)');
+  } else C.tried.push('Removed screen guard and wiped screen');
+  C.reason = 'Since some areas still don\'t respond, the screen needs a check. I\'ll raise a request for the <b>field service team</b>.';
+  return confirmTicket();
+}
+function runTouch(){ const r=RUN; return new Promise(res=>{
+  const L={type:'tt',res:Array(6).fill(null),active:null,retry:false}; LAYER=L; let q=[0,1,2,3,4,5], missed=[], tm;
+  const dead = sim('simFix') ? [3,4] : [];
+  const next=()=>{ clearTimeout(tm); if(r!==RUN) return;
+    if (!q.length){ if(!L.retry && missed.length){ L.retry=true; q=missed; missed=[]; q.forEach(i=>L.res[i]=null); } else { LAYER=null; render(); return res(L.res); } }
+    L.active=q.shift(); render();
+    tm=setTimeout(()=>{ L.res[L.active]='f'; if(!L.retry) missed.push(L.active); next(); }, L.retry?1000:5000); };
+  L.tap=i=>{ if(i!==L.active||dead.includes(i)) return; L.res[i]='p'; next(); };
+  next();
+});}
+
+/* ---------- request ---------- */
+const caseKey = () => [C.cat,C.sub,C.issue?C.issue.n:C.issueName||'other'].join('|');
+async function confirmTicket(auto){
+  const dup = REQS.find(x=>x.key===caseKey());
+  if (dup){
+    await bot('You already have an <b>open request</b> for this issue.');
+    card({type:'ticket',r:dup,existing:true});
+    const a = await ask({type:'pills',items:[{t:'Okay, I\'ll wait'},{t:'Create a new request'}]}); me(a);
+    if (a.startsWith('Okay')) return endPills();
+  }
+  if (C.reason) await bot(C.reason);
+  if (auto) return submitTicket();
+  await bot('I\'ll create a support request with these details:');
+  card({type:'summary'});
+  const a = await ask({type:'pills',items:[{t:'Create request',ticket:true},{t:'Cancel',cancel:true}]}); me(a);
+  if (a==='Cancel'){ await bot('Okay, I haven\'t raised anything.'); return endPills(); }
+  await bot('Where should we send updates about this request?');
+  const n = await ask({type:'pills',items:[{t:'+91 98••• ••210',d:'registered'},{t:'Another number'}]}); me(n);
+  if (n==='Another number'){ await bot('Enter the 10-digit mobile number.'); const num = await ask({type:'phone'}); me('+91 '+num); C.phone='+91 '+num; } else C.phone='+91 98••• ••210';
+  await bot(`Enter the 4-digit code we sent to <b>${esc(C.phone)}</b>.`);
+  PROMPT_ERR='';
+  for(;;){ const code = await ask({type:'otp'}); if(code!=='0000') break; PROMPT_ERR='That code doesn\'t match. Check the SMS and try again.'; }
+  PROMPT_ERR=''; me('Code entered');
+  return submitTicket();
+}
+async function submitTicket(){
+  const r0=RUN; const k=card({type:'check',rows:[{l:'Creating your request',st:'run'}],bare:true}); await sleep(1100); guard(r0);
+  T.splice(T.indexOf(k),1);
+  const r = {id:'SR-'+(2614000+Math.floor(Math.random()*999)), key:caseKey(), name:C.issue?C.issue.n:C.issueName||'Call me back',
+    team: C.issue?teamOf(C.issue.route).replace(/^./,x=>x.toUpperCase()) : C.callback?'Support team':NONDEV[C.cat].n+' team',
+    eta: C.priority?'Within 4 hours':C.callback?'Call within 1–2 hours':'Within 24 hours', priority:C.priority};
+  REQS.unshift(r); card({type:'ticket',r});
+  await bot('Request created. We\'ll send updates to you by SMS.');
+  return endPills();
+}
+
+/* ============================ RENDER ============================ */
 const app = document.getElementById('app');
+function chk(x){ const s = x.st==='wait'?'<span class="dot"></span>':x.st==='run'?'<span class="spin"></span>':x.st==='fail'?ic('close',16,'#B3261E',2.6):x.bad?ic('alert',17,'#B26A00'):ic('check',17,'#1E8E4F',2.6);
+  return `<div class="chk ${x.st==='wait'?'wait':''}"><span class="st">${s}</span><div style="flex:1"><div class="l">${esc(x.l)}</div>${x.st==='done'&&x.r?`<div class="r" style="${x.bad?'color:#8A5A00':''}">${esc(x.r)}</div>`:x.st==='fail'?'<div class="r" style="color:#B3261E">Couldn\'t connect</div>':''}</div></div>`; }
+function caseRows(){
+  const rows=[['Issue',C.issue?C.issue.n:C.issueName||'Not listed (call back)']];
+  if (C.cat) rows.push(['Category',(C.cat==='device'?'Device':NONDEV[C.cat].n)+(C.sub?' › '+(C.cat==='device'?DEVICE[C.sub].n:NONDEV[C.cat].subs[C.sub].n):'')]);
+  if (C.when) rows.push(['When',C.when]);
+  if (C.cat==='device') rows.push(['Device','POS 4287664 · Sharma Stores']);
+  if (C.found&&C.found.length) rows.push(['Found',C.found.join('; ')]);
+  const did=[...(C.done||[]),...(C.tried||[])]; if (did.length) rows.push(['Tried',did.join('; ')]);
+  if (C.photo) rows.push(['Photo','Attached']);
+  if (C.issue&&C.issue.checks) rows.push(['Report','Attached']);
+  return rows;
+}
+function renderCard(m, active){
+  switch(m.type){
+   case 'check': return m.bare ? `<div class="cs" style="display:flex;gap:8px;align-items:center"><span class="spin"></span>${esc(m.rows[0].l)}…</div>` :
+     `<div class="card"><div class="ch">${ic('shield',18,'#1E8E4F')}<div style="flex:1"><div class="ct">${m.rows.length>1?'Device health check':'Device check'}</div><div class="cs">${m.time?'POS 4287664 · '+m.time:'Checking…'}</div></div></div><div>${m.rows.map(chk).join('')}</div></div>`;
+   case 'fix': { const offer=m.state==='offer'&&active;
+     return `<div class="fixcard"><div class="ch">${ic('bolt',18,'#50D387')}<div><div class="ct">${m.title||(m.state==='done'?'Fixes applied':m.state==='skipped'?'Fixes not applied':'I can fix this for you')}</div>${m.note&&m.state==='offer'?`<div class="cs">${esc(m.note)}</div>`:''}</div></div>
+     <div style="display:flex;flex-direction:column;gap:6px">${m.items.map(x=>`<div class="li">${x.st==='run'?'<span class="spin" style="border-color:#2E5A48;border-top-color:#50D387"></span>':x.st==='done'?ic('check',16,'#50D387',2.6):ic('check',16,'#4F7A66',2)}<span>${esc(x.t)}</span></div>`).join('')}</div>
+     ${offer?`<div class="btnrow"><button class="btn light" data-act="card:yes">Fix it for me</button><button class="btn" style="background:none;color:#CFE9DA;flex:0 0 auto" data-act="card:no">Not now</button></div>`:''}</div>`; }
+   case 'tips': return `<div class="card">${m.tips.map(([i,t,d])=>`<div style="display:flex;gap:10px"><span style="width:32px;height:32px;border-radius:9px;background:var(--amber50);display:flex;align-items:center;justify-content:center;flex-shrink:0">${ic(i,16,'#8A5A00')}</span><div><div style="font-size:14px;font-weight:600">${esc(t)}</div><div class="cs">${esc(d)}</div></div></div>`).join('')}<div class="cs" style="border-top:1px solid var(--line2);padding-top:8px">Suggestions only. Nothing is changed on your device.</div></div>`;
+   case 'ledger': { const n=m.steps.filter(s=>s.st==='ok'||s.st==='no').length;
+     return `<div class="card"><div class="ch"><div class="ct" style="flex:1">Steps to try</div><div class="cs">${n} of ${m.steps.length} done</div></div><div class="ledger">${m.steps.map((s,i)=>{
+       const cls = s.st==='checking'?'cur':s.st; const num = s.st==='ok'?ic('check',14,'#fff',3):s.st==='no'?ic('close',13,'#5A6580',3):s.st==='lock'?ic('lock',12,'#8A93A8',2.4):i+1;
+       const act = s.st==='cur'&&active ? `<div class="lact"><button class="sbtn p" data-act="led:done">Done</button><button class="sbtn q" data-act="led:cant">I can't do this</button></div>` : '';
+       const res = s.st==='checking' ? `<div class="lres" style="display:flex;gap:6px;align-items:center;color:var(--ink3)"><span class="spin" style="width:12px;height:12px;border-width:2px"></span>${m.watch==='charge'?'Checking if it\'s charging…':'Checking the connection…'}</div>` : s.res?`<div class="lres" style="color:${/still|Couldn/.test(s.res)?'#8A5A00':'#1E7A45'}">${esc(s.res)}</div>`:'';
+       return `<div class="lrow ${cls}"><span class="lnum">${num}</span><div style="flex:1"><div class="lt">${esc(s.t)}</div>${s.st!=='lock'?`<div class="ld">${esc(s.d)}</div>`:''}${res}${act}</div></div>`;}).join('')}</div></div>`; }
+   case 'danger': return `<div class="danger"><div class="ct">${ic('alert',20,'#B3261E',2.4)}Stop using it now</div>${m.items.map(x=>`<div class="x">${ic('close',14,'#B3261E',2.6)}${esc(x)}</div>`).join('')}</div>`;
+   case 'notice': return `<div class="notice ${m.kind}">${ic(m.kind==='warn'?'alert':'info',18)}<span>${esc(m.text)}</span></div>`;
+   case 'photo': return `<div class="card soft" style="flex-direction:row;align-items:center"><span style="width:48px;height:48px;border-radius:8px;background:linear-gradient(135deg,#C9D2CE,#8FA39A);flex-shrink:0"></span><div style="flex:1"><div class="ct">photo_0418.jpg</div><div class="cs">Added to your request</div></div>${ic('check',18,'#1E8E4F',2.6)}</div>`;
+   case 'tmap': { const f=m.res.filter(x=>x==='f').length; return `<div class="card" style="flex-direction:row;align-items:center;gap:14px"><div class="tmap">${m.res.map(r=>`<i class="${r==='p'?'p':'f'}">${ic(r==='p'?'check':'close',14,r==='p'?'#1E8E4F':'#B3261E',2.8)}</i>`).join('')}</div><div><div class="ct">Touch test</div><div class="cs">${6-f} of 6 spots responded<br>${m.time}</div></div></div>`; }
+   case 'summary': return `<div class="card">${caseRows().map(([k,v])=>`<div class="kv"><span class="k">${k}</span><span class="v">${esc(v)}</span></div>`).join('')}${C.priority?`<div class="notice warn" style="padding:8px 10px">${ic('alert',16)}<span>Marked urgent</span></div>`:''}</div>`;
+   case 'ticket': { const r=m.r; return `<div class="card"><div class="okhead">${m.existing?`<span class="okic" style="background:var(--blue50)">${ic('ticket',18,'#1F4FB8')}</span>`:`<span class="okic">${ic('check',20,'#1E8E4F',2.8)}</span>`}<div style="flex:1"><div class="ct">${esc(r.name)}</div><div class="cs">${esc(r.id)} · <span style="color:${m.existing?'#1F4FB8':'#1E7A45'};font-weight:600">Open</span>${r.priority?' · Urgent':''}</div></div></div>
+       <div class="kv"><span class="k">Sent to</span><span class="v">${esc(r.team)}</span></div><div class="kv"><span class="k">Expected update</span><span class="v">${esc(r.eta)}</span></div></div>`; }
+   case 'resolved': return `<div class="card" style="background:var(--g50);border-color:var(--g100)"><div class="okhead"><span class="okic">${ic('check',20,'#1E8E4F',2.8)}</span><div><div class="ct">Issue fixed</div><div class="cs">Fixed by: ${esc(C.fixedBy)}</div></div></div></div>`;
+   case 'openreq': return `<div class="notice info">${ic('ticket',18)}<span>You have <b>${REQS.length} open request${REQS.length>1?'s':''}</b>. Latest: ${esc(REQS[0].id)} · ${esc(REQS[0].name)}</span></div>`;
+  }
+  return '';
+}
+function renderPrompt(p){
+  if (!p) return '';
+  if (p.type==='list') return `<div class="olist m">${p.items.map((x,i)=>`<button class="orow ${x.muted?'muted':''}" data-act="pick:${i}">${p.plain||!x.ic?'':`<span class="oi">${ic(x.ic,17,x.muted?'#5A6580':'#1E8E4F')}</span>`}<div style="flex:1"><div class="ot" style="${x.more?'color:var(--g600);font-weight:600':''}">${esc(x.t)}</div>${x.d?`<div class="od">${esc(x.d)}</div>`:''}</div>${ic('right',16,'#8A93A8')}</button>`).join('')}</div>`;
+  if (p.type==='pills') return `<div class="pills m">${p.items.map((x,i)=>{ x=typeof x==='string'?{t:x}:x; return `<button class="pill ${x.go?'go':''} ${x.ticket?'ticket':''} ${x.cancel?'cancel':''}" data-act="pill:${i}">${x.ticket?ic('ticket',15):''}${esc(x.t)}${x.d?`<span style="font-weight:400;opacity:.65">· ${x.d}</span>`:''}</button>`;}).join('')}</div>`;
+  if (p.type==='checklist') return `<div class="card m"><div class="cl">${p.items.map((t,i)=>`<button class="clrow ${p.sel.includes(i)?'on':''}" data-act="cl:${i}" role="checkbox" aria-checked="${p.sel.includes(i)}"><span class="cbox">${p.sel.includes(i)?ic('check',13,'#fff',3):''}</span>${esc(t)}</button>`).join('')}</div>
+     <div class="btnrow"><button class="btn sec" data-act="cl:none">None of these</button><button class="btn primary" data-act="cl:ok" ${p.sel.length?'':'disabled'}>Confirm</button></div></div>`;
+  if (p.type==='phone') return `<div class="card m"><input class="inp" id="ph" inputmode="numeric" maxlength="10" placeholder="10-digit mobile number" autocomplete="off"><button class="btn primary" data-act="phone">Send code</button></div>`;
+  if (p.type==='otp') return `<div class="card m"><div class="otp ${PROMPT_ERR?'bad':''}">${[0,1,2,3].map(i=>`<input inputmode="numeric" maxlength="1" data-otp="${i}" aria-label="Digit ${i+1}">`).join('')}</div>${PROMPT_ERR?`<div class="cs" style="color:var(--red)" role="alert">${PROMPT_ERR}</div>`:''}<div class="cs" id="rs"></div><button class="btn primary" data-act="otp">Verify</button></div>`;
+  return '';
+}
+function renderLayer(){
+  const L=LAYER; if(!L) return '';
+  if (L.type==='tt'){ const done=L.res.filter(Boolean).length;
+    return `<div class="layer tt" style="inset:0"><div style="padding:14px 16px 10px;text-align:center"><div style="font-size:16px;font-weight:600">${L.retry?'One more try':'Tap the green spot'}</div><div style="font-size:13px;color:#B7BCC8;margin-top:2px">${done} of 6 checked</div></div>
+     <div class="tt-grid">${L.res.map((r,i)=>`<button class="tt-cell" data-act="tt:${i}" aria-label="Spot ${i+1}">${i===L.active?`<span class="tt-spot">Tap</span><span class="tt-bar"><div style="animation:drain ${L.retry?1:5}s linear forwards"></div></span>`:r==='p'?ic('check',32,'#50D387',3):r==='f'?ic('close',32,'#F28B82',3):''}</button>`).join('')}</div>
+     <div style="padding:10px;text-align:center;font-size:12px;color:#B7BCC8">The test ends by itself and takes you back to the chat.</div></div>`; }
+  if (L.type==='boot') return `<div class="layer boot" style="inset:0"><div class="logo">pine labs</div><span class="spin" style="width:28px;height:28px;border-width:3px;border-color:#333;border-top-color:#50D387"></span><div style="font-size:12px;color:#8A93A8">Restarting…</div></div>`;
+  if (L.type==='poshome') return `<div class="layer poshome" style="inset:0"><div style="padding:16px;font-size:17px;font-weight:600;background:#fff;border-bottom:1px solid var(--line)">Home</div>
+     <div class="notif"><div style="display:flex;gap:10px;align-items:center"><span class="okic" style="width:32px;height:32px">${ic('chat',16,'#1E8E4F')}</span><div style="flex:1"><div class="ct">Help & Support</div><div class="cs">Your device restarted. Let's check if it helped.</div></div></div><button class="btn primary" data-act="resume">Continue chat</button></div>
+     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:4px 12px;opacity:.6"><div class="tile">Sale</div><div class="tile">UPI / QR</div><div class="tile">Settlement</div><div class="tile">Reports</div></div></div>`;
+  return '';
+}
+function render(){
+  const msgs = T.map((m,idx)=>{
+    if (m.k==='typing') return `<div class="m"><div class="typing"><i></i><i></i><i></i></div></div>`;
+    if (m.k==='bot') return `<div class="m bot ${m.err?'err':''}">${m.html}</div>`;
+    if (m.k==='me') return `<div class="m me">${m.edit?`<button data-act="edit:${idx}" aria-label="Change answer: ${esc(m.text)}">${esc(m.text)}${ic('edit',13,'#8A93A8')}</button>`:`<div>${esc(m.text)}</div>`}</div>`;
+    if (m.k==='divider') return `<div class="m divider">${esc(m.text)}</div>`;
+    if (m.k==='card') return `<div class="m">${renderCard(m, PROMPT && PROMPT.card===m)}</div>`;
+  }).join('');
+  const inline = PROMPT && !PROMPT.card ? renderPrompt(PROMPT) : '';
+  app.innerHTML = `<div class="appbar"><button class="iconbtn" aria-label="Back">${ic('back',22)}</button><div class="ab-t">Log a complaint</div><button class="iconbtn" data-act="restart-chat" aria-label="Start over">${ic('refresh',20)}</button></div>
+   <div class="thread" role="log" aria-live="polite">${msgs}${inline}</div>${renderLayer()}`;
+  const th=app.querySelector('.thread'); th.scrollTop=th.scrollHeight;
+  if (PROMPT&&PROMPT.type==='otp'){ const f=app.querySelector('[data-otp="0"]'); f&&f.focus(); PROMPT.sent=PROMPT.sent||Date.now(); otpTimer(); }
+  if (PROMPT&&PROMPT.type==='phone'){ const f=document.getElementById('ph'); f&&f.focus(); }
+}
+let otpT; function otpTimer(){ clearTimeout(otpT); const el=document.getElementById('rs'); if(!el||!PROMPT) return; const left=30-Math.floor((Date.now()-PROMPT.sent)/1000);
+  el.innerHTML = left>0?`Resend code in 0:${String(left).padStart(2,'0')}`:`Didn't get it? <button data-act="resend" style="border:none;background:none;color:var(--g600);font-weight:600;padding:0">Resend code</button>`; if(left>0) otpT=setTimeout(otpTimer,1000); }
+
 app.addEventListener('click', e=>{
-  const b = e.target.closest('[data-act]'); if(!b || b.disabled) return;
-  const [a,...p] = b.dataset.act.split(':'); const s = cur();
-  switch(a){
-    case 'back': return back();
-    case 'leave-fix': st.sheet={t:'Leave while we fix?',d:"The fix will keep running in the background. Don't remove the charger until it finishes.",yes:'Stay here',no:'Leave anyway'}; return render();
-    case 'sheet-no': if(e.target.closest('.sheet') && !e.target.closest('.btn')) return; st.sheet=null; return render();
-    case 'sheet-yes': st.sheet=null; return home();
-    case 'track': return go({s:'track',i:+p[0]});
-    case 'home': return home();
-    case 'clearq': st.q=''; return render(true);
-    case 'cat': st.open = st.open===p[0]?null:p[0]; return render();
-    case 'sub': return go({s:'issues',cat:p[0],sub:p[1]});
-    case 'seeall': return replace({...s,all:true});
-    case 'issue': return startIssue(s.cat,s.sub,+p[0]);
-    case 'nd': return startIssue(s.cat,s.sub,decodeURIComponent(p[0]));
-    case 'short': { const g=SHORTCUTS[+p[0]].go; return startIssue(g[0],g[1],g[2]); }
-    case 'pick': { const r=st._res[+p[0]]; return startIssue(r.cat,r.sub,r.cat==='device'?r.i:r.label); }
-    case 'other': return go({s:'describe',c:newCase(s.cat,s.sub,null)});
-    case 'other-cat': return go({s:'describe',c:newCase(p[0],null,null)});
-    case 'describe': return go({s:'describe',c:newCase(null,null,null),text:st.q});
-    case 'describe-next': { const v=document.getElementById('d').value.trim(); if(!v) return toast('Tell us a little about the issue'); s.c.note=v; return go({s:'request',c:s.c}); }
-    case 'start-check': return runChecks(s.c);
-    case 'fix-start': return runFixes(s.c);
-    case 'to-steps': return go({s:'step',c:s.c,i:0,phase:'do'});
-    case 'to-tips': return s.c.issue.tips ? go({s:'tips',c:s.c}) : go({s:'resolve',c:s.c});
-    case 'tip': { const ack={...(s.ack||{})}; ack[+p[0]]=p[1]; return replace({...s,ack}); }
-    case 'to-resolve': return s.c.issue.steps ? go({s:'step',c:s.c,i:0,phase:'do'}) : go({s:'resolve',c:s.c});
-    case 'did': if(p[0]==='y') return replace({...s,phase:'check'}); return stepAnswer(s,false,true);
-    case 'fixed': return stepAnswer(s, p[0]==='y');
-    case 'sim': return toast(p[0]==='print'?'Printing test slip…':'Insert or tap a card on the device');
-    case 'res': if(p[0]==='n' && s.next==='steps') return go({s:'step',c:s.c,i:0,phase:'do'}); if(p[0]==='y'){ s.c.resolvedBy = s.c.fixed.length?'Fix it for me':null; return go({s:'resolved',c:s.c}); } return go({s:'request',c:s.c});
-    case 'tt-start': case 'tt-again': return startTouch(s.c, a==='tt-again'?(s.attempt||1)+1:1);
-    case 'tt-tap': return touchTap(+p[0]);
-    case 'tt': if(p[0]==='ok'){ s.c.resolvedBy='Removing screen guard / cleaning'; return go({s:'resolved',c:s.c}); } if(p[0]==='slow'){ s.c.note='Touch works but is slow to respond'; return go({s:'request',c:s.c}); } return home();
-    case 'ack': return replace({...s,ack:!s.ack});
-    case 'raise-urgent': s.c.priority=true; return go({s:'request',c:s.c});
-    case 'photo': s.c.photo=!s.c.photo; return render();
-    case 'raise': return go({s:'request',c:s.c});
-    case 'to-phone': s.c.note=document.getElementById('note').value; ['tdate','tamt'].forEach(k=>{const el=document.getElementById(k); if(el) s.c.extra[k]=el.value;}); return go({s:'phone',c:s.c,mode:'own'});
-    case 'ph': return replace({...s,mode:p[0]});
-    case 'send-otp': { if(s.mode==='new'){ const v=(document.getElementById('ph').value||'').replace(/\D/g,''); if(v.length!==10) return toast('Enter a 10-digit number'); return go({s:'otp',c:s.c,mode:'new',num:v}); } return go({s:'otp',c:s.c,mode:'own'}); }
-    case 'resend': s.sent=Date.now(); return toast('New code sent');
-    case 'verify': { const v=[...document.querySelectorAll('[data-otp]')].map(i=>i.value).join(''); if(v.length<4) return replace({...s,err:'Enter all 4 digits'}); if(v==='0000') return replace({...s,err:"That code doesn't match. Check the SMS and try again."}); st.reqs.unshift({c:s.c}); return go({s:'done',c:s.c}); }
-  }
+  const b=e.target.closest('[data-act]'); if(!b||b.disabled) return;
+  const [a,v]=b.dataset.act.split(':'); const p=PROMPT;
+  if (a==='restart-chat') return start();
+  if (a==='resume' && LAYER && LAYER.resume) return LAYER.resume();
+  if (a==='tt' && LAYER && LAYER.tap) return LAYER.tap(+v);
+  if (a==='edit'){ const m=T[+v]; if(!m||!m.edit) return; RUN++; LAYER=null; const s=m.edit; T=T.slice(0,s.len); C=Object.assign({},s.C); PROMPT=s.prompt; render(); return; }
+  if (!p) return;
+  if (a==='pick'){ return p.onPick(p.items[+v]); }
+  if (a==='pill'){ const x=p.items[+v]; PROMPT=null; return p.resolve(typeof x==='string'?x:x.t); }
+  if (a==='card'||a==='led'){ PROMPT=null; return p.resolve(v); }
+  if (a==='cl'){ if(v==='ok'){ PROMPT=null; return p.resolve([...p.sel].sort()); } if(v==='none'){ PROMPT=null; return p.resolve([]); } const i=+v; p.sel=p.sel.includes(i)?p.sel.filter(x=>x!==i):[...p.sel,i]; return render(); }
+  if (a==='phone'){ const n=(document.getElementById('ph').value||'').replace(/\D/g,''); if(n.length!==10){ document.getElementById('ph').style.borderColor='#B3261E'; return; } PROMPT=null; return p.resolve(n); }
+  if (a==='resend'){ p.sent=Date.now(); return otpTimer(); }
+  if (a==='otp'){ const c=[...app.querySelectorAll('[data-otp]')].map(i=>i.value).join(''); if(c.length<4){ PROMPT_ERR='Enter all 4 digits'; return render(); } PROMPT=null; return p.resolve(c); }
 });
-app.addEventListener('input', e=>{
-  if (e.target.id==='q'){ st.q=e.target.value; render(true); }
-  if (e.target.dataset.otp!=null){ const i=+e.target.dataset.otp; e.target.value=e.target.value.replace(/\D/g,''); if(e.target.value && i<3) document.querySelector(`[data-otp="${i+1}"]`).focus(); }
-});
-app.addEventListener('keydown', e=>{ if(e.target.dataset.otp!=null && e.key==='Backspace' && !e.target.value){ const i=+e.target.dataset.otp; if(i>0) document.querySelector(`[data-otp="${i-1}"]`).focus(); } });
-
-/* ---------- touch test engine: 5s per spot, missed spots get one 1s retry ---------- */
-let TT=null;
-function startTouch(c, attempt){
-  TT={c,attempt,res:[null,null,null,null,null,null],queue:[0,1,2,3,4,5],retryQ:[],retry:false,active:null};
-  go({s:'tt',c,res:TT.res}); nextSpot();
-}
-function nextSpot(){
-  clearTimers();
-  if(!TT.queue.length){
-    if(!TT.retry && TT.retryQ.length){ TT.retry=true; TT.queue=TT.retryQ; TT.retryQ=[]; TT.queue.forEach(i=>TT.res[i]=null); }
-    else { const r=[...TT.res]; return replace({s:'ttres',c:TT.c,res:r,attempt:TT.attempt}); }
-  }
-  TT.active=TT.queue.shift(); replace({s:'tt',c:TT.c,res:TT.res,active:TT.active,retry:TT.retry});
-  later(()=>{ TT.res[TT.active]='f'; if(!TT.retry) TT.retryQ.push(TT.active); nextSpot(); }, TT.retry?1000:5000);
-}
-function touchTap(i){ if(!TT||i!==TT.active) return; TT.res[i]='p'; nextSpot(); }
-
-/* =====================================================================
-   RENDER
-   ===================================================================== */
-let lastKey='';
-function render(keepFocus){
-  const s = cur(); const scr = screens[s.s];
-  const key = s.s+'#'+st.stack.length; app.classList.toggle('enter', key!==lastKey); lastKey=key;
-  const pos = keepFocus && document.activeElement && document.activeElement.id==='q' ? document.activeElement.selectionStart : null;
-  app.innerHTML = scr(s) + (st.toast?`<div class="toast">${esc(st.toast)}</div>`:'');
-  if (pos!=null){ const q=document.getElementById('q'); q.focus(); q.setSelectionRange(pos,pos); }
-  if (s.s==='otp') { const f=document.querySelector('[data-otp="0"]'); f&&f.focus(); s.sent=s.sent||Date.now();
-    const rs=()=>{ const el=document.getElementById('rs'); if(!el) return; const left=30-Math.floor((Date.now()-s.sent)/1000);
-      el.innerHTML = left>0 ? `Resend code in 0:${String(left).padStart(2,'0')}` : `Didn't get it? <button class="btn ghost sm" data-act="resend" style="display:inline-flex;min-height:28px;padding:0 4px">Resend code</button>`;
-      if(left>0) later(rs,1000); }; rs(); }
-  if (st.sheet) app.insertAdjacentHTML('beforeend', `<div class="scrim" data-act="sheet-no"><div class="sheet"><div class="h2" style="font-size:17px">${st.sheet.t}</div><p class="p">${st.sheet.d}</p>${Btn(st.sheet.yes,'sheet-no')}${Btn(st.sheet.no,'sheet-yes','ghost')}</div></div>`);
-}
-render();
+app.addEventListener('input', e=>{ const d=e.target.dataset.otp; if(d==null) return; e.target.value=e.target.value.replace(/\D/g,''); if(e.target.value&&+d<3) app.querySelector(`[data-otp="${+d+1}"]`).focus(); });
+app.addEventListener('keydown', e=>{ const d=e.target.dataset.otp; if(d!=null&&e.key==='Backspace'&&!e.target.value&&+d>0) app.querySelector(`[data-otp="${+d-1}"]`).focus(); });
+start();
 </script>
 </body>
 </html>
