@@ -4,817 +4,801 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>POS guided help — prototype</title>
+<title>POS Help & Support — v2 prototype</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-body{margin:0}
-a{color:#1E8E4F}a:hover{color:#003323}
-button{font-family:inherit;cursor:pointer}
+:root{
+  --g900:#003323;--g700:#1E7A45;--g600:#1E8E4F;--g400:#50D387;--g100:#E8F7EE;--g50:#F3FBF6;
+  --ink:#2C3448;--ink2:#495678;--ink3:#5A6580;--ink4:#8A93A8;
+  --line:#DBDDE4;--line2:#ECEEF2;--bg:#F7F8FA;--page:#EEF0F3;--white:#fff;
+  --red:#B3261E;--red50:#FDECEA;--amber:#8A5A00;--amber50:#FFF4D6;--blue:#1F4FB8;--blue50:#EAF0FD;
+  --r8:8px;--r12:12px;--r16:16px;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--page);font-family:Inter,system-ui,sans-serif;color:var(--ink);display:flex;align-items:center;justify-content:center;min-height:100vh;-webkit-font-smoothing:antialiased}
+button{font-family:inherit;cursor:pointer;color:inherit}
+input,textarea{font-family:inherit;color:inherit}
 @keyframes spin{to{transform:rotate(360deg)}}
-@keyframes drain{from{width:100%}to{width:0%}}
-@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-@keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.08)}100%{transform:scale(1)}}
-html,body{height:100%}
-body{background:#EEF0F3;font-family:Inter,sans-serif;color:#2C3448;display:flex;align-items:center;justify-content:center;min-height:100vh}
-.stage{box-sizing:border-box;padding:40px;display:flex;gap:40px;width:720px;max-width:100%}
-@media (max-width:760px){body{align-items:flex-start}.stage{flex-direction:column;align-items:center;padding:16px;gap:24px;width:100%}.stage>div:last-child{width:100%;max-width:360px}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+@keyframes drain{from{width:100%}to{width:0}}
+@keyframes slideIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
+@keyframes toast{0%{opacity:0;transform:translate(-50%,8px)}10%,85%{opacity:1;transform:translate(-50%,0)}100%{opacity:0}}
+
+/* ---------- Frame ---------- */
+.stage{display:flex;gap:32px;align-items:flex-start;padding:32px}
+.device{width:360px;height:640px;background:var(--white);border-radius:6px;box-shadow:0 10px 30px rgba(0,0,0,.14);display:flex;flex-direction:column;overflow:hidden;position:relative;flex-shrink:0}
+.statusbar{height:24px;background:var(--g900);flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 10px;color:#CFE9DA;font-size:11px;font-weight:500}
+.notes{width:280px;font-size:13px;line-height:19px;color:var(--ink2)}
+.notes h3{font-size:13px;margin:0 0 6px;color:var(--ink);text-transform:uppercase;letter-spacing:.04em}
+.notes ul{margin:0 0 16px;padding-left:18px}.notes li{margin-bottom:4px}
+.notes .v{display:inline-block;background:var(--g100);color:var(--g700);font-weight:600;font-size:11px;padding:2px 8px;border-radius:10px;margin-bottom:10px}
+@media (max-width:720px){.stage{flex-direction:column;align-items:center;padding:12px}.notes{width:360px}}
+
+/* ---------- App bar ---------- */
+.appbar{min-height:56px;flex-shrink:0;display:flex;align-items:center;gap:4px;padding:6px 8px;border-bottom:1px solid var(--line)}
+.iconbtn{width:44px;height:44px;border:none;background:none;border-radius:22px;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0}
+.iconbtn:active{background:var(--line2)}
+.ab-title{flex:1;min-width:0}
+.ab-title .t{font-size:17px;font-weight:600;line-height:22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crumbs{display:flex;align-items:center;gap:2px;font-size:12px;color:var(--ink3);margin-top:1px;white-space:nowrap;overflow:hidden}
+.crumbs button{border:none;background:none;padding:0;font-size:12px;color:var(--g600);font-weight:500}
+.crumbs .sep{color:var(--ink4);padding:0 2px}
+
+/* ---------- Body / footer ---------- */
+.body{flex:1;min-height:0;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:16px}
+.enter .body{animation:slideIn .22s ease-out}
+.body.flush{padding:0;gap:0}
+.footer{flex-shrink:0;padding:12px 16px 14px;border-top:1px solid var(--line2);display:flex;flex-direction:column;gap:8px;background:var(--white)}
+.footer.row{flex-direction:row}
+.footer.row>*{flex:1}
+
+/* ---------- Buttons ---------- */
+.btn{min-height:48px;border-radius:24px;border:none;font-size:15px;font-weight:600;padding:0 20px;display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;transition:background .15s}
+.btn.primary{background:var(--g900);color:#fff}.btn.primary:active{background:#00241A}
+.btn.primary[disabled]{background:#B9C2BE;cursor:not-allowed}
+.btn.secondary{background:var(--white);color:var(--g900);box-shadow:inset 0 0 0 1.5px var(--g900)}
+.btn.ghost{background:none;color:var(--g600);min-height:44px}
+.btn.danger{background:var(--red);color:#fff}
+.btn.sm{min-height:36px;font-size:13px;padding:0 14px;width:auto;border-radius:18px}
+
+/* ---------- Text ---------- */
+.h1{font-size:20px;font-weight:600;line-height:26px;margin:0}
+.h2{font-size:15px;font-weight:600;margin:0}
+.p{font-size:14px;line-height:21px;color:var(--ink2);margin:0}
+.cap{font-size:12px;color:var(--ink3);line-height:17px}
+.label{font-size:12px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em}
+
+/* ---------- Search ---------- */
+.search{display:flex;align-items:center;gap:10px;height:48px;border-radius:24px;background:var(--bg);box-shadow:inset 0 0 0 1px var(--line);padding:0 16px}
+.search input{border:none;background:none;outline:none;font-size:15px;flex:1;min-width:0}
+.search:focus-within{box-shadow:inset 0 0 0 2px var(--g600);background:#fff}
+
+/* ---------- Chips ---------- */
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.chip{flex-shrink:0;height:36px;border-radius:18px;border:1px solid var(--line);background:#fff;padding:0 14px;font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px}
+.chip:active{background:var(--g50)}
+
+/* ---------- Category accordion (L1 + L2 on one screen) ---------- */
+.cats{display:flex;flex-direction:column;gap:10px}
+.cat{border:1px solid var(--line);border-radius:var(--r12);background:#fff;overflow:hidden;transition:box-shadow .2s,border-color .2s}
+.cat.open{border-color:var(--g600);box-shadow:0 2px 10px rgba(30,142,79,.12)}
+.cat-head{width:100%;border:none;background:none;display:flex;align-items:center;gap:12px;padding:12px 12px 12px 14px;text-align:left;min-height:64px}
+.cat-ic{width:40px;height:40px;border-radius:12px;background:var(--g100);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cat-txt{flex:1;min-width:0}.cat-txt .n{font-size:15px;font-weight:600}.cat-txt .d{font-size:12px;color:var(--ink3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chev{transition:transform .2s;flex-shrink:0}.cat.open .chev{transform:rotate(180deg)}
+.subgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 12px 12px;animation:fadeUp .2s ease-out}
+.sub{border:none;background:var(--bg);border-radius:10px;min-height:56px;padding:10px;display:flex;align-items:center;gap:8px;text-align:left;font-size:13px;font-weight:500;line-height:17px}
+.sub:active{background:var(--g100)}
+.sub .si{width:28px;height:28px;border-radius:8px;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sub.other{background:#fff;box-shadow:inset 0 0 0 1px var(--line);color:var(--ink2)}
+
+/* ---------- List rows (L3) ---------- */
+.list{display:flex;flex-direction:column}
+.row{width:100%;border:none;background:none;display:flex;align-items:center;gap:12px;padding:14px 16px;text-align:left;min-height:56px;border-bottom:1px solid var(--line2)}
+.row:active{background:var(--bg)}
+.row .rt{flex:1;font-size:15px;line-height:20px}
+.row .rd{font-size:12px;color:var(--ink3);margin-top:2px}
+.row.muted .rt{color:var(--ink2)}
+.tag{font-size:11px;font-weight:600;padding:3px 8px;border-radius:10px;white-space:nowrap}
+.tag.g{background:var(--g100);color:var(--g700)}.tag.r{background:var(--red50);color:var(--red)}.tag.b{background:var(--blue50);color:var(--blue)}
+
+/* ---------- Cards ---------- */
+.card{border:1px solid var(--line);border-radius:var(--r12);padding:14px;background:#fff;display:flex;flex-direction:column;gap:10px}
+.card.soft{background:var(--bg);border-color:transparent}
+.kv{display:flex;justify-content:space-between;gap:12px;font-size:13px}.kv .k{color:var(--ink3)}.kv .v{font-weight:500;text-align:right}
+.notice{display:flex;gap:12px;border-radius:var(--r12);padding:14px;font-size:13px;line-height:19px}
+.notice.info{background:var(--blue50);color:#1B3A80}.notice.warn{background:var(--amber50);color:var(--amber)}.notice.ok{background:var(--g100);color:var(--g700)}.notice.danger{background:var(--red50);color:#8C1D18}
+.notice b{display:block;font-size:14px;margin-bottom:2px}
+
+/* ---------- Hero / illustration ---------- */
+.hero{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;padding:8px 0}
+.hero-ic{width:72px;height:72px;border-radius:36px;display:flex;align-items:center;justify-content:center;animation:pop .35s ease-out}
+.hero-ic.g{background:var(--g100)}.hero-ic.r{background:var(--red50)}.hero-ic.b{background:var(--blue50)}.hero-ic.a{background:var(--amber50)}
+
+/* ---------- Diagnostic checklist ---------- */
+.checks{display:flex;flex-direction:column}
+.chk{display:flex;align-items:flex-start;gap:12px;padding:11px 0;border-bottom:1px solid var(--line2);animation:fadeUp .25s ease-out}
+.chk:last-child{border-bottom:none}
+.chk .st{width:22px;height:22px;flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.chk .ct{flex:1;font-size:14px}.chk .cr{font-size:12px;color:var(--ink3);margin-top:2px}
+.chk.pending .ct{color:var(--ink4)}
+.spinner{width:18px;height:18px;border-radius:9px;border:2.5px solid var(--line);border-top-color:var(--g600);animation:spin .8s linear infinite}
+.dot{width:8px;height:8px;border-radius:4px;background:var(--line)}
+.bar{height:6px;border-radius:3px;background:var(--line2);overflow:hidden}.bar>div{height:100%;background:var(--g600);border-radius:3px;transition:width .4s ease}
+
+/* ---------- Fix card ---------- */
+.fix{border-radius:var(--r12);background:var(--g900);color:#fff;padding:16px;display:flex;flex-direction:column;gap:12px}
+.fix .h2{color:#fff}.fix ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px}
+.fix li{display:flex;gap:10px;font-size:13px;color:#CFE9DA;line-height:18px}
+.fix .btn.primary{background:var(--g400);color:var(--g900)}
+
+/* ---------- Suggestion cards ---------- */
+.sugg{border:1px solid var(--line);border-radius:var(--r12);padding:14px;display:flex;gap:12px;background:#fff;transition:opacity .2s}
+.sugg.done{opacity:.55}
+.sugg .si{width:36px;height:36px;border-radius:10px;background:var(--amber50);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sugg .acts{display:flex;gap:8px;margin-top:10px}
+
+/* ---------- Step (guided steps with confirm) ---------- */
+.stepper{display:flex;gap:4px}.stepper i{flex:1;height:4px;border-radius:2px;background:var(--line2)}.stepper i.on{background:var(--g600)}.stepper i.cur{background:var(--g400)}
+.stepcard{border-radius:var(--r16);background:var(--bg);padding:20px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;animation:fadeUp .25s ease-out}
+.stepcard .num{font-size:12px;font-weight:600;color:var(--g700)}
+.q{font-size:16px;font-weight:600;text-align:center}
+.choice{display:flex;flex-direction:column;gap:8px}
+.opt{width:100%;min-height:52px;border-radius:var(--r12);border:1px solid var(--line);background:#fff;display:flex;align-items:center;gap:12px;padding:0 14px;font-size:15px;font-weight:500;text-align:left}
+.opt:active{border-color:var(--g600);background:var(--g50)}
+.opt .oi{width:28px;height:28px;border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.tried{display:flex;flex-direction:column;gap:6px}
+.tried div{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink3)}
+
+/* ---------- Forms ---------- */
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:13px;font-weight:600}
+.field .hint{font-size:12px;color:var(--ink3)}
+textarea,.inp{width:100%;border:1px solid var(--line);border-radius:var(--r8);padding:12px;font-size:15px;outline:none;background:#fff;resize:none}
+textarea:focus,.inp:focus{border-color:var(--g600);box-shadow:0 0 0 3px rgba(30,142,79,.12)}
+.radio{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:var(--r12);padding:12px 14px;background:#fff;width:100%;text-align:left;min-height:56px}
+.radio.on{border-color:var(--g600);background:var(--g50)}
+.radio .rb{width:20px;height:20px;border-radius:10px;border:2px solid var(--ink4);flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.radio.on .rb{border-color:var(--g600)}.radio.on .rb::after{content:"";width:10px;height:10px;border-radius:5px;background:var(--g600)}
+.otp{display:flex;gap:10px;justify-content:center}
+.otp input{width:52px;height:56px;text-align:center;font-size:22px;font-weight:600;border:1px solid var(--line);border-radius:var(--r12);outline:none}
+.otp input:focus{border-color:var(--g600);box-shadow:0 0 0 3px rgba(30,142,79,.12)}
+.otp.err input{border-color:var(--red)}
+.upload{border:1.5px dashed var(--line);border-radius:var(--r12);padding:16px;display:flex;align-items:center;gap:12px;background:#fff;width:100%;text-align:left}
+.thumb{width:44px;height:44px;border-radius:8px;background:linear-gradient(135deg,#C9D2CE,#8FA39A);flex-shrink:0}
+
+/* ---------- Touch test ---------- */
+.tt{flex:1;display:flex;flex-direction:column;background:#101418;color:#fff;min-height:0}
+.tt-head{padding:14px 16px 10px;text-align:center}
+.tt-grid{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(3,1fr);gap:2px;background:#2A3038;min-height:0}
+.tt-cell{border:none;background:#101418;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:0}
+.tt-spot{width:80px;height:80px;border-radius:40px;background:var(--g400);color:var(--g900);font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;animation:pulse 1s ease-in-out infinite}
+.tt-timer{width:80px;height:4px;border-radius:2px;background:#2A3038;overflow:hidden}.tt-timer div{height:100%;background:var(--g400)}
+
+/* ---------- Toast ---------- */
+.toast{position:absolute;left:50%;bottom:92px;background:#1F2633;color:#fff;font-size:13px;padding:10px 16px;border-radius:20px;white-space:nowrap;animation:toast 2.4s ease forwards;pointer-events:none;z-index:5}
 </style>
 </head>
 <body>
-<div id="app"></div>
-<template id="tpl">
-
 <div class="stage">
-
-<!-- PHONE -->
-<div style="width: 360px; height: 640px; flex-shrink: 0; background: #FFFFFF; display: flex; flex-direction: column; overflow: hidden; border-radius: 4px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); position: relative">
-<div style="height: 24px; background: #003323; flex-shrink: 0"></div>
-
-<!-- ============ FULL-SCREEN TOUCH TEST ============ -->
-<sc-if value="{{isTest}}" hint-placeholder-val="{{ false }}">
-<div style="flex: 1; display: flex; flex-direction: column; background: #101418; min-height: 0">
-<div style="padding: 14px 16px 10px; color: #FFFFFF; text-align: center; pointer-events: none">
-<div style="font-size: 16px; font-weight: 600">Tap the green spot</div>
-<div style="font-size: 13px; color: #B7BCC8; margin-top: 2px">{{testCount}}</div>
-</div>
-<div style="flex: 1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 2px; background: #2A3038; min-height: 0">
-<sc-for list="{{cells}}" as="c" hint-placeholder-count="6">
-<button onClick="{{c.tap}}" aria-label="{{c.name}}" style="border: none; background: #101418; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 0">
-<sc-if value="{{c.active}}" hint-placeholder-val="{{ false }}">
-<div style="width: 84px; height: 84px; border-radius: 42px; background: #50D387; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; color: #003323; animation: pulse 1s ease-in-out infinite">Tap</div>
-<div style="width: 84px; height: 4px; border-radius: 2px; background: #2A3038; overflow: hidden"><div style="height: 4px; background: #50D387; animation: drain 5s linear forwards"></div></div>
-</sc-if>
-<sc-if value="{{c.pass}}" hint-placeholder-val="{{ false }}">
-<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#50D387" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>
-</sc-if>
-<sc-if value="{{c.fail}}" hint-placeholder-val="{{ false }}">
-<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#F28B82" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
-</sc-if>
-</button>
-</sc-for>
-</div>
-<div style="padding: 10px 16px; text-align: center; font-size: 12px; color: #B7BCC8; pointer-events: none">No need to exit. The test ends by itself.</div>
-</div>
-</sc-if>
-
-<!-- ============ NORMAL SCREENS ============ -->
-<sc-if value="{{notTest}}" hint-placeholder-val="{{ true }}">
-
-<!-- Header -->
-<div style="height: 56px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 0 12px; border-bottom: 1px solid #DBDDE4">
-<button onClick="{{back}}" aria-label="Back" style="width: 44px; height: 44px; border: none; background: none; display: flex; align-items: center; justify-content: center; padding: 0">
-<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2C3448" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
-</button>
-<div style="flex: 1; display: flex; flex-direction: column; gap: 1px">
-<div style="font-size: 18px; font-weight: 500; line-height: 22px">{{title}}</div>
-<sc-if value="{{hasSub}}" hint-placeholder-val="{{ false }}"><div style="font-size: 12px; color: #5A6580">{{subtitle}}</div></sc-if>
-</div>
+  <div class="device"><div class="statusbar"><span>Pine Labs</span><span>4G · 82%</span></div><div id="app" style="flex:1;display:flex;flex-direction:column;min-height:0"></div></div>
+  <aside class="notes">
+    <span class="v">v2 · 18 Nov feedback</span>
+    <h3>What's new</h3>
+    <ul>
+      <li>Category › Sub-category on one screen, then Issue. Max 3 taps.</li>
+      <li>Search + one-tap shortcuts for the most common issues.</li>
+      <li><b>Fix it for me</b> only for backend actions (update, clear apps). Brightness, socket, charger are suggestions.</li>
+      <li>Guided steps confirm each action, so we know which one fixed it.</li>
+      <li>Raise a request inside every flow; summary pre-filled, OTP verified.</li>
+      <li>Transaction, Settlement, Account: navigation → request (routed by category).</li>
+    </ul>
+    <h3>Try</h3>
+    <ul>
+      <li>Device › Power &amp; Charging › Charger not working</li>
+      <li>Device › Battery › Draining fast</li>
+      <li>Device › Display and touch › Touch not working</li>
+      <li>Device › Battery › Swollen</li>
+      <li>Search "settlement"</li>
+    </ul>
+    <p class="cap">OTP for demo: any 4 digits.</p>
+  </aside>
 </div>
 
-<!-- Help & Support (static, unchanged entry) -->
-<sc-if value="{{isHelp}}" hint-placeholder-val="{{ true }}">
-<div style="flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 4px">
-<sc-for list="{{helpItems}}" as="it" hint-placeholder-count="4">
-<button onClick="{{it.go}}" style="display: flex; align-items: center; gap: 16px; padding: 12px 4px; border: none; background: none; text-align: left; min-height: 56px; opacity: {{it.op}}">
-<div style="width: 24px; height: 24px; border-radius: 12px; background: #E8F7EE; flex-shrink: 0"></div>
-<div style="flex: 1"><div style="font-size: 16px; color: #2C3448">{{it.t}}</div><div style="font-size: 12px; color: #5A6580; margin-top: 2px">{{it.d}}</div></div>
-<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#003323" stroke-width="2.5" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
-</button>
-</sc-for>
-</div>
-</sc-if>
-
-<!-- ============ GUIDED FLOW: one conversation, starts at the top ============ -->
-<sc-if value="{{isFlow}}" hint-placeholder-val="{{ false }}">
-<div style="flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column-reverse">
-<div style="margin-bottom: auto; padding: 16px; display: flex; flex-direction: column; gap: 14px">
-
-<sc-for list="{{msgs}}" as="m" hint-placeholder-count="3">
-<div style="display: flex; flex-direction: column; gap: 6px; animation: {{m.anim}}">
-
-<sc-if value="{{m.isBot}}" hint-placeholder-val="{{ true }}">
-<div style="font-size: 14px; line-height: 21px; color: #2C3448; max-width: 304px">{{m.t}}<span style="font-weight: 700">{{m.b}}</span>{{m.t2}}</div>
-</sc-if>
-
-<sc-if value="{{m.isErr}}" hint-placeholder-val="{{ false }}">
-<div style="font-size: 14px; line-height: 21px; color: #B3261E; max-width: 304px">{{m.t}}</div>
-</sc-if>
-
-<sc-if value="{{m.isUser}}" hint-placeholder-val="{{ false }}">
-<div style="display: flex; justify-content: flex-end">
-<sc-if value="{{m.fixedReply}}" hint-placeholder-val="{{ true }}">
-<div style="background: #EEF0F3; border-radius: 20px; padding: 10px 16px; font-size: 14px; color: #2C3448; max-width: 260px">{{m.t}}</div>
-</sc-if>
-<sc-if value="{{m.canChange}}" hint-placeholder-val="{{ false }}">
-<button onClick="{{m.change}}" aria-label="{{m.changeAria}}" style="background: #EEF0F3; border: none; border-radius: 20px; min-height: 44px; padding: 10px 12px 10px 16px; font-size: 14px; color: #2C3448; max-width: 260px; display: inline-flex; align-items: center; gap: 8px; text-align: left">{{m.t}}<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#003323" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg></button>
-</sc-if>
-</div>
-</sc-if>
-
-<sc-if value="{{m.isBusy}}" hint-placeholder-val="{{ false }}">
-<div style="display: flex; align-items: center; gap: 10px; font-size: 14px; color: #495678">
-<div style="width: 18px; height: 18px; border-radius: 9px; border: 3px solid #DBDDE4; border-top-color: #1E8E4F; animation: spin 0.9s linear infinite; flex-shrink: 0"></div>{{m.t}}
-</div>
-</sc-if>
-
-<sc-if value="{{m.isStep}}" hint-placeholder-val="{{ false }}">
-<div style="border: 1px solid #DBDDE4; border-radius: 8px; overflow: hidden; max-width: 300px">
-<div style="height: 88px; background: #F4F5F7; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #5A6580">{{m.img}}</div>
-<div style="padding: 12px 14px; display: flex; flex-direction: column; gap: 4px">
-<div style="font-size: 12px; font-weight: 600; color: #1E7A45">{{m.cap}}</div>
-<div style="font-size: 17px; line-height: 23px; font-weight: 600; color: #2C3448">{{m.title}}</div>
-<div style="font-size: 13px; line-height: 19px; color: #495678">{{m.d}}</div>
-</div>
-</div>
-</sc-if>
-
-<sc-if value="{{m.isResult}}" hint-placeholder-val="{{ false }}">
-<div style="border: 1px solid #DBDDE4; border-radius: 8px; padding: 12px 14px; display: flex; align-items: center; gap: 14px; max-width: 300px">
-<div style="width: 56px; height: 84px; border: 2px solid #2C3448; border-radius: 6px; padding: 3px; box-sizing: border-box; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px; flex-shrink: 0">
-<sc-for list="{{m.zones}}" as="z" hint-placeholder-count="6">
-<div style="background: {{z.bg}}; border-radius: 2px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: {{z.col}}">{{z.mark}}</div>
-</sc-for>
-</div>
-<div style="display: flex; flex-direction: column; gap: 2px">
-<div style="font-size: 12px; color: #5A6580">Touch test result</div>
-<div style="font-size: 13px; line-height: 18px; color: #2C3448">{{m.d}}</div>
-</div>
-</div>
-</sc-if>
-
-<sc-if value="{{m.isCard}}" hint-placeholder-val="{{ false }}">
-<div style="border: 1px solid {{m.border}}; background: {{m.bg}}; border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; max-width: 300px">
-<div style="font-size: 15px; font-weight: 600">{{m.title}}</div>
-<sc-for list="{{m.rows}}" as="r" hint-placeholder-count="3">
-<div style="display: flex; justify-content: space-between; gap: 12px; font-size: 13px"><span style="color: #5A6580; flex-shrink: 0">{{r.a}}</span><span style="font-weight: 500; text-align: right">{{r.b}}</span></div>
-</sc-for>
-</div>
-</sc-if>
-
-<sc-if value="{{m.isTicket}}" hint-placeholder-val="{{ false }}">
-<div style="border: 1px solid #DBDDE4; border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; max-width: 300px">
-<div style="align-self: flex-start; background: #FFE9A8; color: #5C4400; font-size: 12px; font-weight: 600; border-radius: 10px; padding: 2px 10px">Open</div>
-<div style="font-size: 15px; font-weight: 600">{{m.title}}</div>
-<div style="font-size: 12px; color: #5A6580">{{m.d}}</div>
-</div>
-</sc-if>
-
-<sc-if value="{{m.isAlert}}" hint-placeholder-val="{{ false }}">
-<div role="alert" style="border: 1.5px solid #D93025; background: #FDECEA; border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px">
-<div style="display: flex; align-items: center; gap: 10px">
-<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#B3261E" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0"><path d="M12 3L2 20h20L12 3z"/><path d="M12 10v4M12 17v.5"/></svg>
-<div style="font-size: 18px; line-height: 23px; font-weight: 700; color: #8C1D18">{{m.title}}</div>
-</div>
-<sc-for list="{{m.items}}" as="it" hint-placeholder-count="3">
-<div style="display: flex; gap: 10px; font-size: 15px; line-height: 21px; font-weight: 600; color: #2C3448"><span style="color: #B3261E" aria-hidden="true">•</span><span>{{it.name}}</span></div>
-</sc-for>
-</div>
-</sc-if>
-
-<sc-if value="{{m.isFixlist}}" hint-placeholder-val="{{ false }}">
-<div style="border: 1px solid #DBDDE4; border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 14px">
-<div style="font-size: 12px; font-weight: 600; color: #1E7A45">{{m.title}}</div>
-<sc-for list="{{m.items}}" as="it" hint-placeholder-count="2">
-<div style="display: flex; gap: 12px">
-<div style="width: 26px; height: 26px; border-radius: 13px; background: #E8F7EE; color: #003323; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0">{{it.n}}</div>
-<div style="display: flex; flex-direction: column; gap: 2px">
-<div style="font-size: 16px; line-height: 22px; font-weight: 600; color: #2C3448">{{it.name}}</div>
-<div style="font-size: 13px; line-height: 19px; color: #495678">{{it.d}}</div>
-</div>
-</div>
-</sc-for>
-</div>
-</sc-if>
-
-<sc-if value="{{m.isDone}}" hint-placeholder-val="{{ false }}">
-<div style="border: 1px solid #A8DDBF; background: #EEF9F2; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
-<div style="width: 36px; height: 36px; border-radius: 10px; background: #FFFFFF; display: flex; align-items: center; justify-content: center">
-<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1E7A45" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>
-</div>
-<div style="display: flex; flex-direction: column; gap: 2px">
-<div style="font-size: 15px; font-weight: 600">{{m.title}}</div>
-<div style="font-size: 13px; line-height: 19px; color: #495678">{{m.d}}</div>
-</div>
-</div>
-</sc-if>
-
-</div>
-</sc-for>
-
-<!-- ============ SELECTION: sizes itself to the number of options ============ -->
-<sc-if value="{{hasOpts}}" hint-placeholder-val="{{ false }}">
-<div style="display: flex; flex-direction: column; gap: 10px; order: {{optOrder}}; position: {{optPos}}; top: 0; background: #FFFFFF; z-index: 1; padding-bottom: 4px">
-
-<sc-if value="{{optsTop}}" hint-placeholder-val="{{ false }}">
-<div style="font-size: 12px; color: #5A6580">Buttons moved up, because the bottom of the screen isn't responding.</div>
-</sc-if>
-
-<!-- "already tried?" tick list -->
-<sc-if value="{{hasChecks}}" hint-placeholder-val="{{ false }}">
-<div style="border: 1px solid #DBDDE4; border-radius: 8px; overflow: hidden; display: flex; flex-direction: column">
-<sc-for list="{{checks}}" as="c" hint-placeholder-count="3">
-<button onClick="{{c.tap}}" aria-pressed="{{c.on}}" style="display: flex; align-items: center; gap: 12px; padding: 0 14px; min-height: 52px; border: none; border-bottom: 1px solid #EEF0F3; background: #FFFFFF; text-align: left; font-size: 15px; color: #2C3448">
-<span style="width: 22px; height: 22px; border-radius: 5px; border: 2px solid #003323; background: {{c.box}}; color: #FFFFFF; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0" aria-hidden="true">{{c.mark}}</span>
-<span>{{c.label}}</span>
-</button>
-</sc-for>
-</div>
-</sc-if>
-
-<!-- one action: a single filled button -->
-<sc-for list="{{actions}}" as="o" hint-placeholder-count="1">
-<button onClick="{{o.pick}}" style="min-height: 48px; border-radius: 24px; border: none; background: #003323; color: #FFFFFF; font-size: 15px; font-weight: 600; padding: 8px 16px">{{o.label}}</button>
-</sc-for>
-
-<!-- the request: a quieter, hug-width green pill -->
-<sc-for list="{{reqPills}}" as="o" hint-placeholder-count="1">
-<button onClick="{{o.pick}}" style="align-self: flex-start; min-height: 46px; border-radius: 24px; border: none; background: #003323; color: #FFFFFF; font-size: 15px; font-weight: 600; padding: 6px 18px 6px 20px; display: inline-flex; align-items: center; gap: 8px">{{o.label}}<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0"><path d="M7 5v8h10"/><path d="M13 9l4 4-4 4"/></svg></button>
-</sc-for>
-
-<!-- 2 to 3 answers: pills -->
-<sc-if value="{{isPills}}" hint-placeholder-val="{{ false }}">
-<div style="display: flex; flex-direction: column; align-items: flex-start; gap: 10px">
-<sc-for list="{{answers}}" as="o" hint-placeholder-count="2">
-<button onClick="{{o.pick}}" style="min-height: 44px; border-radius: 22px; border: 1px solid #003323; background: #FFFFFF; color: #2C3448; font-size: 14px; font-weight: 500; padding: 6px 16px 6px 18px; display: inline-flex; align-items: center; gap: 8px; text-align: left; opacity: {{o.op}}">{{o.label}}<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#003323" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0"><path d="M7 5v8h10"/><path d="M13 9l4 4-4 4"/></svg></button>
-</sc-for>
-</div>
-</sc-if>
-
-<!-- 4 or more answers: compact list, with More from 7 -->
-<sc-if value="{{isList}}" hint-placeholder-val="{{ false }}">
-<div style="border: 1px solid #DBDDE4; border-radius: 8px; overflow: hidden; display: flex; flex-direction: column">
-<sc-for list="{{answers}}" as="o" hint-placeholder-count="5">
-<button onClick="{{o.pick}}" style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 14px; min-height: 48px; border: none; border-bottom: 1px solid #EEF0F3; background: #FFFFFF; text-align: left; font-size: 15px; color: #2C3448; opacity: {{o.op}}">
-<span>{{o.label}}</span>
-<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#003323" stroke-width="2.5" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
-</button>
-</sc-for>
-<sc-if value="{{showMore}}" hint-placeholder-val="{{ false }}">
-<button onClick="{{moreGo}}" style="display: flex; align-items: center; justify-content: space-between; padding: 0 14px; min-height: 48px; border: none; background: #F7F8FA; text-align: left; font-size: 15px; color: #495678">
-<span>More</span>
-<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#495678" stroke-width="2.5" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
-</button>
-</sc-if>
-</div>
-</sc-if>
-
-<!-- the quiet last resort -->
-<sc-for list="{{quiet}}" as="o" hint-placeholder-count="1">
-<button onClick="{{o.pick}}" style="align-self: flex-start; border: none; background: none; font-size: 13px; color: #495678; text-decoration: underline; padding: 10px 4px; min-height: 44px">{{o.label}}</button>
-</sc-for>
-
-</div>
-</sc-if>
-
-</div>
-</div>
-
-<!-- describe the issue: optional free text -->
-<sc-if value="{{descOn}}" hint-placeholder-val="{{ false }}">
-<div style="flex-shrink: 0; border-top: 1px solid #DBDDE4; background: #F7F8FA; padding: 12px 16px; display: flex; flex-direction: column; gap: 8px">
-<label for="desc" style="font-size: 12px; color: #5A6580">Describe the issue (optional)</label>
-<textarea id="desc" onInput="{{descInput}}" rows="3" placeholder="The charger gets hot after a few minutes" style="border: 1.5px solid #003323; border-radius: 8px; background: #FFFFFF; padding: 10px 12px; font-family: inherit; font-size: 15px; line-height: 21px; color: #2C3448; resize: none"></textarea>
-<button onClick="{{descGo}}" style="height: 46px; border-radius: 24px; border: none; background: #003323; color: #FFFFFF; font-size: 15px; font-weight: 600">Continue</button>
-<button onClick="{{descSkip}}" style="align-self: center; border: none; background: none; font-size: 13px; color: #495678; text-decoration: underline; min-height: 30px">Skip</button>
-</div>
-</sc-if>
-
-<!-- number pad: the only place the merchant types -->
-<sc-if value="{{padOn}}" hint-placeholder-val="{{ false }}">
-<div style="flex-shrink: 0; border-top: 1px solid #DBDDE4; background: #F7F8FA; padding: 10px 16px 10px; display: flex; flex-direction: column; gap: 8px">
-<div style="font-size: 12px; color: #5A6580">{{padLabel}}</div>
-<div style="height: 44px; border: 1.5px solid #003323; border-radius: 8px; background: #FFFFFF; display: flex; align-items: center; padding: 0 14px; font-size: 20px; font-weight: 600; letter-spacing: 0.04em; color: #2C3448">{{padShown}}</div>
-<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px">
-<sc-for list="{{padKeys}}" as="k" hint-placeholder-count="12">
-<button onClick="{{k.tap}}" aria-label="{{k.aria}}" style="height: 40px; border-radius: 8px; border: 1px solid #DBDDE4; background: #FFFFFF; font-size: 18px; font-weight: 500; color: #2C3448; opacity: {{k.op}}">{{k.t}}</button>
-</sc-for>
-</div>
-<button onClick="{{padGo}}" style="height: 46px; border-radius: 24px; border: none; background: #003323; color: #FFFFFF; font-size: 15px; font-weight: 600; opacity: {{padGoOp}}">{{padCta}}</button>
-<button onClick="{{padCancel}}" style="align-self: center; border: none; background: none; font-size: 13px; color: #495678; text-decoration: underline; min-height: 30px">Use the registered number instead</button>
-</div>
-</sc-if>
-</sc-if>
-
-<!-- Leave sheet -->
-<sc-if value="{{sheet}}" hint-placeholder-val="{{ false }}">
-<div style="position: absolute; left: 0; right: 0; top: 24px; bottom: 40px; background: rgba(0,0,0,0.45); display: flex; flex-direction: column; justify-content: flex-end; z-index: 5">
-<div style="background: #FFFFFF; border-radius: 16px 16px 0 0; padding: 20px 16px 16px; display: flex; flex-direction: column; gap: 10px">
-<div style="font-size: 17px; font-weight: 600">Leave this check?</div>
-<div style="font-size: 14px; line-height: 20px; color: #495678">We'll save your progress. You can continue from Help &amp; Support.</div>
-<button onClick="{{stay}}" style="height: 48px; border-radius: 24px; border: none; background: #003323; color: #FFFFFF; font-size: 15px; font-weight: 600; margin-top: 6px">Keep going</button>
-<button onClick="{{startOver}}" style="height: 48px; border-radius: 24px; border: 1.5px solid #003323; background: #FFFFFF; color: #003323; font-size: 15px; font-weight: 600">Start over</button>
-<button onClick="{{leave}}" style="height: 48px; border: none; background: none; color: #003323; font-size: 15px; font-weight: 600">Leave</button>
-</div>
-</div>
-</sc-if>
-
-</sc-if>
-
-<div style="height: 40px; background: #000; flex-shrink: 0; display: flex; align-items: center; justify-content: space-around">
-<div style="width: 0; height: 0; border-top: 7px solid transparent; border-bottom: 7px solid transparent; border-right: 11px solid #FFF"></div>
-<div style="width: 14px; height: 14px; border-radius: 7px; border: 2px solid #FFF"></div>
-<div style="width: 12px; height: 12px; background: #FFF"></div>
-</div>
-</div>
-
-<!-- SIDE PANEL -->
-<div style="flex: 1; display: flex; flex-direction: column; gap: 10px; padding-top: 8px">
-<div style="font-size: 12px; font-weight: 600; color: #5A6580; letter-spacing: 0.06em">PROTOTYPE NOTES</div>
-<div style="font-size: 18px; font-weight: 700; line-height: 24px">Guided flow from Log a complaint</div>
-<div style="font-size: 12px; line-height: 17px; color: #2C3448; display: flex; flex-direction: column; gap: 6px">
-<div style="border: 1px solid #DBDDE4; border-radius: 8px; padding: 8px 10px"><b>Built:</b> Power and charging, Screen and buttons. Greyed options aren't built.</div>
-<div style="border: 1px solid #DBDDE4; border-radius: 8px; padding: 8px 10px"><b>Touch test:</b> tap a green spot to pass it, or leave it 5 seconds to miss it. Missed spots get a second try.</div>
-<div style="border: 1px solid #DBDDE4; border-radius: 8px; padding: 8px 10px"><b>Changing an answer:</b> tap your last reply (it shows a pencil) or press back. Once a check has run, back offers Keep going, Start over or Leave.</div>
-</div>
-<sc-for list="{{toggles}}" as="tg" hint-placeholder-count="3">
-<div style="display: flex; flex-direction: column; gap: 6px">
-<div style="font-size: 12px; font-weight: 600; color: #2C3448">{{tg.label}}</div>
-<div style="display: flex; flex-wrap: wrap; gap: 6px">
-<sc-for list="{{tg.items}}" as="x" hint-placeholder-count="2">
-<button onClick="{{x.pick}}" style="min-height: 34px; border-radius: 8px; border: 1.5px solid {{x.border}}; background: {{x.bg}}; font-size: 12px; font-weight: 600; color: #2C3448; padding: 5px 9px">{{x.label}}</button>
-</sc-for>
-</div>
-</div>
-</sc-for>
-<button onClick="{{restart}}" style="height: 40px; border-radius: 20px; border: 1.5px solid #2C3448; background: transparent; font-size: 13px; font-weight: 600; color: #2C3448; margin-top: 4px">Restart prototype</button>
-</div>
-
-</div>
-</template>
 <script>
-/* Tiny renderer: reads the template above, fills {{holes}} from renderVals(), and redraws on setState. */
-class DCLogic {
-  constructor() { this.state = {}; }
-  setState(u) { Object.assign(this.state, u); if (!this._q) { this._q = true; Promise.resolve().then(() => { this._q = false; draw(this); }); } }
+/* =====================================================================
+   ICONS
+   ===================================================================== */
+const P = {
+  back:'<path d="M19 12H5M11 6l-6 6 6 6"/>', close:'<path d="M6 6l12 12M18 6L6 18"/>',
+  chev:'<path d="M6 9l6 6 6-6"/>', right:'<path d="M9 6l6 6-6 6"/>', search:'<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>',
+  check:'<path d="M5 12l5 5 9-10"/>', alert:'<path d="M12 3l10 18H2L12 3z"/><path d="M12 10v5M12 18h.01"/>', info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/>',
+  device:'<rect x="6" y="2" width="12" height="20" rx="2"/><path d="M9 6h6M10 18h4"/>', battery:'<rect x="3" y="7" width="16" height="10" rx="2"/><path d="M22 11v2M7 10v4M10 10v4"/>',
+  plug:'<path d="M9 2v5M15 2v5M6 7h12v4a6 6 0 01-12 0V7zM12 17v5"/>', cable:'<path d="M4 20c4 0 4-6 8-6s4 6 8 6M12 14V4M9 4h6"/>',
+  screen:'<rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 13l3-3M10 15h.01"/>', printer:'<path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/>',
+  card:'<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/>', refresh:'<path d="M20 11a8 8 0 10-2 6"/><path d="M20 4v7h-7"/>',
+  damage:'<rect x="5" y="2" width="14" height="20" rx="2"/><path d="M9 7l3 4-2 3 3 3"/>', wifi:'<path d="M2 9a15 15 0 0120 0M5 12.5a10 10 0 0114 0M8.5 16a5 5 0 017 0"/><path d="M12 19.5h.01"/>',
+  txn:'<path d="M4 7h14l-3-3M20 17H6l3 3"/>', rupee:'<path d="M6 4h12M6 9h12M6 4c7 0 7 9 0 9h0l8 8"/>', user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/>',
+  more:'<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>', camera:'<path d="M4 7h4l2-3h4l2 3h4v13H4z"/><circle cx="12" cy="13" r="4"/>',
+  phone:'<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/>', sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.4 1.4M17.6 17.6L19 19M5 19l1.4-1.4M17.6 6.4L19 5"/>',
+  bolt:'<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>', apps:'<rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/>',
+  shield:'<path d="M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/>', ticket:'<path d="M3 8a2 2 0 002-2h14a2 2 0 002 2v2a2 2 0 000 4v2a2 2 0 00-2 2H5a2 2 0 00-2-2v-2a2 2 0 000-4z"/><path d="M13 6v12" stroke-dasharray="2 2"/>',
+  edit:'<path d="M4 20h4L19 9l-4-4L4 16v4z"/>', bank:'<path d="M3 10l9-6 9 6M5 10v8M10 10v8M14 10v8M19 10v8M3 20h18"/>', clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'
+};
+const ic = (n, s=20, c='currentColor', w=2) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]||P.info}</svg>`;
+const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* =====================================================================
+   DATA — from "Log a Complaint – Workflow Templates" sheet
+   Templates: A check & auto-fix · B guided steps · C check → steps
+              D guided test · E safety stop · F direct request · G auto-raised
+   check syntax: "Label|Result"  · prefix "!" = problem found
+   ===================================================================== */
+const S = (t,d,ic,act) => ({t,d,ic,act});
+const DEVICE = {
+ battery:{n:'Battery',ic:'battery',issues:[
+  {n:'Draining fast / low backup',t:'A',route:'Field – battery replacement',
+   checks:['Charger type|Pine Labs charger (OEM)','App & firmware|!Payment app update available','Background apps|!4 apps using battery','Battery drain, last 7 days|18% per hour (higher than normal)'],
+   fixes:['Close 4 background apps using battery','Update payment app to the latest version'],
+   tips:[S('Lower screen brightness','Brightness is at 100%. Lower it when you work indoors.','sun'),S('Charge fully with the Pine Labs charger','A full charge once a day keeps the battery healthy.','plug'),S('Avoid other chargers','Non-Pine Labs chargers can drain the battery faster.','bolt')]},
+  {n:'Not charging / not holding charge',t:'C',route:'Field',
+   checks:['Charging current|!No current detected','Charger type|Pine Labs charger (OEM)','Battery drain, last 7 days|Normal'],
+   steps:[S('Use the Pine Labs charger','Unplug any other charger and connect the one that came with the device.','plug'),S('Try a different socket','Plug the charger into another wall socket that you know works.','plug'),S('Try another charger','If you have another Pine Labs charger, try that one.','bolt')]},
+  {n:'Device not charging',t:'C',route:'Field',
+   checks:['Charging current|!No current detected','Charger type|Pine Labs charger (OEM)','Battery health|Good (86%)'],
+   steps:[S('Use the Pine Labs charger','Unplug any other charger and connect the one that came with the device.','plug'),S('Try a different socket','Plug the charger into another wall socket that you know works.','plug'),S('Try another charger','If you have another Pine Labs charger, try that one.','bolt')]},
+  {n:'Switches off on battery / sudden shutdown',t:'C',route:'Field – battery replacement',
+   checks:['Battery health|72%','Overheating errors|None in last 7 days'],
+   steps:[S('Charge the device fully','Keep it on charge until it shows 100%.','battery'),S('Test it unplugged','Unplug the charger and use the device as normal for 10 minutes.','bolt')]},
+  {n:'Dead / replacement needed',t:'G',route:'Field – battery replacement',checks:['Battery health|!12% · battery has failed'],autoMsg:'Battery health is below the safe limit. We\'ve raised a battery replacement request for you.'},
+  {n:'Swollen / bulging / heating',t:'E',route:'Field',danger:['Stop using the device','Unplug it from the charger','Do not charge it again','Keep it away from heat and water']}
+ ]},
+ power:{n:'Power & Charging',ic:'plug',issues:[
+  {n:'Charger / adapter not working',t:'C',route:'Field – adapter',
+   checks:['Charging current|!No current detected','Charger type|!Unknown charger','Battery health|Good (88%)'],
+   steps:[S('Try a different socket','Plug the charger into another wall socket that you know works.','plug'),S('Try another charger','If you have another Pine Labs charger, try that one.','bolt')],
+   recheck:'Checking charging status…'},
+  {n:'Charger cable damaged',t:'E',route:'Field',danger:['Stop using the damaged cable','Unplug it from the wall','Use another Pine Labs charger if you have one']}
+ ]},
+ cable:{n:'Charger cable',ic:'cable',issues:[
+  {n:'Cable loose / connection problem',t:'C',route:'Field',checks:['Charging status|!Charging stops and starts','Battery health|Good (90%)'],
+   steps:[S('Reseat both ends','Unplug the cable from the device and the adapter, then plug both back in firmly.','cable'),S('Check the port with another charger','Connect a different Pine Labs charger to the device.','plug')]},
+  {n:'Charging port / pin loose or damaged',t:'B',route:'Field – port repair',
+   steps:[S('Clean the port','Gently remove dust from the charging port with a dry brush.','device'),S('Check the pin','Look inside the port. The pin should be straight and not loose.','device'),S('Reseat the cable','Plug the cable in firmly until it clicks.','cable'),S('Try another charger','Connect a different Pine Labs charger.','plug'),S('Try another socket','Plug the charger into another wall socket.','plug')]},
+  {n:'Charger missing / new charger needed',t:'F',route:'Field'}
+ ]},
+ display:{n:'Display and touch',ic:'screen',issues:[
+  {n:'Touch not working / unresponsive',t:'D',route:'Field – EDC replacement'},
+  {n:'Display not working',t:'C',route:'Field – EDC replacement',checks:['Brightness|!Set to 5%','Display driver|Responding'],fixes:['Reset brightness to 60%'],
+   steps:[S('Restart the device','Hold the power button for 3 seconds, then tap Restart.','refresh'),S('Check the brightness','Swipe down from the top and drag brightness up.','sun')]},
+  {n:'Blank / black / white screen',t:'C',route:'Field – EDC replacement',checks:['Device status|Online','Firmware|Stable version'],fixes:['Restart the device remotely'],
+   steps:[S('Long-press to restart','Hold the power button for 10 seconds until the device restarts.','refresh')]},
+  {n:'Lines / flicker / dim / partial display',t:'C',route:'Field – EDC replacement',photo:true,checks:['Brightness|Normal','Firmware|!Update available'],fixes:['Reset brightness','Update firmware'],
+   steps:[S('Restart the device','Hold the power button for 3 seconds, then tap Restart.','refresh')]},
+  {n:'Power button not working',t:'C',route:'Field – EDC replacement',checks:['Device status|Online'],fixes:['Restart the device remotely'],
+   steps:[S('Check if the button is stuck','Press it gently a few times. It should click and spring back.','device'),S('Long-press the button','Hold it for 3 seconds.','device')]},
+  {n:'Broken / cracked screen',t:'F',route:'Field – EDC replacement',photo:true}
+ ]},
+ printer:{n:'Printer',ic:'printer',issues:[
+  {n:'Not printing',t:'C',route:'Field',checks:['Paper sensor|Paper detected','Print head temperature|Normal','Printer service|!Not responding'],fixes:['Reset print darkness','Restart the printer service'],
+   steps:[S('Check the paper roll','The roll should feed from underneath, shiny side facing up.','printer'),S('Close the flap firmly','Press down until you hear a click.','printer'),S('Print a test slip','Tap below to print a test slip.','printer','print')]},
+  {n:'Blank / half / faint print',t:'C',route:'Field – printer',checks:['Paper sensor|Paper detected','Print darkness|!Set too low','Print head temperature|Normal'],fixes:['Reset print darkness','Restart the printer service'],
+   steps:[S('Check the paper roll','The roll should feed from underneath, shiny side facing up.','printer'),S('Close the flap firmly','Press down until you hear a click.','printer'),S('Print a test slip','Tap below to print a test slip.','printer','print')]},
+  {n:'Printer error message',t:'C',route:'Field – printer',checks:['Printer error code|!E-04 · cover open','Paper sensor|Paper detected'],fixes:['Restart the printer service'],
+   steps:[S('Check the paper roll','The roll should feed from underneath, shiny side facing up.','printer'),S('Close the flap firmly','Press down until you hear a click.','printer'),S('Print a test slip','Tap below to print a test slip.','printer','print')]},
+  {n:'Flap issue / paper roll jam',t:'B',route:'Field – printer part',
+   steps:[S('Open the flap','Lift the printer cover.','printer'),S('Clear the jam','Remove any torn paper stuck inside.','printer'),S('Reseat the roll','Place the roll back, shiny side up, and close the flap.','printer')]}
+ ]},
+ card:{n:'Card reader',ic:'card',issues:[
+  {n:'Chip card / mag stripe not working',t:'A',route:'Field – EDC replacement',fw:true,checks:['Card reader|Connected','Firmware stability|!Unstable version found'],fixes:['Install stable firmware'],steps:[S('Do a test transaction','Tap below and insert any card for a ₹1 test.','card','txn')]},
+  {n:'Card not reading (type not known)',t:'A',route:'RTT first, then Field',fw:true,checks:['Card reader|Connected','Firmware stability|!Unstable version found'],fixes:['Install stable firmware'],steps:[S('Do a test transaction','Tap below and insert any card for a ₹1 test.','card','txn')]},
+  {n:'Swipe not working',t:'A',route:'Field – EDC replacement',fw:true,checks:['Magstripe head|Connected','Firmware stability|!Unstable version found'],fixes:['Install stable firmware'],steps:[S('Do a test transaction','Tap below and swipe any card for a ₹1 test.','card','txn')]},
+  {n:'Card reader error message',t:'A',route:'RTT if config; Field if hardware',fw:true,checks:['Error code|!CR-12 · reader config','Firmware stability|Stable'],fixes:['Reload card reader configuration'],steps:[S('Do a test transaction','Tap below and insert any card for a ₹1 test.','card','txn')]}
+ ]},
+ hang:{n:'Device hanging / restarting',ic:'refresh',issues:[
+  {n:'Hanging / freezing / slow',t:'A',route:'RTT',checks:['Memory|!92% full','Background apps|!6 apps running','App & firmware|Stable'],fixes:['Settle open transactions and save logs','Clear memory and cache','Close background apps'],note:'Your payments are settled first. Nothing is lost.',
+   steps:[S('Restart the device','Hold the power button for 3 seconds, then tap Restart.','refresh')]},
+  {n:'Auto restart / reboot',t:'C',route:'Field – battery / EDC',checks:['Battery health|78%','Overheating errors|!3 in last 24 hours','Firmware|Stable'],
+   steps:[S('Charge the device fully','Keep it on charge until it shows 100%.','battery'),S('Keep it ventilated','Keep it out of direct sun and off hot surfaces.','sun')]},
+  {n:'Stuck on logo / boot loop',t:'B',route:'Field – EDC replacement',
+   steps:[S('Long-press to restart','Hold the power button for 10 seconds.','refresh'),S('Charge it','Connect the Pine Labs charger for 30 minutes, then try again.','plug')]},
+  {n:'App crash',t:'A',route:'RTT first, then Field',checks:['Payment app version|!Older version','Memory|!88% full'],fixes:['Update payment app','Clear memory'],steps:[S('Restart the device','Hold the power button for 3 seconds, then tap Restart.','refresh')]}
+ ]},
+ damage:{n:'Physical damage',ic:'damage',issues:[
+  {n:'Device broken / cracked',t:'F',route:'Field – EDC replacement',photo:true,policy:'Damage charges may apply as per your agreement.'},
+  {n:'Base / stand / flap broken',t:'F',route:'Field – part replacement',photo:true},
+  {n:'Lost / stolen / misplaced',t:'F',route:'RTT / Ops – deactivate terminal',policy:'We\'ll block this terminal so nobody else can use it, and send a replacement.'},
+  {n:'Water / burn damage',t:'E',route:'Field – EDC replacement',danger:['Switch the device off','Unplug it from the charger','Do not charge it','Do not try to dry it with heat']}
+ ]},
+ network:{n:'Network & Connectivity',ic:'wifi',issues:[
+  {n:'Internet not connected',t:'C',route:'RTT',checks:['Signal strength|!Weak (1 bar)','Internet|!Not reachable','Pine Labs server|!Not reachable','APN settings|Correct'],
+   steps:[S('Switch on WiFi','Swipe down from the top and turn on WiFi.','wifi'),S('Move to a stronger signal','Move closer to the shop entrance or a window.','wifi')],recheck:'Checking connection…'}
+ ]}
+};
+
+/* Non-device: navigation → raise request (from Merchant Complaint Categories sheet; sorted by tickets) */
+const NONDEV = {
+ transaction:{n:'Payment / Transaction',ic:'txn',d:'Card, UPI/QR, EMI, disputes',subs:{
+  card:{n:'Card payments',ic:'card',issues:['Transaction status query','Amex not accepted','Charge slip / receipt query','Credit cards failing','Card declined','All cards failing','Customer charged twice / payment failed','Void a transaction','International cards not working','Refund to customer','RuPay not accepted','Tap / contactless failing','Debit cards failing','Diners / JCB not accepted']},
+  upi:{n:'UPI / QR',ic:'phone',issues:['QR not generating on terminal','UPI payment failing','Enable UPI / QR on terminal','UPI sound alert not working','Disable UPI / QR','QR not scanning','UPI payment pending','Customer debited, payment not received']},
+  emi:{n:'EMI',ic:'rupee',issues:['Brand EMI / offer not showing','EMI transaction failing','Brand / product not mapped','"Acquirer could not be found" error','No-cost EMI / cashback not applied']},
+  fuel:{n:'Fuel station automation',ic:'bolt',issues:['Tank / ATG data not syncing','Automation PC / FCC / IOT down','Dispenser (MPD) offline','ALP / UFill payments not working']},
+  dispute:{n:'Disputes & fraud',ic:'shield',issues:['Transaction reported as fraud','Customer dispute on transaction','Chargeback raised']},
+  pbl:{n:'Pay by Link',ic:'txn',issues:['Pay by Link query','Link not working','Payment via link pending']}
+ }},
+ settlement:{n:'Settlement',ic:'bank',d:'Money not credited, batch, reports',subs:{
+  credit:{n:'Settlement credit',ic:'rupee',issues:['Amount not credited','Settlement status / UTR','Settlement delayed','Less amount credited','When will money be credited']},
+  batch:{n:'Terminal batch',ic:'device',issues:['Auto-settlement setup','Batch partially / not settled','Invalid batch / ROC error','Batch locked','Batch open / cannot initialise','Batch full']},
+  report:{n:'Settlement reports',ic:'printer',issues:['Settlement / MPR / transaction report needed']},
+  hold:{n:'Holds & freezes',ic:'shield',issues:['Funds frozen by cyber cell / police / court','Money on hold (risk / documents)']}
+ }},
+ account:{n:'Accounts, services & charges',ic:'user',d:'Paper rolls, charges, add-ons, login',subs:{
+  paper:{n:'Paper rolls',ic:'printer',issues:['Paper rolls needed','Paper rolls not delivered','Stop paper roll supply']},
+  charges:{n:'Charges & billing',ic:'rupee',issues:['Unexpected auto-debit','Invoice copy / query','Ledger / account statement','Refund of charges','Rental / plan charges','MDR deduction query','Outstanding dues','Platform fee query','Charged despite no-rental plan','ACH bounce charges']},
+  service:{n:'Machine service requests',ic:'device',issues:['Fuel station maintenance visit','Fuel station re-onboarding','Return machine / close account','Training / how to use','Shift machine to new location','New / additional machine','New machine not delivered']},
+  vas:{n:'Add-on services',ic:'apps',issues:['Stop MITC & refund','Activate instant cashback','Deactivate terminal / TID','Stop Pay by Link & refund','Stop Prime & refund','Activate Pay by Link','Stop other add-on & refund','Deactivate UPI / VPA','Stop platform fee & refund','Activate Prime','Activate other add-on','Stop ACH bounce fee & refund','Stop SUF & refund','Stop EMI World & refund','Activate SDS','Activate UPI / QR','Stop V-POS','Stop low-output fee & refund','Stop SDS & refund','Activate V-POS / cardless']},
+  details:{n:'Account details',ic:'user',issues:['Change bank account','Update contact / address / email','KYC / documents status','TID / MID change','Onboarding / reactivation status','Change business name']},
+  login:{n:'Login & access',ic:'shield',issues:["Can't log in to Pine One",'Password reset','New user ID','Merchant app / portal not working']},
+  query:{n:'Queries & escalations',ic:'info',issues:['Product / process information','Follow up on an earlier complaint','Sales follow-up','Complaint to RBI / Consumer Affairs']}
+ }}
+};
+const CAT_ORDER = [
+ {id:'device',n:'Device',ic:'device',d:'Battery, charging, printer, screen…'},
+ {id:'transaction',...NONDEV.transaction},{id:'settlement',...NONDEV.settlement},{id:'account',...NONDEV.account}
+];
+const SHORTCUTS = [
+ {l:'Paper rolls needed',go:['account','paper','Paper rolls needed']},
+ {l:'Device not charging',go:['device','battery',1]},
+ {l:'Amount not credited',go:['settlement','credit','Amount not credited']},
+ {l:'Card not reading',go:['device','card',0]},
+ {l:'Printer not printing',go:['device','printer',0]}
+];
+const ISSUE_VISIBLE = 6;
+
+/* =====================================================================
+   STATE + ROUTER
+   ===================================================================== */
+let st = {open:null, q:'', stack:[{s:'home'}], toast:null};
+let timers = [];
+const clearTimers = () => { timers.forEach(clearTimeout); timers = []; };
+const later = (fn, ms) => timers.push(setTimeout(fn, ms));
+const cur = () => st.stack[st.stack.length-1];
+const go = scr => { clearTimers(); st.stack.push(scr); render(); };
+const replace = scr => { clearTimers(); st.stack[st.stack.length-1] = scr; render(); };
+const back = () => { clearTimers(); if (st.stack.length>1) st.stack.pop(); render(); };
+const home = () => { clearTimers(); st.stack=[{s:'home'}]; st.q=''; render(); };
+const toast = t => { st.toast = t; render(); setTimeout(()=>{ st.toast=null; }, 2400); };
+
+/* the "case" travels through a flow and becomes the request summary */
+function newCase(cat, sub, issue){ return {cat, sub, issue, found:[], fixed:[], tried:[], resolvedBy:null, priority:false, note:'', photo:false}; }
+function catName(id){ return id==='device'?'Device':NONDEV[id].n; }
+function subName(c, s){ return c==='device'?DEVICE[s].n:NONDEV[c].subs[s].n; }
+
+/* =====================================================================
+   COMPONENTS
+   ===================================================================== */
+const Btn = (label, act, kind='primary', extra='') => `<button class="btn ${kind}" data-act="${act}" ${extra}>${label}</button>`;
+function AppBar(title, crumbs, opts={}){
+  const c = crumbs && crumbs.length ? `<div class="crumbs">${crumbs.map((x,i)=> (i?'<span class="sep">›</span>':'') + (x.act?`<button data-act="${x.act}">${esc(x.l)}</button>`:`<span>${esc(x.l)}</span>`)).join('')}</div>` : '';
+  const left = opts.noBack ? `<div style="width:12px"></div>` : `<button class="iconbtn" data-act="${opts.close?'home':'back'}" aria-label="${opts.close?'Close':'Back'}">${ic(opts.close?'close':'back',22)}</button>`;
+  return `<div class="appbar">${left}<div class="ab-title"><div class="t">${esc(title)}</div>${c}</div>${opts.right||''}</div>`;
 }
-function look(path, scope) {
-  path = path.trim(); if (path === 'true') return true; if (path === 'false') return false;
-  const parts = path.split('.'); let v;
-  for (let s = scope; s; s = s.up) { if (parts[0] in s.vars) { v = s.vars[parts[0]]; break; } }
-  for (let i = 1; i < parts.length && v != null; i++) v = v[parts[i]];
-  return v;
+const Footer = (inner, row) => `<div class="footer ${row?'row':''}">${inner}</div>`;
+const Notice = (kind, icon, title, text) => `<div class="notice ${kind}"><div style="flex-shrink:0;margin-top:1px">${ic(icon,20)}</div><div>${title?`<b>${title}</b>`:''}${text}</div></div>`;
+const Hero = (kind, icon, title, text) => `<div class="hero"><div class="hero-ic ${kind}">${ic(icon,34,kind==='r'?'#B3261E':kind==='b'?'#1F4FB8':kind==='a'?'#8A5A00':'#1E8E4F',2.2)}</div><h1 class="h1">${title}</h1>${text?`<p class="p">${text}</p>`:''}</div>`;
+function parseCheck(s){ const [l,r]=s.split('|'); const bad=r&&r[0]==='!'; return {l, r:bad?r.slice(1):r, bad}; }
+function CheckRow(c, state){
+  const st_ = state==='pending'?'<div class="dot"></div>':state==='run'?'<div class="spinner"></div>':c.bad?ic('alert',20,'#B26A00'):ic('check',20,'#1E8E4F',2.6);
+  return `<div class="chk ${state}"><div class="st">${st_}</div><div style="flex:1"><div class="ct">${esc(c.l)}</div>${state==='done'?`<div class="cr" style="color:${c.bad?'#8A5A00':''}">${esc(c.r)}</div>`:''}</div></div>`;
 }
-const WHOLE = /^\s*\{\{([^}]+)\}\}\s*$/;
-const fill = (str, scope) => str.replace(/\{\{([^}]+)\}\}/g, (m, p) => { const v = look(p, scope); return v == null ? '' : v; });
-function build(node, scope, out) {
-  if (node.nodeType === 3) { out.appendChild(document.createTextNode(fill(node.nodeValue, scope))); return; }
-  if (node.nodeType !== 1) return;
-  const tag = node.localName;
-  if (tag === 'sc-if') { const m = WHOLE.exec(node.getAttribute('value') || ''); if (m && look(m[1], scope)) node.childNodes.forEach((c) => build(c, scope, out)); return; }
-  if (tag === 'sc-for') {
-    const m = WHOLE.exec(node.getAttribute('list') || ''); const list = (m && look(m[1], scope)) || []; const as = node.getAttribute('as');
-    list.forEach((item, i) => { const vars = { $index: i }; vars[as] = item; node.childNodes.forEach((c) => build(c, { vars: vars, up: scope }, out)); });
-    return;
+const Stepper = (n, i) => `<div class="stepper">${Array.from({length:n},(_,k)=>`<i class="${k<i?'on':k===i?'cur':''}"></i>`).join('')}</div>`;
+const Opt = (label, act, icon, color, bg) => `<button class="opt" data-act="${act}"><span class="oi" style="background:${bg}">${ic(icon,16,color,2.4)}</span>${label}</button>`;
+
+/* =====================================================================
+   SCREENS
+   ===================================================================== */
+const screens = {
+
+ /* ---------- Home: search + shortcuts + L1/L2 accordion ---------- */
+ home(){
+  const q = st.q.trim().toLowerCase();
+  let body;
+  if (q){
+    const res = searchAll(q);
+    body = `<div class="label">${res.length} result${res.length===1?'':'s'}</div><div class="list" style="margin:0 -16px">${res.slice(0,30).map((r,i)=>`<button class="row" data-act="pick:${i}"><div style="flex:1"><div class="rt">${hl(r.label,q)}</div><div class="rd">${esc(catName(r.cat))} › ${esc(subName(r.cat,r.sub))}</div></div>${ic('right',18,'#8A93A8')}</button>`).join('') || `<div class="p" style="padding:16px">No match. Try another word, or pick a category below.</div>`}</div>
+    <button class="row" data-act="describe" style="border:none;margin:0 -16px;width:calc(100% + 32px)"><div class="rt" style="color:var(--g600);font-weight:600">Describe your issue instead</div>${ic('edit',18,'#1E8E4F')}</button>`;
+    st._res = res;
+  } else {
+    body = `<div style="display:flex;flex-direction:column;gap:8px"><div class="label">Common issues</div><div class="chips" style="margin:0 -16px;padding:0 16px">${SHORTCUTS.map((s,i)=>`<button class="chip" data-act="short:${i}">${esc(s.l)}</button>`).join('')}</div></div>
+    <div style="display:flex;flex-direction:column;gap:8px"><div class="label">What do you need help with?</div><div class="cats">${CAT_ORDER.map(Category).join('')}</div></div>`;
   }
-  const el = node.cloneNode(false);
-  for (const at of Array.from(node.attributes)) {
-    if (at.name.startsWith('hint-')) { el.removeAttribute(at.name); continue; }
-    if (at.name.startsWith('on')) { el.removeAttribute(at.name); const m = WHOLE.exec(at.value); const fn = m && look(m[1], scope); if (typeof fn === 'function') el.addEventListener(at.name.slice(2).toLowerCase(), fn); continue; }
-    if (at.value.includes('{{')) el.setAttribute(at.name, fill(at.value, scope));
+  return AppBar('Log a complaint',null) + `<div class="body">
+    <div class="search">${ic('search',20,'#5A6580')}<input id="q" placeholder="Search e.g. charger, settlement" value="${esc(st.q)}" autocomplete="off">${st.q?`<button class="iconbtn" style="width:32px;height:32px" data-act="clearq" aria-label="Clear">${ic('close',16)}</button>`:''}</div>
+    ${body}</div>`;
+ },
+
+ /* ---------- L3: issue list ---------- */
+ issues(s){
+  const {cat, sub, all} = s;
+  let items;
+  if (cat==='device') items = DEVICE[sub].issues.map((x,i)=>({l:x.n,act:`issue:${i}`,tag:tagFor(x.t)}));
+  else {
+    const list = NONDEV[cat].subs[sub].issues;
+    const show = all ? list : list.slice(0,ISSUE_VISIBLE);
+    items = show.map(x=>({l:x,act:`nd:${encodeURIComponent(x)}`}));
+    if (!all && list.length>ISSUE_VISIBLE) items.push({l:`See all ${list.length} issues`,act:'seeall',more:true});
   }
-  node.childNodes.forEach((c) => build(c, scope, el));
-  out.appendChild(el);
+  items.push({l:'Something else',d:'Describe it in your own words',act:'other',other:true});
+  return AppBar(subName(cat,sub),[{l:'Help',act:'home'},{l:catName(cat)}]) + `<div class="body flush">
+    <div style="padding:16px 16px 8px"><div class="label">Select your issue</div></div>
+    <div class="list">${items.map(x=>`<button class="row ${x.other?'muted':''}" data-act="${x.act}">
+      <div style="flex:1"><div class="rt" style="${x.more?'color:var(--g600);font-weight:600':''}">${esc(x.l)}</div>${x.d?`<div class="rd">${x.d}</div>`:''}</div>
+      ${x.tag||''}${ic(x.more?'chev':'right',18,'#8A93A8')}</button>`).join('')}</div></div>`;
+ },
+
+ /* ---------- Free text / Other ---------- */
+ describe(s){
+  return AppBar('Describe your issue', s.c?crumbsFor(s.c):[{l:'Help',act:'home'}]) + `<div class="body">
+    <p class="p">Tell us what's happening. We'll send it to the right team.</p>
+    <div class="field"><label for="d">What's the problem?</label><textarea id="d" rows="5" placeholder="e.g. The device shows 'Batch full' when I try to settle">${esc(s.text||'')}</textarea><span class="hint">A few words is enough.</span></div>
+  </div>` + Footer(Btn('Continue','describe-next'));
+ },
+
+ /* ---------- A/C: prerequisite notice ---------- */
+ prep(s){
+  const it = s.c.issue;
+  const extra = it.fw ? Notice('warn','alert','If a firmware update is needed','The device can\'t take payments until it finishes, about 5 minutes. Keep the charger in and WiFi on.') :
+               Notice('info','info','Before we start','Keep the charger connected and WiFi on. If an update is needed, the device may be unusable for a few minutes.');
+  return AppBar(it.n, crumbsFor(s.c)) + `<div class="body">
+    ${Hero('g','shield','Let\'s check your device','We\'ll run a quick health check. It takes about 30 seconds and doesn\'t affect your payments.')}
+    ${extra}
+  </div>` + Footer(Btn('Start check','start-check') + Btn('Raise a request instead','raise','ghost'));
+ },
+
+ /* ---------- A/C: running diagnostics ---------- */
+ checking(s){
+  const cs = s.c.issue.checks.map(parseCheck);
+  const rows = cs.map((c,i)=>CheckRow(c, i<s.i?'done':i===s.i?'run':'pending')).join('');
+  const pct = Math.round(s.i/cs.length*100);
+  return AppBar('Checking your device', crumbsFor(s.c),{close:true}) + `<div class="body">
+    <div><div class="h2" style="margin-bottom:8px">Running health check…</div><div class="bar"><div style="width:${pct}%"></div></div></div>
+    <div class="checks">${rows}</div></div>`;
+ },
+
+ /* ---------- A/C: report + Fix it for me ---------- */
+ report(s){
+  const it = s.c.issue; const cs = it.checks.map(parseCheck); const bad = cs.filter(c=>c.bad);
+  const fixes = it.fixes||[];
+  const summary = bad.length ? Notice('warn','alert',`${bad.length} thing${bad.length>1?'s':''} need attention`, bad.map(b=>esc(b.r)).join(' · ')) : Notice('ok','check','Device looks healthy','No problems found on the device side.');
+  const fixCard = fixes.length ? `<div class="fix"><div style="display:flex;align-items:center;gap:8px">${ic('bolt',18,'#50D387')}<div class="h2">We can fix this for you</div></div>
+     <ul>${fixes.map(f=>`<li>${ic('check',16,'#50D387',2.6)}<span>${esc(f)}</span></li>`).join('')}</ul>
+     ${it.note?`<div class="cap" style="color:#9FC9B2">${esc(it.note)}</div>`:''}
+     ${Btn('Fix it for me','fix-start')}</div>` : '';
+  const next = fixes.length ? Btn('Skip, I\'ll try steps myself', it.steps?'to-steps':'to-tips','ghost') :
+               it.steps ? Btn('Next: quick checks on your side','to-steps') : Btn('Continue','to-tips');
+  return AppBar('Health check report', crumbsFor(s.c)) + `<div class="body">
+    ${summary}
+    <div class="card"><div class="checks">${cs.map(c=>CheckRow(c,'done')).join('')}</div></div>
+    ${fixCard}
+  </div>` + Footer(next);
+ },
+
+ /* ---------- A/C: running fixes ---------- */
+ fixing(s){
+  const fx = s.c.issue.fixes;
+  const rows = fx.map((f,i)=>CheckRow({l:f,r:'Done',bad:false}, i<s.i?'done':i===s.i?'run':'pending')).join('');
+  return AppBar('Fixing your device', crumbsFor(s.c),{close:true}) + `<div class="body">
+    <div><div class="h2" style="margin-bottom:8px">${s.i<fx.length?'Applying fixes…':'All fixes applied'}</div><div class="bar"><div style="width:${Math.round(s.i/fx.length*100)}%"></div></div></div>
+    <div class="checks">${rows}</div>
+    ${Notice('info','info','','Please don\'t remove the charger until this finishes.')}</div>`;
+ },
+
+ /* ---------- A: suggestions (never auto-applied) ---------- */
+ tips(s){
+  const tips = s.c.issue.tips||[];
+  if (!tips.length) return screens.resolve(s);
+  return AppBar('Suggestions for you', crumbsFor(s.c)) + `<div class="body">
+    ${s.c.fixed.length?Notice('ok','check','Fixes applied',s.c.fixed.map(esc).join(' · ')):''}
+    <p class="p">These can help too. You know your shop best, so pick what works for you.</p>
+    ${tips.map((t,i)=>{const d=(s.ack||{})[i];return `<div class="sugg ${d?'done':''}"><div class="si">${ic(t.ic,18,'#8A5A00')}</div><div style="flex:1"><div class="h2" style="font-size:14px">${esc(t.t)}</div><div class="cap" style="margin-top:2px">${esc(t.d)}</div>
+      ${d?`<div class="cap" style="margin-top:8px;color:var(--g700);font-weight:600">${d==='y'?'✓ Got it':'Skipped'}</div>`:`<div class="acts"><button class="btn sm secondary" data-act="tip:${i}:y">Got it</button><button class="btn sm ghost" data-act="tip:${i}:n">Not for me</button></div>`}</div></div>`}).join('')}
+  </div>` + Footer(Btn('Continue','to-resolve'));
+ },
+
+ /* ---------- B/C: guided steps, one action per screen, confirm each ---------- */
+ step(s){
+  const steps = s.c.issue.steps; const x = steps[s.i];
+  const phase = s.phase||'do';
+  let action = '';
+  if (x.act==='print') action = `<button class="btn sm secondary" data-act="sim:print" style="margin-top:4px">${ic('printer',16)} Print test slip</button>`;
+  if (x.act==='txn') action = `<button class="btn sm secondary" data-act="sim:txn" style="margin-top:4px">${ic('card',16)} Start ₹1 test</button>`;
+  const q = phase==='do'
+    ? `<div class="q">Did you do this?</div><div class="choice">${Opt('Yes, done','did:y','check','#1E8E4F','#E8F7EE')}${Opt('I couldn\'t do this','did:n','close','#5A6580','#ECEEF2')}</div>`
+    : `<div class="q">Is it working now?</div><div class="choice">${Opt('Yes, it\'s fixed','fixed:y','check','#1E8E4F','#E8F7EE')}${Opt('No, still not working','fixed:n','close','#B3261E','#FDECEA')}</div>`;
+  const tried = s.c.tried.length ? `<div class="tried"><div class="label">Tried so far</div>${s.c.tried.map(t=>`<div>${ic(t.ok?'check':'close',14,t.ok?'#1E8E4F':'#8A93A8',2.6)}${esc(t.s)}${t.ok||t.s.includes('couldn')?'':' — didn\'t help'}</div>`).join('')}</div>` : '';
+  return AppBar(s.c.issue.n, crumbsFor(s.c)) + `<div class="body">
+    <div style="display:flex;flex-direction:column;gap:8px">${Stepper(steps.length,s.i)}<div class="cap">Step ${s.i+1} of ${steps.length}</div></div>
+    <div class="stepcard"><div class="hero-ic g" style="width:56px;height:56px">${ic(x.ic,28,'#1E8E4F')}</div><div class="h2" style="font-size:17px">${esc(x.t)}</div><p class="p">${esc(x.d)}</p>${action}</div>
+    ${q}${tried}
+  </div>` + Footer(Btn('Raise a request','raise','ghost'));
+ },
+
+ /* ---------- C: re-check after steps (telemetry) ---------- */
+ recheck(s){
+  return AppBar('Checking again', crumbsFor(s.c),{close:true}) + `<div class="body" style="justify-content:center">
+    <div class="hero"><div class="spinner" style="width:40px;height:40px;border-width:4px"></div><h1 class="h1">${esc(s.c.issue.recheck)}</h1><p class="p">Reading live status from your device.</p></div></div>`;
+ },
+
+ /* ---------- Resolution confirm (end of A/B/C/D) ---------- */
+ resolve(s){
+  return AppBar(s.c.issue.n, crumbsFor(s.c)) + `<div class="body">
+    ${Hero('g','check','Is the issue fixed?','Try using the device as you normally would.')}
+    ${s.c.fixed.length?`<div class="card soft">${s.c.fixed.map(f=>`<div class="kv"><span class="k">${esc(f)}</span><span class="v" style="color:var(--g700)">Done</span></div>`).join('')}</div>`:''}
+    <div class="choice">${Opt('Yes, it\'s working now','res:y','check','#1E8E4F','#E8F7EE')}${Opt('No, still not working','res:n','close','#B3261E','#FDECEA')}</div>
+  </div>`;
+ },
+
+ /* ---------- D: touch test ---------- */
+ ttprep(s){
+  return AppBar('Touch test', crumbsFor(s.c)) + `<div class="body">
+    ${Hero('g','screen','Let\'s test your screen','6 green spots will appear one by one. Tap each spot within 5 seconds.')}
+    <div class="card soft"><div class="label">Before you start</div>
+      <div class="kv"><span class="k">1. Remove the screen guard or cover</span></div>
+      <div class="kv"><span class="k">2. Wipe the screen with a dry cloth</span></div></div>
+  </div>` + Footer(Btn('Start test','tt-start') + Btn('Raise a request instead','raise','ghost'));
+ },
+ tt(s){
+  const names=['Top left','Top right','Middle left','Middle right','Bottom left','Bottom right'];
+  const cells = names.map((n,i)=>{
+    const r=s.res[i]; let inner='';
+    if (i===s.active) inner = `<div class="tt-spot">Tap</div><div class="tt-timer"><div style="animation:drain ${s.retry?1:5}s linear forwards"></div></div>`;
+    else if (r==='p') inner = ic('check',34,'#50D387',3); else if (r==='f') inner = ic('close',34,'#F28B82',3);
+    return `<button class="tt-cell" data-act="tt-tap:${i}" aria-label="${n}">${inner}</button>`;}).join('');
+  const done = s.res.filter(x=>x).length;
+  return `<div class="tt"><div class="tt-head"><div style="font-size:16px;font-weight:600">${s.retry?'One more try':'Tap the green spot'}</div><div style="font-size:13px;color:#B7BCC8;margin-top:2px">${done} of 6 checked</div></div><div class="tt-grid">${cells}</div><div style="padding:10px;text-align:center;font-size:12px;color:#B7BCC8">The test ends by itself.</div></div>`;
+ },
+ ttres(s){
+  const fail = s.res.filter(r=>r==='f').length;
+  if (!fail) return AppBar('Touch test', crumbsFor(s.c)) + `<div class="body">
+    ${Hero('g','check','All 6 spots worked','Your touch screen is responding. How is it now?')}
+    <div class="choice">${Opt('It\'s working now','tt:ok','check','#1E8E4F','#E8F7EE')}${Opt('It\'s slow to respond','tt:slow','clock','#8A5A00','#FFF4D6')}${Opt('I have a different issue','tt:other','more','#5A6580','#ECEEF2')}${Opt('Raise a request','raise','ticket','#1F4FB8','#EAF0FD')}</div></div>`;
+  const tried = s.attempt>1;
+  return AppBar('Touch test', crumbsFor(s.c)) + `<div class="body">
+    ${Hero('r','alert',`${fail} spot${fail>1?'s':''} didn't respond`, tried?'The screen still isn\'t responding in some areas. Let\'s get it looked at.':'This is often caused by a screen guard or a dirty screen.')}
+    ${tried?'':`<div class="card soft"><div class="kv"><span class="k">1. Remove the screen guard</span></div><div class="kv"><span class="k">2. Wipe the screen with a dry cloth</span></div></div>`}
+  </div>` + Footer((tried?'':Btn('Try the test again','tt-again')) + Btn('Raise a request', 'raise', tried?'primary':'secondary'));
+ },
+
+ /* ---------- E: safety stop ---------- */
+ safety(s){
+  const it = s.c.issue;
+  return AppBar(it.n, crumbsFor(s.c)) + `<div class="body">
+    <div class="notice danger" style="flex-direction:column;gap:12px;padding:16px">
+      <div style="display:flex;align-items:center;gap:10px">${ic('alert',24,'#B3261E',2.4)}<b style="margin:0;font-size:16px">This isn't safe to use</b></div>
+      <div>${it.danger.map(d=>`<div style="display:flex;gap:8px;margin-top:6px">${ic('close',16,'#B3261E',2.6)}<span>${esc(d)}</span></div>`).join('')}</div></div>
+    <button class="radio ${s.ack?'on':''}" data-act="ack"><span class="rb" style="border-radius:4px"></span><span style="font-size:14px;font-weight:500">I've stopped using it</span></button>
+    <p class="cap">We'll treat this as urgent and send a technician.</p>
+  </div>` + Footer(Btn('Raise urgent request','raise-urgent','danger', s.ack?'':'disabled style="opacity:.45"'));
+ },
+
+ /* ---------- F: direct request ---------- */
+ direct(s){
+  const it = s.c.issue;
+  return AppBar(it.n, crumbsFor(s.c)) + `<div class="body">
+    ${Hero('b','ticket','We\'ll send this to our team','There\'s nothing to fix remotely for this one, so we\'ll raise a request straight away.')}
+    ${it.policy?Notice('info','info','',esc(it.policy)):''}
+    ${it.photo?`<div class="field"><label>Add a photo <span style="font-weight:400;color:var(--ink3)">(optional)</span></label>
+      <button class="upload" data-act="photo">${s.c.photo?'<div class="thumb"></div><div style="flex:1"><div class="h2" style="font-size:14px">photo_0418.jpg</div><div class="cap">Tap to replace</div></div>'+ic('check',20,'#1E8E4F',2.6):ic('camera',24,'#5A6580')+'<div><div class="h2" style="font-size:14px">Take or upload a photo</div><div class="cap">Helps the technician bring the right part</div></div>'}</button></div>`:''}
+  </div>` + Footer(Btn('Continue','raise'));
+ },
+
+ /* ---------- G: auto-raised ---------- */
+ auto(s){
+  const c = parseCheck(s.c.issue.checks[0]);
+  if (!s.done) return AppBar('Checking your device', crumbsFor(s.c),{close:true}) + `<div class="body"><div class="checks">${CheckRow(c,'run')}</div></div>`;
+  return AppBar(s.c.issue.n, crumbsFor(s.c)) + `<div class="body">
+    <div class="card"><div class="checks">${CheckRow(c,'done')}</div></div>
+    ${Notice('warn','alert','Request raised automatically',esc(s.c.issue.autoMsg))}
+    ${TicketCard(s.c)}
+  </div>` + Footer(Btn('Done','home'));
+ },
+
+ /* ---------- Raise a request: summary + description ---------- */
+ request(s){
+  const c = s.c; const path = `${catName(c.cat)} › ${c.sub?subName(c.cat,c.sub):'Other'}`;
+  const rows = [['Issue', c.issue?c.issue.n:'Described by you'],['Category', path]];
+  if (c.found.length) rows.push(['Diagnostics', c.found.join(', ')]);
+  if (c.fixed.length) rows.push(['Fixes applied', c.fixed.join(', ')]);
+  if (c.tried.length) rows.push(['Steps tried', c.tried.map(t=>t.s).join(', ')]);
+  if (c.photo) rows.push(['Photo','Attached']);
+  if (c.cat==='device' && c.issue && c.issue.checks) rows.push(['Device report','Attached']);
+  return AppBar('Raise a request', crumbsFor(c)) + `<div class="body">
+    ${c.priority?Notice('danger','alert','Urgent request','A technician will be assigned first.'):''}
+    <div class="card"><div class="label">Summary</div>${rows.map(([k,v])=>`<div class="kv"><span class="k">${k}</span><span class="v">${esc(v)}</span></div>`).join('')}</div>
+    <div class="field"><label for="note">Anything else we should know? <span style="font-weight:400;color:var(--ink3)">(optional)</span></label><textarea id="note" rows="3" placeholder="e.g. Happens mostly in the afternoon">${esc(c.note)}</textarea></div>
+  </div>` + Footer(Btn('Continue','to-phone'));
+ },
+
+ /* ---------- Phone ---------- */
+ phone(s){
+  const own = s.mode!=='new';
+  return AppBar('Confirm your number', crumbsFor(s.c)) + `<div class="body">
+    <p class="p">We'll send updates about this request to this number.</p>
+    <button class="radio ${own?'on':''}" data-act="ph:own"><span class="rb"></span><div><div style="font-size:15px;font-weight:600">+91 98••• ••210</div><div class="cap">Registered number</div></div></button>
+    <button class="radio ${!own?'on':''}" data-act="ph:new"><span class="rb"></span><div style="font-size:15px;font-weight:500">Use another number</div></button>
+    ${!own?`<div class="field" style="animation:fadeUp .2s"><input class="inp" id="ph" inputmode="numeric" maxlength="10" placeholder="10-digit mobile number" value="${esc(s.num||'')}"></div>`:''}
+  </div>` + Footer(Btn('Send OTP','send-otp'));
+ },
+
+ /* ---------- OTP ---------- */
+ otp(s){
+  const n = s.mode==='new'?`+91 ${s.num}`:'+91 98••• ••210';
+  return AppBar('Enter OTP', crumbsFor(s.c)) + `<div class="body">
+    <p class="p">We've sent a 4-digit code to <b>${n}</b>.</p>
+    <div class="otp ${s.err?'err':''}">${[0,1,2,3].map(i=>`<input inputmode="numeric" maxlength="1" data-otp="${i}" aria-label="Digit ${i+1}">`).join('')}</div>
+    ${s.err?`<div class="cap" style="color:var(--red);text-align:center">Enter all 4 digits</div>`:''}
+    <div class="cap" style="text-align:center">Didn't get it? <button class="btn ghost sm" data-act="resend" style="display:inline-flex;min-height:28px;padding:0 4px">Resend code</button></div>
+  </div>` + Footer(Btn('Verify and raise request','verify'));
+ },
+
+ /* ---------- Success ---------- */
+ done(s){
+  return AppBar('Request raised',null,{close:true}) + `<div class="body">
+    ${Hero('g','check','Request raised','We\'ve sent the details to the right team. You\'ll get updates by SMS.')}
+    ${TicketCard(s.c)}
+  </div>` + Footer(Btn('Back to home','home'));
+ },
+
+ /* ---------- Resolved ---------- */
+ resolved(s){
+  const by = s.c.resolvedBy;
+  return AppBar('All sorted',null,{close:true}) + `<div class="body">
+    ${Hero('g','check','Great, it\'s working!', by?`Fixed by: ${esc(by)}`:'Glad we could help.')}
+    <p class="cap" style="text-align:center">If it happens again, come back to Help and we'll pick up from here.</p>
+  </div>` + Footer(Btn('Done','home'));
+ }
+};
+
+function TicketCard(c){
+  const route = c.issue&&c.issue.route ? c.issue.route.split(';')[0] : `${catName(c.cat)} support team`;
+  const id = c._id || (c._id = 'SR-' + (2611000 + Math.floor(Math.random()*9000)));
+  return `<div class="card"><div class="kv"><span class="k">Request ID</span><span class="v" style="font-family:ui-monospace,monospace">${id}</span></div>
+    <div class="kv"><span class="k">Sent to</span><span class="v">${esc(route)}</span></div>
+    <div class="kv"><span class="k">Expected update</span><span class="v">${c.priority?'Within 4 hours':'Within 24 hours'}</span></div></div>`;
 }
-function draw(c) {
-  const frag = document.createDocumentFragment();
-  document.getElementById('tpl').content.childNodes.forEach((n) => build(n, { vars: c.renderVals(), up: null }, frag));
-  const app = document.getElementById('app'); app.replaceChildren(frag);
-  c._seen = c.state.hist ? c.state.hist.length : 0;
+const tagFor = t => t==='E' ? '<span class="tag r">Safety</span>' : (t==='A'||t==='C'||t==='D'||t==='G') ? '<span class="tag g">Quick check</span>' : '';
+function crumbsFor(c){ if(!c) return null; const a=[{l:catName(c.cat)}]; if(c.sub) a.push({l:subName(c.cat,c.sub)}); return a; }
+function Category(cat){
+  const open = st.open===cat.id;
+  const subs = cat.id==='device' ? Object.entries(DEVICE).map(([k,v])=>({k,n:v.n,ic:v.ic})) : Object.entries(NONDEV[cat.id].subs).map(([k,v])=>({k,n:v.n,ic:v.ic}));
+  return `<div class="cat ${open?'open':''}"><button class="cat-head" data-act="cat:${cat.id}" aria-expanded="${open}">
+    <span class="cat-ic">${ic(cat.ic,22,'#1E8E4F')}</span><span class="cat-txt"><div class="n">${esc(cat.n)}</div><div class="d">${esc(cat.d)}</div></span><span class="chev">${ic('chev',20,'#5A6580')}</span></button>
+    ${open?`<div class="subgrid">${subs.map(s=>`<button class="sub" data-act="sub:${cat.id}:${s.k}"><span class="si">${ic(s.ic,16,'#1E8E4F')}</span>${esc(s.n)}</button>`).join('')}<button class="sub other" data-act="other-cat:${cat.id}"><span class="si">${ic('more',16,'#5A6580')}</span>Other</button></div>`:''}</div>`;
 }
+function searchAll(q){
+  const out=[]; const words=q.split(/\s+/);
+  const m = s => words.every(w=>s.toLowerCase().includes(w));
+  Object.entries(DEVICE).forEach(([sk,sv])=>sv.issues.forEach((it,i)=>{ if(m(it.n+' '+sv.n)) out.push({cat:'device',sub:sk,i,label:it.n}); }));
+  Object.entries(NONDEV).forEach(([ck,cv])=>Object.entries(cv.subs).forEach(([sk,sv])=>sv.issues.forEach(x=>{ if(m(x+' '+sv.n+' '+cv.n)) out.push({cat:ck,sub:sk,label:x}); })));
+  return out;
+}
+const hl = (t,q) => { let s=esc(t); q.split(/\s+/).filter(Boolean).forEach(w=>{ s=s.replace(new RegExp('('+w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','ig'),'<b>$1</b>'); }); return s; };
 
-class Component extends DCLogic {
-  constructor(p) {
-    super(p);
-    this.state = Object.assign(this.fresh(), { scen: 'port', openReq: 'no', failMode: 'no', sw: 'old', lowBatt: 'no' });
-  }
-  fresh() {
-    return { screen: 'help', hist: [], opts: [], undo: [], more: false, tq: [], tpos: 0, tmap: {}, tpass: 1, pad: null, descOn: false, ticks: {}, note: '', ptried: [], failedNames: [], run: 0, optsTop: false, sheet: false, fixI: 0, pfixI: 0, failedOnce: false, num: '', ftitle: 'Log a complaint', fsub: '' };
-  }
-  componentWillUnmount() { this.clearAll(); }
-  clearAll() { (this._t || []).forEach(clearTimeout); this._t = []; }
-  later(fn, ms) { this._t = this._t || []; const id = setTimeout(fn, ms); this._t.push(id); return id; }
-
-  /* ---------- questions that narrow down the problem ---------- */
-  nodes() {
-    return {
-      root: { head: "Tell us what's going wrong. We'll try to fix it right here.", rows: [
-        { label: 'Device issue', to: 'part' },
-        { label: 'Payment issue', off: true }
-      ], quiet: [] },
-      part: { head: 'Which part is giving trouble?', rows: [
-        { label: 'Power and charging', to: 'psym' },
-        { label: 'Card reader', off: true },
-        { label: 'Printer', off: true },
-        { label: 'Screen and buttons', to: 'sym' },
-        { label: 'Network', off: true },
-        { label: 'Device slow or restarting', off: true },
-        { label: 'Damage or security alert', off: true }
-      ], quiet: [{ label: "My issue isn't listed", to: 'when' }] },
-      when: { head: 'When does the problem happen?', rows: [
-        { label: 'While taking a payment', to: 'payq' },
-        { label: 'While printing a receipt', off: true },
-        { label: 'While charging, or the battery runs out', to: 'psym' },
-        { label: 'When I touch or look at the screen', to: 'sym' },
-        { label: 'All the time: slow, hangs or restarts', off: true }
-      ], quiet: [{ label: "I'm not sure when it happens", flow: 'cantSay' }] },
-      payq: { head: 'What happens with the payment?', rows: [
-        { label: "The card isn't read", off: true },
-        { label: 'It keeps loading or fails', off: true }
-      ], quiet: [] },
-      psym: { head: "What's happening with charging?", rows: [
-        { label: "Won't charge", flow: 'charge' },
-        { label: 'Battery runs out fast', flow: 'drain' },
-        { label: 'Switches off by itself', off: true },
-        { label: 'Battery swollen or hot', flow: 'swollen' },
-        { label: 'Charger or cable missing or damaged', off: true }
-      ], quiet: [{ label: "My issue isn't listed", flow: 'chargeAny' }] },
-      sym: { head: "What's happening with the screen?", rows: [
-        { label: 'Touch not working properly', flow: 'touch' },
-        { label: 'Screen dim, flickering or lines', off: true },
-        { label: 'Power button not working', off: true },
-        { label: 'Screen cracked', flow: 'crack' }
-      ], quiet: [{ label: "My issue isn't listed", flow: 'screenAny' }] }
-    };
-  }
-  ask(key) {
-    const n = this.nodes()[key];
-    return { entries: [{ k: 'bot', t: n.head }], opts: n.rows.map((r) => ({ id: 'node', label: r.label, off: r.off, r: r })).concat(n.quiet.map((r) => ({ id: 'node', label: r.label, r: r }))) };
-  }
-  sum(rows) { return { k: 'card', tone: 'info', title: 'Request summary', rows: rows }; }
-  raiseOpts() { return [{ id: 'raise', label: 'Raise a request', primary: true }, { id: 'else', label: 'I have a different issue' }]; }
-  /* a quiet way out, offered once one check or fix has been tried */
-  reqOpt(rows, label, quiet) { return { id: 'req', label: label || 'Raise a request', quiet: quiet !== false, rows: rows.concat([{ a: 'Diagnostic report', b: 'Attached' }]) }; }
-  testIntro() {
-    return { k: 'step', img: '[Picture: screen with 6 spots]', cap: 'Touch test', title: 'Tap each spot when it turns green', d: "We'll light up 6 spots, one at a time. You get 5 seconds for each, and a second try for any you miss." };
-  }
-  flowStart(kind) {
-    const start = [{ id: 'start', label: 'Start touch test', primary: true }];
-    const pStart = [{ id: 'pStart', label: 'Start check', primary: true }, this.reqOpt([{ a: 'Problem', b: "Won't charge" }, { a: 'Power check', b: 'Could not be run' }], "I can't do this")];
-    const plug = { k: 'step', img: '[Picture: charger plugged into the device]', cap: 'Before we check', title: 'Plug in your charger and keep it connected', d: "We'll check the charger, the charging and the battery. It takes about 10 seconds." };
-    const P = 'Power and charging'; const S = 'Screen and buttons';
-    if (kind === 'touch') return { title: 'Touch not working', sub: S, entries: [{ k: 'bot', t: "Let's check your touch screen." }, this.testIntro()], opts: start };
-    if (kind === 'screenAny') return { title: 'Screen check', sub: S, entries: [{ k: 'bot', t: "No problem. We'll run the screen check for you." }, this.testIntro()], opts: start };
-    if (kind === 'crack') return { title: 'Screen cracked', sub: S, entries: [{ k: 'bot', t: 'A cracked screen ', b: 'has to be replaced', t2: '. If any glass is loose, stop using the device.' }, this.sum([{ a: 'Problem', b: 'Screen cracked' }, { a: 'Needs', b: 'Device replacement' }, { a: 'Diagnostic report', b: 'Attached' }])], opts: this.raiseOpts() };
-    if (kind === 'charge') return { title: "Won't charge", sub: P, entries: [{ k: 'bot', t: "Let's find out why it isn't charging." }, plug], opts: pStart };
-    if (kind === 'chargeAny') return { title: 'Power check', sub: P, entries: [{ k: 'bot', t: "No problem. We'll run the power check for you." }, plug], opts: pStart };
-    if (kind === 'drain') return { title: 'Battery runs out fast', sub: P, entries: [{ k: 'bot', t: "Let's see what is using your battery. We'll check the battery, the charger and the software. It takes a few seconds." }], opts: [{ id: 'dStart', label: 'Start check', primary: true }] };
-    if (kind === 'swollen') return { title: 'Battery swollen or hot', sub: P, entries: [{ k: 'alert', title: 'Stop using this device now', items: [{ name: 'Unplug it from the charger' }, { name: 'Do not charge it' }, { name: 'Keep it away from heat' }] }, { k: 'bot', t: "We're treating this as a ", b: 'safety priority', t2: '.' }, this.sum([{ a: 'Problem', b: 'Battery swollen or hot' }, { a: 'Priority', b: 'Safety' }, { a: 'Diagnostic report', b: 'Attached' }])], opts: this.raiseOpts() };
-    return { title: 'Log a complaint', sub: '', entries: [{ k: 'bot', t: "That's okay. Our support team will call you to understand the problem." }, this.sum([{ a: 'Problem', b: 'Not identified' }, { a: 'Diagnostic report', b: 'Latest device readings attached' }])], opts: this.raiseOpts() };
-  }
-  keep() { const st = this.state; return { scen: st.scen, openReq: st.openReq, failMode: st.failMode, sw: st.sw, lowBatt: st.lowBatt }; }
-  enterStart() { this.clearAll(); this.setState(Object.assign(this.fresh(), this.keep(), { screen: 'start' })); }
-  enterFlow() {
-    this.clearAll();
-    const head = [];
-    if (this.state.openReq === 'yes') {
-      this.setState(Object.assign(this.fresh(), this.keep(), { screen: 'flow',
-        hist: head.concat([{ k: 'bot', t: 'You already have an open request for this device. We will call you ', b: 'within [SLA]', t2: '.' }, { k: 'ticket', title: 'Touch not working', d: 'Request no. [SR number] · Raised [date and time]' }]),
-        opts: [{ id: 'resolved', label: 'My issue is resolved' }, { id: 'followUp', label: 'Follow up on this request' }, { id: 'different', label: 'I have a different issue' }] }));
-      return;
-    }
-    const a = this.ask('root');
-    this.setState(Object.assign(this.fresh(), this.keep(), { screen: 'flow', hist: head.concat(a.entries), opts: a.opts }));
-  }
-
-  /* ---------- conversation mechanics ---------- */
-  step(userLabel, entries, opts, lock, extra) {
-    const st = this.state;
-    const undo = lock ? [] : st.undo.concat([{ n: st.hist.length, opts: st.opts, ftitle: st.ftitle, fsub: st.fsub }]);
-    const hist = st.hist.concat(userLabel ? [{ k: 'user', t: userLabel }] : [], entries);
-    this.setState(Object.assign({ hist: hist, opts: opts, undo: undo, more: false }, extra || {}));
-  }
-  change() {
-    const st = this.state; if (!st.undo.length) return;
-    const u = st.undo[st.undo.length - 1];
-    this.setState({ hist: st.hist.slice(0, u.n), opts: u.opts, ftitle: u.ftitle, fsub: u.fsub, undo: st.undo.slice(0, -1), more: false, descOn: false, pad: null, ticks: {} });
-  }
-  busyThen(label, text, ms, fn) {
-    this.step(label, [{ k: 'busy', t: text }], [], true);
-    this.later(() => fn(this.state.hist.filter((h) => h.k !== 'busy')), ms);
-  }
-
-  /* ---------- touch test: 5 seconds a spot, and a second try for missed spots ---------- */
-  beginTest(label, fresh) {
-    const st = this.state;
-    this.setState({ screen: 'test', tq: [0, 1, 2, 3, 4, 5], tpos: 0, tmap: {}, tpass: 1, undo: [], opts: [], run: fresh ? 0 : st.run, hist: st.hist.concat([{ k: 'user', t: label }]) });
-    this.arm();
-  }
-  arm() { clearTimeout(this._tt); this._tt = this.later(() => this.mark(false), 5000); }
-  mark(ok) {
-    const st = this.state; if (st.screen !== 'test' || st.tpos >= st.tq.length) return;
-    const tmap = Object.assign({}, st.tmap); tmap[st.tq[st.tpos]] = ok;
-    const pos = st.tpos + 1;
-    if (pos < st.tq.length) { this.setState({ tmap: tmap, tpos: pos }); this.arm(); return; }
-    clearTimeout(this._tt);
-    const all = [0, 1, 2, 3, 4, 5];
-    const missed = all.filter((i) => !tmap[i]);
-    this.setState({ tmap: tmap, tpos: pos });
-    if (st.tpass === 1 && missed.length > 0 && missed.length < 6) {
-      this.later(() => { const m2 = Object.assign({}, this.state.tmap); missed.forEach((i) => { delete m2[i]; }); this.setState({ tpass: 2, tq: missed, tpos: 0, tmap: m2 }); this.arm(); }, 900);
-      return;
-    }
-    this.later(() => this.finishTest(all.map((i) => !!tmap[i])), 700);
-  }
-  finishTest(res) {
-    const st = this.state;
-    const names = ['Top left', 'Top right', 'Middle left', 'Middle right', 'Bottom left', 'Bottom right'];
-    const failed = names.filter((n, i) => !res[i]);
-    const f = failed.length; const run = st.run + 1;
-    const result = { k: 'result', zones: res, d: f ? 'Not responding: ' + failed.join(', ') : 'Every spot responded' };
-    let entries = []; let opts = [];
-    const done = [{ id: 'close', label: 'Done', primary: true }];
-    if (f === 0 && run === 1) {
-      entries = [{ k: 'bot', t: '', b: 'Touch is working in all 6 spots.', t2: '' }, result, { k: 'bot', t: "What's still wrong?" }];
-      opts = [{ id: 'slowYes', label: "It's slow to respond" }, { id: 'else', label: 'I have a different issue' }, { id: 'works0', label: "It's working now" }, this.reqOpt([{ a: 'Problem', b: 'Screen or touch issue' }, { a: 'Touch test', b: '6 of 6 spots working' }])];
-    } else if (f === 0) {
-      entries = [{ k: 'bot', t: '', b: 'Touch is working in all 6 spots now.', t2: '' }, result, { k: 'done', title: 'Touch is working again', d: 'The screen guard or dirt was the problem.' }];
-      opts = done;
-    } else if (f === 6) {
-      entries = [{ k: 'bot', t: '', b: "We didn't register any taps.", t2: " If you weren't ready, try again. If the screen isn't responding at all, raise the request from PineOne on your phone." }, result,
-        { k: 'step', img: '[QR code]', cap: 'No touch needed', title: 'Scan with your phone to raise this in PineOne', d: 'The test result is sent along, so you will not have to explain it again.' }];
-      opts = [{ id: 'retest0', label: 'Try again', primary: true }];
-    } else if (run === 1) {
-      entries = [{ k: 'bot', t: '', b: (6 - f) + ' of 6 spots are working.', t2: ' We tried the missed spots twice. A screen guard or dirt is often the cause.' }, result, { k: 'bot', t: 'Have you already removed the screen guard and wiped the screen?' }];
-      opts = [{ id: 'cleanNo', label: 'No, not yet' }, { id: 'cleanYes', label: 'Yes, already done' }];
-    } else {
-      entries = [{ k: 'bot', t: "The same area still isn't responding after cleaning, so ", b: 'the screen needs a repair', t2: '.' }, result, this.sum([{ a: 'Problem', b: 'Touch not working' }, { a: 'Not responding', b: failed.join(', ') }, { a: 'Already tried', b: 'Screen guard removed, screen cleaned' }, { a: 'Diagnostic report', b: 'Attached' }])];
-      opts = this.raiseOpts();
-    }
-    const bottomDead = !res[4] || !res[5];
-    const topOk = res[0] && res[1];
-    this.setState({ screen: 'flow', run: run, failedNames: failed, hist: st.hist.concat(entries), opts: opts, undo: [], more: false, optsTop: f > 0 && f < 6 && bottomDead && topOk });
-  }
-
-  /* ---------- power helpers ---------- */
-  pcard(a, b, c) { return { k: 'card', tone: 'plain', title: 'Power check', rows: [{ a: 'Charger', b: a }, { a: 'Charging', b: b }, { a: 'Battery health', b: c }] }; }
-  /* merchant-done fixes: asked about up front, then shown together, with one re-check */
-  pfixes() {
-    return [
-      { key: 'socket', short: 'Different socket', ask: 'Tried a different wall socket', name: 'Plug the charger into a different wall socket', d: 'Use a socket you know is working.' },
-      { key: 'cable', short: 'Cable reconnected', ask: 'Unplugged the cable and pushed it back in', name: 'Unplug the cable at both ends and push it back in firmly', d: 'Check the charger end and the device end.' },
-      { key: 'port', short: 'Port cleaned', ask: 'Cleaned the charging port', name: 'Gently blow the dust out of the charging port', d: 'Do not use a pin or anything sharp.' }
-    ];
-  }
-  triedOpts() { return this.pfixes().map((f) => ({ id: 'tick', key: f.key, label: f.ask, check: true })).concat([{ id: 'triedGo', label: 'Continue', primary: true }]); }
-  chargeRows() { const st = this.state; const rows = [{ a: 'Problem', b: "Won't charge" }]; const did = this.pfixes().filter((f) => st.ptried.indexOf(f.short) < 0).map((f) => f.short); if (did.length) rows.push({ a: 'Tried just now', b: did.join(', ') }); if (st.ptried.length) rows.push({ a: 'You told us you tried', b: st.ptried.join(', ') }); return rows; }
-  recheck(L) {
-    this.busyThen(L, 'Checking for charging…', 1800, (hist) => {
-      if (this.state.scen === 'socket') this.setState({ hist: hist.concat([{ k: 'done', title: 'Charging now', d: 'Your device is charging normally.' }]), opts: [{ id: 'close', label: 'Done', primary: true }] });
-      else this.setState({ hist: hist.concat([{ k: 'bot', t: '', b: "It's still not charging.", t2: ' Do you have another Pine Labs charger or cable to try?' }]), opts: [{ id: 'spYes', label: 'Yes, it charges with the other one' }, { id: 'spNo', label: 'Yes, but still not charging' }, { id: 'spNone', label: "No, I don't have a spare" }] });
-    });
-  }
-  /* describe the issue, then the number */
-  descDone(skip) {
-    const st = this.state; const text = skip ? '' : String(this._desc || '').trim(); this._desc = '';
-    this.setState({ descOn: false, note: text, undo: [], hist: st.hist.concat([{ k: 'user', t: text || 'Skip' }, { k: 'bot', t: 'Which number should we call?' }]), opts: [{ id: 'numThis', label: 'Call 98XXX XXXXX' }, { id: 'numOther', label: 'Call a different number' }] });
-  }
-  /* ---------- number pad ---------- */
-  padKey(k) { const p = this.state.pad; if (!p) return; const max = p.mode === 'num' ? 10 : 4; let v = p.val; if (k === 'del') v = v.slice(0, -1); else if (v.length < max) v += k; this.setState({ pad: { mode: p.mode, val: v, num: p.num } }); }
-  padGo() {
-    const st = this.state; const p = st.pad; if (!p) return;
-    if (p.mode === 'num') {
-      if (p.val.length < 10) return;
-      const shown = '+91 ' + p.val.slice(0, 5) + ' ' + p.val.slice(5);
-      this.setState({ hist: st.hist.concat([{ k: 'user', t: shown }, { k: 'bot', t: 'Enter the 4-digit code we sent to that number by SMS.' }]), pad: { mode: 'otp', val: '', num: shown }, undo: [] });
-      return;
-    }
-    if (p.val.length < 4) return;
-    this.setState({ pad: null }); this.raiseNow('Code entered', p.num);
-  }
-  padCancel() { const st = this.state; this.setState({ pad: null, undo: [], hist: st.hist.concat([{ k: 'bot', t: 'Which number should we call?' }]), opts: [{ id: 'numThis', label: 'Call 98XXX XXXXX' }, { id: 'numOther', label: 'Call a different number' }] }); }
-  /* battery runs out fast: battery, charger, software and battery use, as in the Issue and Sub Issue matrix */
-  drainRows(extra) { const st = this.state; const wrong = st.scen === 'charger' || st.scen === 'chargerBad'; return [{ a: 'Problem', b: 'Battery runs out fast' }, { a: 'Battery health', b: 'Good' }, { a: 'Last 7 days', b: 'Draining faster than normal' }, { a: 'Charger', b: wrong ? 'Not a Pine Labs charger' : 'Pine Labs charger' }].concat(extra || []); }
-  runDrain(L) {
-    this.busyThen(L, 'Checking battery, charger, software and battery use…', 2400, (hist) => {
-      const st = this.state; const wrong = st.scen === 'charger' || st.scen === 'chargerBad';
-      if (st.scen === 'battery') {
-        this.setState({ hist: hist.concat([{ k: 'bot', t: '', b: 'The battery needs replacing.', t2: " Keep the device plugged in until it's replaced." }, { k: 'card', tone: 'plain', title: 'Battery check', rows: [{ a: 'Battery health', b: '38%' }, { a: 'Last 7 days', b: 'Draining much faster than normal' }] }, this.sum([{ a: 'Problem', b: 'Battery runs out fast' }, { a: 'Part to replace', b: 'Battery' }, { a: 'Diagnostic report', b: 'Attached' }])]), opts: this.raiseOpts() });
-        return;
-      }
-      const found = ['the screen and background apps are using most of the power'].concat(st.sw === 'old' ? ['the software is out of date'] : [], wrong ? ["the charger isn't a Pine Labs charger"] : []);
-      const line = found.length === 1 ? found[0] : found.slice(0, -1).join(', ') + ' and ' + found[found.length - 1];
-      this.setState({ hist: hist.concat([{ k: 'bot', t: 'Your battery is healthy. ', b: 'We found ' + found.length + (found.length > 1 ? ' things' : ' thing') + ' draining it:', t2: ' ' + line + '.' },
-        { k: 'card', tone: 'plain', title: 'Battery check', rows: [{ a: 'Battery health', b: 'Good' }, { a: 'Last 7 days', b: 'Draining faster than normal' }, { a: 'Screen brightness', b: '100%' }, { a: 'Background apps', b: 'Many running' }, { a: 'Software', b: st.sw === 'old' ? 'Update available' : 'Up to date' }, { a: 'Charger', b: wrong ? 'Not a Pine Labs charger' : 'Pine Labs charger' }] },
-        { k: 'bot', t: "Let's start with the quick one." }, { k: 'card', tone: 'plain', title: 'Battery saver', rows: [{ a: 'What happens', b: 'Lower brightness, close background apps' }, { a: 'Takes', b: 'A few seconds' }] }]), opts: [{ id: 'dFix', label: 'Fix it for me', primary: true }] });
-    });
-  }
-  drainUpdate() {
-    return { entries: [{ k: 'bot', t: 'Next, ', b: 'a software update is available.', t2: ' Older versions can use more battery.' }, { k: 'card', tone: 'plain', title: 'Update the software', rows: [{ a: 'Takes', b: 'About 10 minutes' }, { a: 'During the update', b: "The device can't take payments" }, { a: 'Needs', b: 'Charger connected' }] }],
-      opts: [{ id: 'dUpd', label: 'Update now', primary: true }, { id: 'dUpdLater', label: 'Update after closing' }, this.reqOpt(this.drainRows([{ a: 'Already tried', b: 'Brightness lowered, apps closed' }, { a: 'Software', b: 'Update available, not installed' }]))] };
-  }
-  drainEnd(hist, swLine) {
-    const st = this.state; const wrong = st.scen === 'charger' || st.scen === 'chargerBad';
-    const e = wrong ? [{ k: 'step', img: '[Photo: the Pine Labs charger]', cap: 'From now on', title: 'Charge only with the Pine Labs charger', d: 'Other chargers charge slowly and wear the battery out. Charge it fully tonight.' }] : [{ k: 'bot', t: 'Charge it fully tonight with the Pine Labs charger. ', b: 'It can take a day to see the difference.', t2: '' }];
-    this.setState({ hist: hist.concat(e), opts: [{ id: 'close', label: 'Done', primary: true }, this.reqOpt(this.drainRows([{ a: 'Already tried', b: 'Brightness lowered, apps closed' }, { a: 'Software', b: swLine }]), 'Still not fixed', false)] });
-  }
-  drainInstall(L) { this.busyThen(L, 'Updating the software…', 2600, (hist) => this.drainEnd(hist.concat([{ k: 'done', title: 'Software updated', d: 'You are on the latest version.' }]), 'Updated today')); }
-
-  /* device-run fixes for a slow screen: quick one first, disruptive ones only if needed */
-  fixes() {
-    return [
-      { name: 'Clear memory', short: 'Memory cleared', why: 'Memory is almost full, which slows the screen down.', rows: [{ a: 'What happens', b: 'Close background apps, clear memory' }, { a: 'Takes', b: 'About a minute' }, { a: 'Your payments', b: 'Settled first, nothing is lost' }], cta: 'Fix it for me', busy: 'Closing apps and clearing memory…', doneT: 'Memory cleared', doneD: 'Background apps are closed.' },
-      { name: 'Restart the device', short: 'Device restarted', why: 'A restart clears anything that is still stuck.', rows: [{ a: 'What happens', b: 'The device restarts' }, { a: 'Takes', b: 'About 2 minutes' }, { a: 'After the restart', b: 'We continue from here' }], cta: 'Restart now', busy: 'Restarting…', doneT: 'Restarted', doneD: "You're back where you left off." },
-      { name: 'Update the software', short: 'Software updated', why: 'A newer version is available and may fix this.', rows: [{ a: 'Takes', b: 'About 10 minutes' }, { a: 'During the update', b: "The device can't take payments" }, { a: 'Needs', b: 'Charger connected' }], cta: 'Update now', busy: 'Updating the software…', doneT: 'Software updated', doneD: 'You are on the latest version.' }
-    ];
-  }
-  slowRows(n) { const rows = [{ a: 'Problem', b: 'Screen slow to respond' }, { a: 'Touch test', b: '6 of 6 spots working' }]; if (n > 0) rows.push({ a: 'Already tried', b: this.fixes().slice(0, n).map((f) => f.short).join(', ') }); return rows; }
-  offer(i) {
-    const f = this.fixes()[i];
-    return {
-      entries: [{ k: 'bot', t: f.why }, { k: 'card', tone: 'plain', title: f.name, rows: f.rows }],
-      opts: [{ id: 'doFix', label: f.cta, primary: true }].concat(i === 2 ? [{ id: 'fixLater', label: 'Update after closing' }] : [], i > 0 ? [this.reqOpt(this.slowRows(i))] : [])
-    };
-  }
-  afterFix(i) { return [{ id: 'works', label: "It's working now" }, i < 2 ? { id: 'nextFix', label: 'Try the next fix' } : { id: 'stillNo', label: 'Still slow' }].concat(i < 2 ? [this.reqOpt(this.slowRows(i + 1))] : []); }
-  raiseNow(L, num) {
-    this.busyThen(L, 'Raising your request…', 1600, (hist) => {
-      const st = this.state;
-      if (st.failMode === 'yes' && !st.failedOnce) {
-        this.setState({ hist: hist.concat([{ k: 'err', t: "We couldn't raise the request right now. Your details are saved, so you won't need to enter them again." }]), opts: [{ id: 'retryRaise', label: 'Try again', primary: true }, { id: 'cancelReq', label: 'Not now' }], failedOnce: true, num: num });
-      } else {
-        this.setState({ hist: hist.concat([{ k: 'card', tone: 'ok', title: 'Request raised', rows: [{ a: 'Request no.', b: '[SR number]' }, { a: "We'll call", b: num }, { a: 'Expect a call', b: '[within SLA]' }, { a: 'Your note', b: st.note ? 'Added' : 'Not added' }, { a: 'WhatsApp', b: 'Confirmation sent' }] }, { k: 'bot', t: 'You can track this in Help & Support, under My Requests.' }]), opts: [{ id: 'close', label: 'Done', primary: true }] });
-      }
-    });
-  }
-
-  pick(o) {
-    if (o.off) return;
-    const st0 = this.state; const id = o.id; const L = o.label;
-    const done = [{ id: 'close', label: 'Done', primary: true }];
-    if (id === 'node') {
-      const r = o.r;
-      if (r.to) { const a = this.ask(r.to); this.step(L, a.entries, a.opts, false); return; }
-      const f = this.flowStart(r.flow);
-      this.step(L, f.entries, f.opts, false, { ftitle: f.title, fsub: f.sub, run: 0, fixI: 0, optsTop: false, ptried: [], ticks: {} });
-      return;
-    }
-    if (id === 'resolved') { this.step(L, [{ k: 'done', title: 'Request closed', d: 'Glad it is working again. No one will call or visit for this request.' }], done, true); return; }
-    if (id === 'followUp') { this.step(L, [{ k: 'done', title: 'Follow-up sent', d: 'We have told our support team you are still waiting. They will call you within [SLA].' }], done, true); return; }
-    if (id === 'different') { const a = this.ask('root'); this.step(L, a.entries, a.opts, true); return; }
-    if (id === 'else') { const a = this.ask('when'); this.step(L, a.entries, a.opts, true, { ftitle: 'Log a complaint', fsub: '', optsTop: false }); return; }
-    if (id === 'req') { this.step(L, [{ k: 'bot', t: "Here's what we'll send to our support team." }, this.sum(o.rows)], this.raiseOpts(), false, { optsTop: false }); return; }
-    if (id === 'works0') { this.step(L, [{ k: 'done', title: 'All good', d: "We didn't find a problem. You can run this check again anytime." }], done, true); return; }
-    if (id === 'start' || id === 'retest') { this.beginTest(L); return; }
-    if (id === 'retest0') { this.beginTest(L, true); return; }
-
-    /* touch: ask before telling them to clean */
-    if (id === 'cleanNo') {
-      this.step(L, [{ k: 'step', img: '[Photo: peeling off the screen guard]', cap: 'Try this', title: 'Remove the screen guard and wipe the screen with a dry cloth', d: 'Then run the test again.' }],
-        [{ id: 'retest', label: "I've done this, test again", primary: true }, this.reqOpt([{ a: 'Problem', b: 'Touch not working' }, { a: 'Not responding', b: st0.failedNames.join(', ') }], "I can't do this")], false);
-      return;
-    }
-    if (id === 'cleanYes') { this.step(L, [{ k: 'bot', t: 'Then ', b: 'the screen needs a repair', t2: '.' }, this.sum([{ a: 'Problem', b: 'Touch not working' }, { a: 'Not responding', b: st0.failedNames.join(', ') }, { a: 'You told us you tried', b: 'Screen guard removed, screen cleaned' }, { a: 'Diagnostic report', b: 'Attached' }])], this.raiseOpts(), false, { optsTop: false }); return; }
-
-    /* slow screen */
-    if (id === 'slowYes') {
-      const f = this.offer(0);
-      this.step(L, [{ k: 'card', tone: 'plain', title: 'Screen check', rows: [{ a: 'Touch', b: 'Working' }, { a: 'Memory', b: 'Almost full' }, { a: 'Software', b: 'Update available' }] }].concat(f.entries), f.opts, false, { fixI: 0 });
-      return;
-    }
-    if (id === 'doFix') {
-      const i = st0.fixI; const f = this.fixes()[i];
-      this.busyThen(L, f.busy, 2200, (hist) => {
-        if (i === 1) this.setState({ hist: hist.concat([{ k: 'done', title: f.doneT, d: f.doneD }, { k: 'bot', t: 'Is it faster now?' }]), opts: this.afterFix(i) });
-        else this.setState({ hist: hist.concat([{ k: 'done', title: f.doneT, d: f.doneD }, { k: 'bot', t: 'Now ', b: 'restart the app', t2: ' so you can feel the difference.' }]), opts: [{ id: 'restartApp', label: 'Restart the app', primary: true }] });
-      });
-      return;
-    }
-    if (id === 'restartApp') { const i = st0.fixI; this.busyThen(L, 'Restarting the app…', 2000, (hist) => this.setState({ hist: hist.concat([{ k: 'bot', t: "You're back where you left off. Is it faster now?" }]), opts: this.afterFix(i) })); return; }
-    if (id === 'nextFix') { const i = st0.fixI + 1; const f = this.offer(i); this.step(L, f.entries, f.opts, true, { fixI: i }); return; }
-    if (id === 'fixLater') { this.step(L, [{ k: 'done', title: 'Update scheduled', d: "We'll update the software after closing tonight." }], done.concat([this.reqOpt(this.slowRows(2).concat([{ a: 'Software update', b: 'Scheduled for tonight' }]), 'Still need help', false)]), true); return; }
-    if (id === 'works') { this.step(L, [{ k: 'done', title: 'Fixed', d: 'Glad it is working again.' }], done, true); return; }
-    if (id === 'stillNo') { this.step(L, [{ k: 'bot', t: "We've tried every fix we can run on the device, so ", b: 'an engineer should look at this', t2: '.' }, this.sum(this.slowRows(3).concat([{ a: 'Diagnostic report', b: 'Attached' }]))], this.raiseOpts(), true); return; }
-
-    /* power and charging */
-    if (id === 'pStart') {
-      this.busyThen(L, 'Checking charger, charging and battery…', 2400, (hist) => {
-        const sc = this.state.scen; let e = []; let op = [];
-        if (sc === 'battery') { e = [{ k: 'bot', t: '', b: 'The battery needs replacing.', t2: " Keep the device plugged in until it's replaced." }, this.pcard('Pine Labs charger', 'Working', '38%'), this.sum([{ a: 'Problem', b: "Won't charge" }, { a: 'Part to replace', b: 'Battery' }, { a: 'Diagnostic report', b: 'Attached' }])]; op = this.raiseOpts(); }
-        else if (sc === 'charger' || sc === 'chargerBad') { e = [{ k: 'bot', t: '', b: "This isn't a Pine Labs charger.", t2: " It doesn't give your device enough power. Your battery is fine." }, this.pcard('Not a Pine Labs charger', 'Too weak', 'Good'), { k: 'step', img: '[Photo: the Pine Labs charger]', cap: 'Try this', title: 'Plug in the Pine Labs charger', d: 'It came in the box with your device.' }]; op = [{ id: 'chgRe', label: "I've done this", primary: true }, { id: 'chgNo', label: "I don't have it" }]; }
-        else if (sc === 'fine') { e = [{ k: 'bot', t: '', b: 'Your device is charging normally.', t2: '' }, this.pcard('Pine Labs charger', 'Working', 'Good'), { k: 'bot', t: "What's still wrong?" }]; op = [{ id: 'toDrain', label: 'Battery runs out fast' }, { id: 'else', label: 'I have a different issue' }, { id: 'works0', label: "It's working now" }, this.reqOpt([{ a: 'Problem', b: "Won't charge" }, { a: 'Power check', b: 'No problem found' }])]; }
-        else { e = [{ k: 'bot', t: '', b: 'No power is reaching the device.', t2: '' }, this.pcard('Pine Labs charger', 'No power coming in', 'Good'), { k: 'bot', t: 'Have you already tried any of these?' }]; op = this.triedOpts(); }
-        this.setState({ hist: hist.concat(e), opts: op, ticks: {}, ptried: [] });
-      });
-      return;
-    }
-    if (id === 'tick') { const t = Object.assign({}, st0.ticks); t[o.key] = !t[o.key]; this.setState({ ticks: t }); return; }
-    if (id === 'triedGo') {
-      const all = this.pfixes(); const tried = all.filter((f) => st0.ticks[f.key]); const rest = all.filter((f) => !st0.ticks[f.key]);
-      const said = tried.length ? 'Already tried: ' + tried.map((f) => f.short.toLowerCase()).join(', ') : "I haven't tried these";
-      const ptried = tried.map((f) => f.short);
-      if (!rest.length) { this.setState({ ptried: ptried }); this.recheck(said); return; }
-      const rows = [{ a: 'Problem', b: "Won't charge" }].concat(ptried.length ? [{ a: 'You told us you tried', b: ptried.join(', ') }] : []);
-      this.step(said, [{ k: 'fixlist', title: rest.length > 1 ? 'Try these, in any order' : 'Try this', items: rest.map((f, i) => ({ n: i + 1, name: f.name, d: f.d })) }, { k: 'bot', t: "We'll check for charging as soon as you're done." }],
-        [{ id: 'pAll', label: rest.length > 1 ? "I've done these" : "I've done this", primary: true }, this.reqOpt(rows, rest.length > 1 ? "I can't do these" : "I can't do this")], true, { ptried: ptried });
-      return;
-    }
-    if (id === 'pAll') { this.recheck(L); return; }
-    if (id === 'spYes') { this.step(L, [{ k: 'bot', t: 'Then ', b: 'the charger or cable is faulty', t2: ". We'll send a replacement." }, this.sum(this.chargeRows().concat([{ a: 'Part to replace', b: 'Charger or cable' }, { a: 'Diagnostic report', b: 'Attached' }]))], this.raiseOpts(), true); return; }
-    if (id === 'spNo' || id === 'spNone') { this.step(L, [{ k: 'bot', t: 'Then ', b: 'the charging port most likely needs a repair', t2: '.' }, this.sum(this.chargeRows().concat([{ a: 'Part to check', b: 'Charging port' }, { a: 'Diagnostic report', b: 'Attached' }]))], this.raiseOpts(), true); return; }
-    if (id === 'chgRe') {
-      this.busyThen(L, 'Checking for charging…', 1800, (hist) => {
-        if (this.state.scen === 'chargerBad') this.setState({ hist: hist.concat([{ k: 'bot', t: '', b: "It's still not charging", t2: ', even with the Pine Labs charger. Have you already tried any of these?' }]), opts: this.triedOpts(), ticks: {}, ptried: [] });
-        else this.setState({ hist: hist.concat([{ k: 'done', title: 'Charging now', d: 'The Pine Labs charger is working. Use only this charger from now on.' }]), opts: done });
-      });
-      return;
-    }
-    if (id === 'chgNo') { this.step(L, [{ k: 'bot', t: "We'll send you a Pine Labs charger. ", b: 'No engineer visit is needed.', t2: '' }, this.sum([{ a: 'Problem', b: 'Wrong charger in use' }, { a: 'Needs', b: 'Pine Labs charger' }, { a: 'Diagnostic report', b: 'Attached' }])], this.raiseOpts(), false); return; }
-    if (id === 'dStart' || id === 'toDrain') { this.runDrain(L); return; }
-    if (id === 'dFix') {
-      this.busyThen(L, 'Lowering brightness and closing apps…', 1800, (hist) => {
-        const h = hist.concat([{ k: 'done', title: 'Battery saver applied', d: 'Brightness is lower and background apps are closed.' }]);
-        if (this.state.sw === 'old') { const u = this.drainUpdate(); this.setState({ hist: h.concat(u.entries), opts: u.opts }); }
-        else this.drainEnd(h, 'Up to date');
-      });
-      return;
-    }
-    if (id === 'dUpd') {
-      if (st0.lowBatt === 'yes') { this.step(L, [{ k: 'bot', t: 'The battery is at 12%. ', b: 'Plug in the charger', t2: ' so the update can start safely.' }], [{ id: 'dPlug', label: "I've plugged it in", primary: true }, { id: 'dUpdLater', label: 'Update after closing' }], false); return; }
-      this.drainInstall(L); return;
-    }
-    if (id === 'dPlug') { this.drainInstall(L); return; }
-    if (id === 'dUpdLater') { this.setState({ undo: [], more: false }); this.drainEnd(st0.hist.concat([{ k: 'user', t: L }, { k: 'done', title: 'Update scheduled', d: "We'll update the software after closing tonight. Keep the charger connected." }]), 'Update scheduled for tonight'); return; }
-
-    /* request: describe it, then the number */
-    if (id === 'raise') { this._desc = ''; this.step(L, [{ k: 'bot', t: 'Want to add anything in your own words? This is optional.' }], [], false, { descOn: true }); return; }
-    if (id === 'numOther') { this.step(L, [{ k: 'bot', t: 'Type the number we should call.' }], [], true, { pad: { mode: 'num', val: '', num: '' } }); return; }
-    if (id === 'numThis') { this.raiseNow(L, '98XXX XXXXX'); return; }
-    if (id === 'retryRaise') { this.raiseNow(L, this.state.num); return; }
-    if (id === 'cancelReq') { this.step(L, [{ k: 'bot', t: 'No request was raised. You can come back anytime from Help & Support.' }], done, true); return; }
-    if (id === 'close') { this.restart(); return; }
-  }
-  restart() { this.clearAll(); const st = this.state; this.setState(Object.assign(this.fresh(), { scen: st.scen, openReq: st.openReq, failMode: st.failMode, sw: st.sw, lowBatt: st.lowBatt })); }
-
-  renderVals() {
-    const st = this.state; const scr = st.screen;
-    const helpItems = [
-      { t: 'My Requests', d: 'View open and closed requests' },
-      { t: 'Request Paper Roll', d: 'Order thermal rolls' },
-      { t: 'Log a Complaint', d: 'Raise a device or payment issue', on: true },
-      { t: 'Help & Support', d: 'Contact for service related queries' }
-    ].map((h) => ({ t: h.t, d: h.d, op: h.on ? 1 : 0.55, go: h.on ? () => this.enterFlow() : () => {} }));
-
-    const names = ['Top left', 'Top right', 'Middle left', 'Middle right', 'Bottom left', 'Bottom right'];
-    const cur = st.tq[st.tpos];
-    const cells = names.map((n, i) => ({ name: n, active: i === cur, pass: st.tmap[i] === true, fail: st.tmap[i] === false, tap: () => { const z = this.state; if (z.tq[z.tpos] === i) this.mark(true); } }));
-    const testCount = st.tpass === 2 ? 'Second try for missed spots · ' + Math.min(st.tpos + 1, st.tq.length) + ' of ' + st.tq.length : 'Spot ' + Math.min(st.tpos + 1, 6) + ' of 6';
-    const pd = st.pad; const isNum = pd && pd.mode === 'num';
-    const padKeys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'del'].map((k) => ({ t: k === 'del' ? '⌫' : k, aria: k === 'del' ? 'Delete' : (k || 'Blank'), op: k === '' ? 0 : 1, tap: () => { if (k !== '') this.padKey(k); } }));
-    const padVal = pd ? pd.val : '';
-    const padShown = !pd ? '' : (isNum ? '+91 ' + padVal.slice(0, 5) + (padVal.length > 5 ? ' ' + padVal.slice(5) : '') : padVal.split('').join(' '));
-    const padValid = pd && padVal.length === (isNum ? 10 : 4);
-    const topUndo = st.undo.length ? st.undo[st.undo.length - 1].n : -1;
-    const tones = { info: ['#8CCBEA', '#EAF6FC'], ok: ['#A8DDBF', '#EEF9F2'], plain: ['#DBDDE4', '#FFFFFF'] };
-    const msgs = st.hist.map((h, i) => {
-      const m = { anim: i >= (this._seen || 0) ? 'fadeUp 0.28s ease-out' : 'none', t: h.t || '', b: h.b || '', t2: h.t2 || '', cap: h.cap || '', title: h.title, d: h.d, img: h.img, rows: h.rows || [],
-        isBot: h.k === 'bot', isErr: h.k === 'err', isUser: h.k === 'user', isBusy: h.k === 'busy', isStep: h.k === 'step', isResult: h.k === 'result', isCard: h.k === 'card', isDone: h.k === 'done', isTicket: h.k === 'ticket', isAlert: h.k === 'alert', isFixlist: h.k === 'fixlist', items: h.items || [],
-        canChange: h.k === 'user' && i === topUndo, fixedReply: h.k === 'user' && i !== topUndo, changeAria: 'Change answer: ' + (h.t || ''), change: () => this.change(), zones: [] };
-      if (h.k === 'result') m.zones = h.zones.map((ok) => ({ bg: ok ? '#1E8E4F' : '#FBE3E1', col: ok ? '#FFFFFF' : '#B3261E', mark: ok ? '✓' : '✕' }));
-      if (h.k === 'card') { const c = tones[h.tone] || tones.plain; m.border = c[0]; m.bg = c[1]; }
-      return m;
-    });
-
-    /* the selection sizes itself: pills for up to 3 answers, a list for more, a More row from 7 */
-    const mk = (o) => ({ label: o.label, op: o.off ? 0.45 : 1, pick: () => this.pick(o) });
-    const anyTick = Object.keys(st.ticks).some((k) => st.ticks[k]);
-    const actions = st.opts.filter((o) => o.primary && o.id !== 'raise').map((o) => ({ label: o.id === 'triedGo' && !anyTick ? "I haven't tried these" : o.label, op: 1, pick: () => this.pick(o) }));
-    const checks = st.opts.filter((o) => o.check).map((o) => ({ label: o.label, on: st.ticks[o.key] ? 'true' : 'false', box: st.ticks[o.key] ? '#003323' : '#FFFFFF', mark: st.ticks[o.key] ? '✓' : '', tap: () => this.pick(o) }));
-    const reqPills = st.opts.filter((o) => o.primary && o.id === 'raise').map(mk);
-    const quiet = st.opts.filter((o) => o.quiet).map(mk);
-    const allAnswers = st.opts.filter((o) => !o.primary && !o.quiet && !o.check);
-    const isList = allAnswers.length > 3;
-    const collapsed = allAnswers.length >= 7 && !st.more;
-    const answers = (collapsed ? allAnswers.slice(0, 5) : allAnswers).map(mk);
-
-    const T = (label, key, items) => ({ label: label, items: items.map((x) => ({ label: x[1], border: st[key] === x[0] ? '#003323' : '#DBDDE4', bg: st[key] === x[0] ? '#FFFFFF' : 'transparent', pick: () => { const u = {}; u[key] = x[0]; this.setState(u); } })) });
-    const toggles = [
-      T('The power check finds:', 'scen', [['battery', 'Battery failing'], ['charger', 'Wrong charger'], ['chargerBad', 'Right charger, still no charge'], ['socket', 'Socket was the problem'], ['port', 'Faulty part'], ['fine', 'Charging is fine']]),
-      T('Software on the device:', 'sw', [['old', 'Update available'], ['ok', 'Up to date']]),
-      T('Battery level for an update:', 'lowBatt', [['no', 'Enough charge'], ['yes', 'Too low']]),
-      T('Open request on this device:', 'openReq', [['no', 'None'], ['yes', 'One is open']]),
-      T('Raising a request:', 'failMode', [['no', 'Works'], ['yes', 'Fails the first time']])
-    ];
-    const answered = st.hist.some((h) => h.k === 'user');
-
-    return {
-      isTest: scr === 'test', notTest: scr !== 'test', isHelp: scr === 'help', isStart: scr === 'start', isFlow: scr === 'flow', goDevice: () => this.enterFlow(),
-      padOn: !!pd && scr === 'flow', padLabel: isNum ? 'Mobile number · 10 digits' : 'Code sent to ' + (pd ? pd.num : ''), padShown: padShown, padKeys: padKeys, padCta: isNum ? 'Send code' : 'Verify and raise request', padGoOp: padValid ? 1 : 0.4, padGo: () => this.padGo(), padCancel: () => this.padCancel(),
-      title: scr === 'help' ? 'Help & Support' : st.ftitle, subtitle: st.fsub, hasSub: scr === 'flow' && !!st.fsub,
-      back: () => { if (scr === 'start') this.restart(); else if (scr === 'flow') { if (st.undo.length && !st.pad) this.change(); else if (answered) this.setState({ sheet: true }); else this.restart(); } },
-      startOver: () => this.enterFlow(),
-      helpItems: helpItems, cells: cells, testCount: testCount,
-      msgs: msgs, hasOpts: st.opts.length > 0, actions: actions, reqPills: reqPills, answers: answers, checks: checks, hasChecks: checks.length > 0,
-      descOn: st.descOn && scr === 'flow', descInput: (e) => { this._desc = e.target.value; }, descGo: () => this.descDone(false), descSkip: () => this.descDone(true), quiet: quiet,
-      isPills: !isList && answers.length > 0, isList: isList, showMore: collapsed, moreGo: () => this.setState({ more: true }),
-      optsTop: st.optsTop, optOrder: st.optsTop ? -1 : 0, optPos: st.optsTop ? 'sticky' : 'static',
-      sheet: st.sheet && scr === 'flow', stay: () => this.setState({ sheet: false }), leave: () => this.restart(),
-      toggles: toggles, restart: () => this.restart()
-    };
-  }
+/* =====================================================================
+   FLOW ENGINE — template → first screen
+   ===================================================================== */
+function startIssue(cat, sub, i){
+  if (cat!=='device'){ const c=newCase(cat,sub,{n:i}); return go({s:'request',c}); }
+  const it = DEVICE[sub].issues[i]; const c = newCase(cat,sub,it);
+  ({A:()=>go({s:'prep',c}), C:()=>go({s:'prep',c}), B:()=>go({s:'step',c,i:0}), D:()=>go({s:'ttprep',c}),
+    E:()=>go({s:'safety',c}), F:()=>go({s:'direct',c}), G:()=>{ go({s:'auto',c}); later(()=>{ c.found.push(parseCheck(it.checks[0]).r); c.priority=true; replace({s:'auto',c,done:true}); },1600); }})[it.t]();
+}
+function runChecks(c){
+  const n=c.issue.checks.length; let i=0; replace({s:'checking',c,i:0});
+  const tick=()=>{ i++; replace({s:'checking',c,i}); if(i<n) later(tick,800); else { c.found = c.issue.checks.map(parseCheck).filter(x=>x.bad).map(x=>x.r); later(()=>replace({s:'report',c}),600);} };
+  later(tick,900);
+}
+function runFixes(c){
+  const fx=c.issue.fixes; let i=0; go({s:'fixing',c,i:0});
+  const tick=()=>{ i++; replace({s:'fixing',c,i}); if(i<fx.length) later(tick,1300); else { c.fixed=[...fx]; later(()=>afterFix(c),900);} };
+  later(tick,1300);
+}
+function afterFix(c){ const it=c.issue; if(it.tips) replace({s:'tips',c}); else if(it.steps) replace({s:'step',c,i:0,phase:'do'}); else replace({s:'resolve',c}); }
+function stepAnswer(s, ok, couldnt){
+  const x = s.c.issue.steps[s.i];
+  if (ok){ s.c.tried.push({s:x.t,ok:true}); s.c.resolvedBy = x.t; return go({s:'resolved',c:s.c}); }
+  s.c.tried.push({s:x.t+(couldnt?' (couldn\'t do)':''),ok:false});
+  if (s.i+1 < s.c.issue.steps.length) return replace({s:'step',c:s.c,i:s.i+1,phase:'do'});
+  if (s.c.issue.recheck){ go({s:'recheck',c:s.c}); later(()=>replace({s:'request',c:s.c}),2200); return; }
+  go({s:'request',c:s.c});
 }
 
-window.proto = new Component(); draw(window.proto);
+/* =====================================================================
+   EVENTS
+   ===================================================================== */
+const app = document.getElementById('app');
+app.addEventListener('click', e=>{
+  const b = e.target.closest('[data-act]'); if(!b || b.disabled) return;
+  const [a,...p] = b.dataset.act.split(':'); const s = cur();
+  switch(a){
+    case 'back': return back();
+    case 'home': return home();
+    case 'clearq': st.q=''; return render(true);
+    case 'cat': st.open = st.open===p[0]?null:p[0]; return render();
+    case 'sub': return go({s:'issues',cat:p[0],sub:p[1]});
+    case 'seeall': return replace({...s,all:true});
+    case 'issue': return startIssue(s.cat,s.sub,+p[0]);
+    case 'nd': return startIssue(s.cat,s.sub,decodeURIComponent(p[0]));
+    case 'short': { const g=SHORTCUTS[+p[0]].go; return startIssue(g[0],g[1],g[2]); }
+    case 'pick': { const r=st._res[+p[0]]; return startIssue(r.cat,r.sub,r.cat==='device'?r.i:r.label); }
+    case 'other': return go({s:'describe',c:newCase(s.cat,s.sub,null)});
+    case 'other-cat': return go({s:'describe',c:newCase(p[0],null,null)});
+    case 'describe': return go({s:'describe',c:newCase('account',null,null),text:st.q});
+    case 'describe-next': { const v=document.getElementById('d').value.trim(); if(!v) return toast('Tell us a little about the issue'); s.c.note=v; return go({s:'request',c:s.c}); }
+    case 'start-check': return runChecks(s.c);
+    case 'fix-start': return runFixes(s.c);
+    case 'to-steps': return go({s:'step',c:s.c,i:0,phase:'do'});
+    case 'to-tips': return s.c.issue.tips ? go({s:'tips',c:s.c}) : go({s:'resolve',c:s.c});
+    case 'tip': { const ack={...(s.ack||{})}; ack[+p[0]]=p[1]; return replace({...s,ack}); }
+    case 'to-resolve': return s.c.issue.steps ? go({s:'step',c:s.c,i:0,phase:'do'}) : go({s:'resolve',c:s.c});
+    case 'did': if(p[0]==='y') return replace({...s,phase:'check'}); return stepAnswer(s,false,true);
+    case 'fixed': return stepAnswer(s, p[0]==='y');
+    case 'sim': return toast(p[0]==='print'?'Printing test slip…':'Insert or tap a card on the device');
+    case 'res': if(p[0]==='y'){ s.c.resolvedBy = s.c.fixed.length?'Fix it for me':null; return go({s:'resolved',c:s.c}); } return go({s:'request',c:s.c});
+    case 'tt-start': case 'tt-again': return startTouch(s.c, a==='tt-again'?(s.attempt||1)+1:1);
+    case 'tt-tap': return touchTap(+p[0]);
+    case 'tt': if(p[0]==='ok'){ s.c.resolvedBy='Removing screen guard / cleaning'; return go({s:'resolved',c:s.c}); } if(p[0]==='slow'){ s.c.note='Touch works but is slow to respond'; return go({s:'request',c:s.c}); } return home();
+    case 'ack': return replace({...s,ack:!s.ack});
+    case 'raise-urgent': s.c.priority=true; return go({s:'request',c:s.c});
+    case 'photo': s.c.photo=!s.c.photo; return render();
+    case 'raise': return go({s:'request',c:s.c});
+    case 'to-phone': s.c.note=document.getElementById('note').value; return go({s:'phone',c:s.c,mode:'own'});
+    case 'ph': return replace({...s,mode:p[0]});
+    case 'send-otp': { if(s.mode==='new'){ const v=(document.getElementById('ph').value||'').replace(/\D/g,''); if(v.length!==10) return toast('Enter a 10-digit number'); return go({s:'otp',c:s.c,mode:'new',num:v}); } return go({s:'otp',c:s.c,mode:'own'}); }
+    case 'resend': return toast('New code sent');
+    case 'verify': { const v=[...document.querySelectorAll('[data-otp]')].map(i=>i.value).join(''); if(v.length<4) return replace({...s,err:true}); return go({s:'done',c:s.c}); }
+  }
+});
+app.addEventListener('input', e=>{
+  if (e.target.id==='q'){ st.q=e.target.value; render(true); }
+  if (e.target.dataset.otp!=null){ const i=+e.target.dataset.otp; e.target.value=e.target.value.replace(/\D/g,''); if(e.target.value && i<3) document.querySelector(`[data-otp="${i+1}"]`).focus(); }
+});
+app.addEventListener('keydown', e=>{ if(e.target.dataset.otp!=null && e.key==='Backspace' && !e.target.value){ const i=+e.target.dataset.otp; if(i>0) document.querySelector(`[data-otp="${i-1}"]`).focus(); } });
+
+/* ---------- touch test engine: 5s per spot, missed spots get one 1s retry ---------- */
+let TT=null;
+function startTouch(c, attempt){
+  TT={c,attempt,res:[null,null,null,null,null,null],queue:[0,1,2,3,4,5],retryQ:[],retry:false,active:null};
+  go({s:'tt',c,res:TT.res}); nextSpot();
+}
+function nextSpot(){
+  clearTimers();
+  if(!TT.queue.length){
+    if(!TT.retry && TT.retryQ.length){ TT.retry=true; TT.queue=TT.retryQ; TT.retryQ=[]; TT.queue.forEach(i=>TT.res[i]=null); }
+    else { const r=[...TT.res]; return replace({s:'ttres',c:TT.c,res:r,attempt:TT.attempt}); }
+  }
+  TT.active=TT.queue.shift(); replace({s:'tt',c:TT.c,res:TT.res,active:TT.active,retry:TT.retry});
+  later(()=>{ TT.res[TT.active]='f'; if(!TT.retry) TT.retryQ.push(TT.active); nextSpot(); }, TT.retry?1000:5000);
+}
+function touchTap(i){ if(!TT||i!==TT.active) return; TT.res[i]='p'; nextSpot(); }
+
+/* =====================================================================
+   RENDER
+   ===================================================================== */
+let lastKey='';
+function render(keepFocus){
+  const s = cur(); const scr = screens[s.s];
+  const key = s.s+'#'+st.stack.length; app.classList.toggle('enter', key!==lastKey); lastKey=key;
+  const pos = keepFocus && document.activeElement && document.activeElement.id==='q' ? document.activeElement.selectionStart : null;
+  app.innerHTML = scr(s) + (st.toast?`<div class="toast">${esc(st.toast)}</div>`:'');
+  if (pos!=null){ const q=document.getElementById('q'); q.focus(); q.setSelectionRange(pos,pos); }
+  if (s.s==='otp') { const f=document.querySelector('[data-otp="0"]'); f&&f.focus(); }
+}
+render();
 </script>
 </body>
 </html>
