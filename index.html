@@ -46,6 +46,7 @@ input{font-family:inherit;color:inherit}
 .bot{font-size:14px;line-height:21px;max-width:312px}
 .bot b{font-weight:600}
 .bot.err{color:var(--red)}
+.bot.q{font-size:15px;font-weight:600}
 .me{align-self:flex-end;display:flex;justify-content:flex-end;max-width:270px}
 .me>*{background:var(--line2);border-radius:20px 20px 4px 20px;padding:10px 14px;font-size:14px;line-height:19px;border:none;text-align:left;display:inline-flex;align-items:center;gap:8px}
 .me button:active{background:var(--line)}
@@ -53,6 +54,14 @@ input{font-family:inherit;color:inherit}
 .divider{display:flex;align-items:center;gap:10px;font-size:11px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em}
 .divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line)}
 
+.tabs{display:flex;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none;flex-shrink:0}
+.tab{flex-shrink:0;height:40px;border-radius:20px;border:1px solid var(--line);background:#fff;padding:0 14px;font-size:14px;font-weight:500;display:flex;align-items:center;gap:6px}
+.tab.on{background:var(--g900);border-color:var(--g900);color:#fff}
+.picklist{flex:1;overflow-y:auto}
+.picklist .ph{padding:14px 16px 6px;font-size:12px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em}
+.pinned{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:var(--bg)}
+.pinned .pt{flex:1;font-size:13px;color:var(--ink2)}.pinned .pt b{color:var(--ink);font-weight:600}
+.linkbtn{border:none;background:none;color:var(--g600);font-weight:600;font-size:13px;padding:6px 4px}
 .olist{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
 .orow{width:100%;border:none;background:#fff;display:flex;align-items:center;gap:12px;padding:12px 14px;text-align:left;min-height:52px;border-bottom:1px solid var(--line2)}
 .orow:last-child{border-bottom:none}
@@ -146,14 +155,14 @@ input{font-family:inherit;color:inherit}
 <div class="stage">
   <div class="device"><div class="statusbar"><span>Pine Labs</span><span>4G · 82%</span></div><div id="app" style="flex:1;display:flex;flex-direction:column;min-height:0;position:relative"></div></div>
   <aside class="notes">
-    <span class="v">v2.1 · chat flow</span>
+    <span class="v">v2.2 · guided flow</span>
     <h3>How it works</h3>
     <ul>
-      <li>One chat from the first question. Every tap becomes your reply, so the whole history stays on screen. Tap a reply with ✎ to change it.</li>
-      <li>Checks, fixes and steps all happen inside the chat.</li>
+      <li>Category tabs and sub-categories on one screen.</li>
+      <li>From the issue onwards, each answer stays on screen and the next step appears below it. Your selection stays pinned at the top.</li>
       <li>Fix before request: the request only appears once fixes run out, or straight away for safety and damage.</li>
       <li>Your steps: "Already tried any?" first, then one list that unlocks in order. The device checks itself where it can.</li>
-      <li>Restart: the chat picks up again after the device boots.</li>
+      <li>Restart: you come back to the same screen after the device boots.</li>
     </ul>
     <h3>Try</h3>
     <ul>
@@ -332,27 +341,25 @@ const CATS = [
 ];
 
 /* ============================ CHAT ENGINE ============================ */
-let T=[], PROMPT=null, C={}, LAYER=null, RUN=0, PROMPT_ERR='';
+let T=[], PROMPT=null, C={}, LAYER=null, RUN=0, PROMPT_ERR='', VIEW='pick', TAB='device';
 const REQS=[];
 const sim = k => document.getElementById(k).checked;
 const now = () => new Date().toLocaleTimeString('en-IN',{hour:'numeric',minute:'2-digit'});
 const sleep = ms => new Promise(r=>setTimeout(r,ms));
 const guard = r => { if(r!==RUN) throw 'stale'; };
 
-async function bot(html, opt={}){ const r=RUN; T.push({k:'typing'}); render(); await sleep(opt.fast?350:650); guard(r); T.pop(); T.push({k:'bot',html,err:opt.err}); render(); await sleep(150); guard(r); }
+async function bot(html, opt={}){ const r=RUN; T.push({k:'bot',html,err:opt.err,q:opt.q}); render(); await sleep(180); guard(r); }
 function card(o){ T.push({k:'card',...o}); render(); return T[T.length-1]; }
 function me(text, editable){ T.push({k:'me',text,edit:editable?snap():null}); PROMPT=null; render(); }
 function snap(){ return {len:T.length, prompt:PROMPT, C:Object.assign({},C)}; }
 function ask(p){ PROMPT=p; render(); return new Promise(res=>{ p.resolve=res; }); }
 async function go(fn){ try{ await fn(); }catch(e){ if(e!=='stale') throw e; } }
 
-async function start(){
-  RUN++; T=[]; PROMPT=null; C={}; LAYER=null; render();
-  await go(async()=>{
-    if (REQS.length) card({type:'openreq'});
-    await bot('Hi! I\'m here to help. What do you need help with?');
-    pickCategory();
-  });
+function start(){ RUN++; T=[]; PROMPT=null; C={}; LAYER=null; VIEW='pick'; render(); }
+function openSub(cat, sub){
+  RUN++; T=[]; PROMPT=null; LAYER=null; C={cat}; VIEW='flow';
+  if (sub==='other'){ render(); return go(somethingElse); }
+  C.sub=sub; render(); go(()=>pickIssue());
 }
 function pickCategory(){
   ask({type:'list',items:CATS.map(c=>({id:c.id,t:c.n,d:c.d,ic:c.ic})),onPick:it=>{ me(it.t,true); C={cat:it.id}; go(pickSub); }});
@@ -367,7 +374,7 @@ async function pickIssue(all){
   let items;
   if (C.cat==='device') items = DEVICE[C.sub].issues.map((x,i)=>({id:i,t:x.n}));
   else { const l=NONDEV[C.cat].subs[C.sub].issues; items=(all?l:l.slice(0,6)).map(x=>({id:x,t:x})); if(!all&&l.length>6) items.push({id:'_more',t:`Show all ${l.length}`,more:true}); }
-  if (!all) await bot('Which of these is happening?');
+  if (!all) await bot('Which of these is happening?',{q:true});
   ask({type:'list',plain:true,items:[...items,{id:'other',t:'Something else',muted:true}],onPick:it=>{
     if (it.id==='_more'){ PROMPT=null; return go(()=>pickIssue(true)); }
     me(it.t,true); if(it.id==='other') return go(somethingElse);
@@ -376,14 +383,14 @@ async function pickIssue(all){
 }
 
 async function nonDevice(){
-  await bot(`Got it. I'll send this to our <b>${esc(NONDEV[C.cat].n)}</b> team.`);
+  await bot(`This goes to our <b>${esc(NONDEV[C.cat].n)}</b> team.`);
   if (C.cat==='transaction'||C.cat==='settlement'){
     await bot(C.cat==='settlement'?'Which settlement is this about?':'When did this transaction happen?');
     const w = await ask({type:'pills',items:['Today','Yesterday','Earlier this week','Older']}); me(w); C.when=w;
   }
   C.reason=''; await confirmTicket();
 }
-async function somethingElse(){ await bot('No problem. I\'ll ask our support team to <b>call you</b> and understand the issue.'); C.callback=true; C.reason=''; await confirmTicket(); }
+async function somethingElse(){ await bot('Our support team will <b>call you</b> to understand the issue.'); C.callback=true; C.reason=''; await confirmTicket(); }
 
 /* ---------- device issue ---------- */
 async function runIssue(){
@@ -406,7 +413,7 @@ async function afterDiagnosis(){
 }
 async function diagnose(){
   const it=C.issue, r=RUN;
-  await bot('Let\'s check your device. <b>Don\'t close the chat</b> while I connect to it.');
+  await bot('Checking your device. <b>Keep this screen open</b> until it finishes.');
   const rows = it.checks.map(s=>{const [l,v]=s.split('|'); return {l, r:v.replace(/^!/,''), bad:v[0]==='!', st:'wait'};});
   const k = card({type:'check',rows});
   for (let i=0;i<rows.length;i++){
@@ -459,18 +466,18 @@ async function firmware(){
 async function restart(){
   const it=C.issue;
   if (it.restart==='remote'){
-    await bot('Let\'s try a <b>restart</b>. It takes about a minute and you can\'t take payments meanwhile. I\'ll pick up right here when the device is back on.');
+    await bot('Let\'s try a <b>restart</b>. It takes about a minute and you can\'t take payments meanwhile. You\'ll come back to this screen after it restarts.');
     const a = await ask({type:'pills',items:[{t:'Restart now',go:true},{t:'Not now'}]}); me(a);
     if (a!=='Restart now') return false;
   } else {
-    await bot('Hold the <b>power button for 10 seconds</b> until the device restarts. I\'ll pick up right here when it\'s back on.');
+    await bot('Hold the <b>power button for 10 seconds</b> until the device restarts. You\'ll come back to this screen after it restarts.');
     const a = await ask({type:'pills',items:[{t:'Okay, restarting',go:true},{t:'I can\'t do this'}]}); me(a);
     if (a!=='Okay, restarting') return false;
   }
   C.done.push('Device restarted');
   await reboot();
   T.push({k:'divider',text:'Device restarted · '+now()}); render();
-  await bot('Welcome back. Your device has restarted.',{fast:true});
+  
   return verify('restart');
 }
 function reboot(){ const r=RUN; return new Promise(res=>{ LAYER={type:'boot'}; render();
@@ -545,15 +552,14 @@ async function verify(after){
 /* ---------- endings ---------- */
 async function resolved(){
   if (C.fixedBy && !C.watch) card({type:'resolved'});
-  await bot(C.watch?'Did this chat help?':'Glad it\'s sorted. Did this chat help?');
+  await bot('Did this help?',{q:true});
   const a = await ask({type:'pills',items:[{t:'It solved my problem'},{t:'It needs improvement'}]}); me(a);
-  await bot(a.startsWith('It solved')?'Thanks for letting us know!':'Thanks. We\'ll use this to improve.',{fast:true});
+  
   return endPills();
 }
 async function endPills(){
   const a = await ask({type:'pills',items:[{t:'Need help with something else'},{t:'Done'}]}); me(a);
-  if (a.startsWith('Need')) return start();
-  await bot('Have a good day!',{fast:true});
+  start();
 }
 const teamOf = r => /^Field/.test(r) ? 'field service team' : /^RTT/.test(r) ? 'remote support team' : 'support team';
 async function escalate(){
@@ -706,29 +712,42 @@ function renderPrompt(p){
   if (p.type==='otp') return `<div class="card m"><div class="otp ${PROMPT_ERR?'bad':''}">${[0,1,2,3].map(i=>`<input inputmode="numeric" maxlength="1" data-otp="${i}" aria-label="Digit ${i+1}">`).join('')}</div>${PROMPT_ERR?`<div class="cs" style="color:var(--red)" role="alert">${PROMPT_ERR}</div>`:''}<div class="cs" id="rs"></div><button class="btn primary" data-act="otp">Verify</button></div>`;
   return '';
 }
+function renderPicker(){
+  const subs = TAB==='device' ? Object.entries(DEVICE).map(([k,v])=>({k,n:v.n,ic:v.ic,d:v.issues.slice(0,3).map(x=>x.n.split(' / ')[0]).join(', ')})) :
+    Object.entries(NONDEV[TAB].subs).map(([k,v])=>({k,n:v.n,ic:v.ic,d:v.issues.slice(0,3).join(', ')}));
+  const short={device:'Device',transaction:'Payments',settlement:'Settlement',account:'Account'};
+  const open = REQS.length ? `<div style="padding:12px 16px 0"><div class="notice info">${ic('ticket',18)}<span>You have <b>${REQS.length} open request${REQS.length>1?'s':''}</b>. Latest: ${esc(REQS[0].id)} · ${esc(REQS[0].name)}</span></div></div>` : '';
+  return `<div class="appbar"><button class="iconbtn" aria-label="Back">${ic('back',22)}</button><div class="ab-t">Log a complaint</div></div>
+   <div class="tabs" role="tablist">${CATS.map(c=>`<button class="tab ${TAB===c.id?'on':''}" role="tab" aria-selected="${TAB===c.id}" data-act="tab:${c.id}">${ic(c.ic,16)}${short[c.id]}</button>`).join('')}</div>
+   <div class="picklist">${open}<div class="ph">What's the issue about?</div>
+   <div style="padding:0 16px 16px"><div class="olist">${subs.map(x=>`<button class="orow" data-act="sub:${x.k}"><span class="oi">${ic(x.ic,17,'#1E8E4F')}</span><div style="flex:1;min-width:0"><div class="ot">${esc(x.n)}</div><div class="od" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(x.d)}</div></div>${ic('right',16,'#8A93A8')}</button>`).join('')}
+   <button class="orow muted" data-act="sub:other"><span class="oi" style="background:var(--line2)">${ic('more',17,'#5A6580')}</span><div class="ot">Something else</div>${ic('right',16,'#8A93A8')}</button></div></div></div>`;
+}
 function renderLayer(){
   const L=LAYER; if(!L) return '';
   if (L.type==='tt'){ const done=L.res.filter(Boolean).length;
     return `<div class="layer tt" style="inset:0"><div style="padding:14px 16px 10px;text-align:center"><div style="font-size:16px;font-weight:600">${L.retry?'One more try':'Tap the green spot'}</div><div style="font-size:13px;color:#B7BCC8;margin-top:2px">${done} of 6 checked</div></div>
      <div class="tt-grid">${L.res.map((r,i)=>`<button class="tt-cell" data-act="tt:${i}" aria-label="Spot ${i+1}">${i===L.active?`<span class="tt-spot">Tap</span><span class="tt-bar"><div style="animation:drain ${L.retry?1:5}s linear forwards"></div></span>`:r==='p'?ic('check',32,'#50D387',3):r==='f'?ic('close',32,'#F28B82',3):''}</button>`).join('')}</div>
-     <div style="padding:10px;text-align:center;font-size:12px;color:#B7BCC8">The test ends by itself and takes you back to the chat.</div></div>`; }
+     <div style="padding:10px;text-align:center;font-size:12px;color:#B7BCC8">The test ends by itself.</div></div>`; }
   if (L.type==='boot') return `<div class="layer boot" style="inset:0"><div class="logo">pine labs</div><span class="spin" style="width:28px;height:28px;border-width:3px;border-color:#333;border-top-color:#50D387"></span><div style="font-size:12px;color:#8A93A8">Restarting…</div></div>`;
   if (L.type==='poshome') return `<div class="layer poshome" style="inset:0"><div style="padding:16px;font-size:17px;font-weight:600;background:#fff;border-bottom:1px solid var(--line)">Home</div>
-     <div class="notif"><div style="display:flex;gap:10px;align-items:center"><span class="okic" style="width:32px;height:32px">${ic('chat',16,'#1E8E4F')}</span><div style="flex:1"><div class="ct">Help & Support</div><div class="cs">Your device restarted. Let's check if it helped.</div></div></div><button class="btn primary" data-act="resume">Continue chat</button></div>
+     <div class="notif"><div style="display:flex;gap:10px;align-items:center"><span class="okic" style="width:32px;height:32px">${ic('chat',16,'#1E8E4F')}</span><div style="flex:1"><div class="ct">Help & Support</div><div class="cs">Your device restarted. Let's check if it helped.</div></div></div><button class="btn primary" data-act="resume">Continue</button></div>
      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:4px 12px;opacity:.6"><div class="tile">Sale</div><div class="tile">UPI / QR</div><div class="tile">Settlement</div><div class="tile">Reports</div></div></div>`;
   return '';
 }
 function render(){
   const msgs = T.map((m,idx)=>{
     if (m.k==='typing') return `<div class="m"><div class="typing"><i></i><i></i><i></i></div></div>`;
-    if (m.k==='bot') return `<div class="m bot ${m.err?'err':''}">${m.html}</div>`;
+    if (m.k==='bot') return `<div class="m bot ${m.err?'err':''} ${m.q?'q':''}">${m.html}</div>`;
     if (m.k==='me') return `<div class="m me">${m.edit?`<button data-act="edit:${idx}" aria-label="Change answer: ${esc(m.text)}">${esc(m.text)}${ic('edit',13,'#8A93A8')}</button>`:`<div>${esc(m.text)}</div>`}</div>`;
     if (m.k==='divider') return `<div class="m divider">${esc(m.text)}</div>`;
     if (m.k==='card') return `<div class="m">${renderCard(m, PROMPT && PROMPT.card===m)}</div>`;
   }).join('');
+  if (VIEW==='pick'){ app.innerHTML = renderPicker(); return; }
   const inline = PROMPT && !PROMPT.card ? renderPrompt(PROMPT) : '';
-  app.innerHTML = `<div class="appbar"><button class="iconbtn" aria-label="Back">${ic('back',22)}</button><div class="ab-t">Log a complaint</div><button class="iconbtn" data-act="restart-chat" aria-label="Start over">${ic('refresh',20)}</button></div>
-   <div class="thread" role="log" aria-live="polite">${msgs}${inline}</div>${renderLayer()}`;
+  const cat = CATS.find(c=>c.id===C.cat), subN = C.sub ? (C.cat==='device'?DEVICE[C.sub].n:NONDEV[C.cat].subs[C.sub].n) : 'Something else';
+  app.innerHTML = `<div class="appbar"><button class="iconbtn" data-act="to-pick" aria-label="Back">${ic('back',22)}</button><div class="ab-t">Log a complaint</div></div>
+   <div class="thread" role="log" aria-live="polite"><div class="pinned"><span style="width:28px;height:28px;border-radius:8px;background:var(--g100);display:flex;align-items:center;justify-content:center;flex-shrink:0">${ic(cat.ic,15,'#1E8E4F')}</span><div class="pt">${esc(cat.n)} › <b>${esc(subN)}</b></div><button class="linkbtn" data-act="to-pick">Change</button></div>${msgs}${inline}</div>${renderLayer()}`;
   const th=app.querySelector('.thread'); th.scrollTop=th.scrollHeight;
   if (PROMPT&&PROMPT.type==='otp'){ const f=app.querySelector('[data-otp="0"]'); f&&f.focus(); PROMPT.sent=PROMPT.sent||Date.now(); otpTimer(); }
   if (PROMPT&&PROMPT.type==='phone'){ const f=document.getElementById('ph'); f&&f.focus(); }
@@ -739,7 +758,9 @@ let otpT; function otpTimer(){ clearTimeout(otpT); const el=document.getElementB
 app.addEventListener('click', e=>{
   const b=e.target.closest('[data-act]'); if(!b||b.disabled) return;
   const [a,v]=b.dataset.act.split(':'); const p=PROMPT;
-  if (a==='restart-chat') return start();
+  if (a==='restart-chat'||a==='to-pick') return start();
+  if (a==='tab'){ TAB=v; return render(); }
+  if (a==='sub') return openSub(TAB, v);
   if (a==='resume' && LAYER && LAYER.resume) return LAYER.resume();
   if (a==='tt' && LAYER && LAYER.tap) return LAYER.tap(+v);
   if (a==='edit'){ const m=T[+v]; if(!m||!m.edit) return; RUN++; LAYER=null; const s=m.edit; T=T.slice(0,s.len); C=Object.assign({},s.C); PROMPT=s.prompt; render(); return; }
