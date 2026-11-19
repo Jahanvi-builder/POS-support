@@ -18,7 +18,7 @@
 html,body{height:100%;margin:0}
 body{background:var(--page);font-family:Inter,system-ui,sans-serif;color:var(--ink);display:flex;align-items:center;justify-content:center;min-height:100vh;-webkit-font-smoothing:antialiased}
 button{font-family:inherit;cursor:pointer;color:inherit}
-input{font-family:inherit;color:inherit}
+input,textarea{font-family:inherit;color:inherit}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
@@ -80,6 +80,7 @@ input{font-family:inherit;color:inherit}
 .pills{display:flex;flex-wrap:wrap;gap:8px}
 .pill{min-height:40px;border-radius:20px;border:1px solid var(--line);background:#fff;padding:0 14px;font-size:14px;font-weight:500;display:inline-flex;align-items:center;gap:6px}
 .pill:active{background:var(--g50);border-color:var(--g600)}
+.pill.chipon{background:var(--g100);border-color:var(--g600);color:var(--g700)}
 .pill.go{background:var(--g900);border-color:var(--g900);color:#fff}
 .pill.ticket{background:var(--g100);border-color:var(--g100);color:var(--g700)}
 .pill.cancel{background:var(--red50);border-color:var(--red50);color:var(--red)}
@@ -663,14 +664,27 @@ async function pineOne(why){
   const a = await ask({type:'pills',items:[{t:'Done'}]}); me(a); start();
 }
 /* ---------- request ---------- */
-const CHIPS = {
-  battery:['Drains within a few hours','Started this week','Happens every day'], power:['Not charging at all','Charges only sometimes','Started today'],
-  cable:['Cable is loose','Charges only at an angle','Started today'], display:['Screen is dim','Lines on the screen','Started today'],
-  printer:['Happens on every slip','Started today','Only some slips'], card:['All cards fail','Only chip cards fail','Started today'],
-  hang:['Freezes during payment','Restarts by itself','Started today'], damage:['Fell down','Cracked screen','Device not usable'],
-  network:['No internet all day','Drops in and out','Started today'], _:['Happened once','Happens every time','Started today','Need it urgently']
+const ISSUE_CHIPS = {"Draining fast / low backup": ["Battery lasts less than half a day", "Drops quickly even when not in use", "Drains faster during card payments"], "Not charging / not holding charge": ["Drops to 0% within 2–3 hours of a full charge", "Switches off even when it shows charge left", "Full charge is gone by the next morning"], "Device not charging": ["Charging icon doesn't appear when plugged in", "Shows charging but the percentage doesn't go up", "Charges only when the cable is held at an angle"], "Switches off on battery / sudden shutdown": ["Switches off in the middle of a payment", "Switches off as soon as it's unplugged", "Switches off when the battery is below 30%"], "Swollen / bulging / heating": ["Back cover is bulging or lifting", "Device feels hot even when not in use", "There's a burning smell from the device"], "Charger / adapter not working": ["Charger light doesn't turn on", "Device charges with another charger, not this one", "Charger gets very hot"], "Charger cable damaged": ["Wire is cut or exposed", "Cable sparks or gets hot", "Connector end is broken"], "Cable loose / connection problem": ["Charging stops when the cable moves", "Cable falls out of the port easily", "Charges only at an angle"], "Charging port / pin loose or damaged": ["Port feels loose or wobbly", "Pin inside the port looks bent", "Cable doesn't stay plugged in"], "Charger missing / new charger needed": ["Charger never came with the device", "Charger is lost", "Need a spare charger"], "Touch not working / unresponsive": ["Some parts of the screen don't respond", "Screen responds after a delay", "Screen taps by itself"], "Display not working properly": ["Screen is very dim", "Screen goes dark while in use", "Colours or text look wrong"], "Lines / flicker / dim": ["Lines across the screen", "Screen keeps flickering", "Part of the screen is blank"], "Power button not working": ["Button is stuck and doesn't click", "Button clicks but nothing happens", "Device turns off when the button is touched lightly"], "Screen broken / cracked": ["Screen is cracked but still works", "Screen is cracked and doesn't respond", "Glass is shattered with sharp edges"], "Not printing": ["Nothing comes out after a payment", "Printer makes a noise but no slip comes out", "Prints only sometimes"], "Blank / half / faint print": ["Text is too light to read", "Only half the slip prints", "Slip comes out completely blank"], "Printer error message": ["Shows 'Paper out' with paper loaded", "Shows 'Cover open' with the flap closed", "Error appears after every slip"], "Flap issue / paper roll jam": ["Paper gets stuck inside", "Flap doesn't close properly", "Roller doesn't move the paper"], "Chip card / mag stripe not working": ["Chip cards show 'Card read error'", "Swiped cards are not read", "Works for some cards, fails for others"], "Card not reading (not sure which)": ["No card is being read at all", "Card is read only after many tries", "Tap payments also fail"], "Swipe not working": ["Swipe shows 'Card read error'", "Needs several swipes to read", "Works only when swiped very slowly"], "Card reader error message": ["Error appears on every card payment", "Error appears and the device restarts", "Error appears only for some cards"], "Hanging / freezing / slow": ["Freezes during a payment", "Payment app takes long to open", "Screen stops responding until a restart"], "Auto restart / reboot": ["Restarts in the middle of a payment", "Restarts several times a day", "Restarts when it gets hot"], "App crash": ["App closes during a payment", "App closes as soon as it opens", "App crashes after printing the slip"], "Device broken / cracked": ["Device fell and the body cracked", "Parts inside are exposed", "Device still works but is damaged"], "Base / stand / flap broken": ["Base or stand is broken", "Printer flap is broken", "Device doesn't sit firmly"], "Water / burn damage": ["Liquid spilled on the device", "Device has burn marks", "Device got wet in the rain"], "Internet not connected": ["No internet at all", "Internet drops during payments", "Works on WiFi but not on SIM"]};
+const SUB_CHIPS = {
+  card:["Payment failed but the customer was charged","Card declined for many customers","Payment status didn't update"],
+  upi:["Customer paid but the payment didn't show","QR code doesn't appear","Payment stuck on pending"],
+  emi:["EMI option not showing for the card","Brand offer not applied","EMI payment failed"],
+  fuel:["Pump sales not showing in the app","Tank data not updating","Dispenser shows offline"],
+  dispute:["Customer says they didn't make this payment","Customer raised a chargeback","Got a fraud alert for a payment"],
+  pbl:["Link doesn't open for the customer","Customer paid but it isn't showing","Can't create a payment link"],
+  credit:["Money not received in my bank account","Received less than expected","Settlement is later than usual"],
+  batch:["Batch won't settle","Batch shows full or locked","Need auto-settlement turned on"],
+  report:["Need a settlement report for a date range","Report doesn't match my sales","Can't download the report"],
+  hold:["Money is on hold, need to know why","Account frozen by police or court","Documents submitted, still on hold"],
+  paper:["Need new paper rolls","Ordered rolls not delivered","Want to stop paper roll supply"],
+  charges:["Unexpected amount debited","Need an invoice or statement","Charged more than my plan"],
+  service:["Need to return the machine","Need the machine moved to a new address","Need training on the device"],
+  vas:["Want to stop a service and get a refund","Want to activate a service","Charged for a service I didn't ask for"],
+  details:["Need to change my bank account","Need to update phone or address","KYC status still pending"],
+  login:["Can't log in to PineOne","Forgot my password","Need a new user ID"],
+  query:["Want to know how something works","Following up on an earlier complaint","Want a call from sales"]
 };
-const chipsFor = () => C.cat==='device' && C.sub ? CHIPS[C.sub] : CHIPS._;
+const chipsFor = () => (C.issue && ISSUE_CHIPS[C.issue.n]) || (C.sub && SUB_CHIPS[C.sub]) || [];
 const caseKey = () => [C.cat,C.sub,C.issue?C.issue.n:C.issueName||'other'].join('|');
 async function confirmTicket(auto){
   const dup = REQS.find(x=>x.key===caseKey());
@@ -682,7 +696,7 @@ async function confirmTicket(auto){
   }
   if (C.reason) await bot(C.reason);
   if (auto) return submitTicket();
-  await bot('Describe the problem in a few words.',{q:true});
+  await bot('What exactly is happening?',{q:true});
   const d = await ask({type:'desc',chips:chipsFor(),val:C.desc||''}); C.desc=d; me(d);
   await bot('I\'ll create a support request with these details:');
   card({type:'summary'});
@@ -757,9 +771,9 @@ function renderPrompt(p){
   if (p.type==='pills') return `<div class="pills m">${p.items.map((x,i)=>{ x=typeof x==='string'?{t:x}:x; return `<button class="pill ${x.go?'go':''} ${x.ticket?'ticket':''} ${x.cancel?'cancel':''}" data-act="pill:${i}">${x.ticket?ic('ticket',15):''}${esc(x.t)}${p.auto&&i===0?` <span style="opacity:.7;font-weight:400">· starts in ${p.auto}s</span>`:''}${x.d?`<span style="font-weight:400;opacity:.65">· ${x.d}</span>`:''}</button>`;}).join('')}</div>`;
   if (p.type==='checklist') return `<div class="card m"><div class="cl">${p.items.map((t,i)=>`<button class="clrow ${p.sel.includes(i)?'on':''}" data-act="cl:${i}" role="checkbox" aria-checked="${p.sel.includes(i)}"><span class="cbox">${p.sel.includes(i)?ic('check',13,'#fff',3):''}</span>${esc(t)}</button>`).join('')}</div>
      <div class="btnrow"><button class="btn sec" data-act="cl:none">None of these</button><button class="btn primary" data-act="cl:ok" ${p.sel.length?'':'disabled'}>Confirm</button></div></div>`;
-  if (p.type==='desc') return `<div class="card m"><div class="pills">${p.chips.map((t,i)=>`<button class="pill" data-act="chip:${i}" style="min-height:34px;font-size:13px">${esc(t)}</button>`).join('')}</div>
-     <textarea id="desc" class="inp" rows="3" style="height:auto;padding:10px 12px;font-size:14px;letter-spacing:0;resize:none" placeholder="e.g. Printer stops halfway through the slip" aria-describedby="dh">${esc(p.val)}</textarea>
-     <div class="cs" id="dh">Required · at least 10 characters</div>
+  if (p.type==='desc') return `<div class="card m">${p.chips.length?'<div class="cs">Pick the closest match, or write your own.</div>':''}<div class="pills">${p.chips.map((t,i)=>`<button class="pill ${p.val.includes(t)?'chipon':''}" aria-pressed="${p.val.includes(t)}" data-act="chip:${i}" style="min-height:34px;font-size:13px;text-align:left;padding:6px 12px">${esc(t)}</button>`).join('')}</div>
+     <textarea id="desc" class="inp" rows="3" style="height:auto;padding:10px 12px;font-size:14px;letter-spacing:0;resize:none" placeholder="Pick the closest match above, or write your own" aria-describedby="dh">${esc(p.val)}</textarea>
+     <div class="cs" id="dh">Required. The technician reads this before calling you.</div>
      <button class="btn primary" data-act="desc" ${p.val.trim().length>=10?'':'disabled'}>Continue</button></div>`;
   if (p.type==='phone') return `<div class="card m"><input class="inp" id="ph" inputmode="numeric" maxlength="10" placeholder="10-digit mobile number" autocomplete="off"><button class="btn primary" data-act="phone">Send code</button></div>`;
   if (p.type==='otp') return `<div class="card m"><div class="otp ${PROMPT_ERR?'bad':''}">${[0,1,2,3].map(i=>`<input inputmode="numeric" maxlength="1" data-otp="${i}" aria-label="Digit ${i+1}">`).join('')}</div>${PROMPT_ERR?`<div class="cs" style="color:var(--red)" role="alert">${PROMPT_ERR}</div>`:''}<div class="cs" id="rs"></div><button class="btn primary" data-act="otp">Verify</button></div>`;
@@ -842,13 +856,13 @@ app.addEventListener('click', e=>{
   if (a==='pill'){ const x=p.items[+v]; PROMPT=null; return p.resolve(typeof x==='string'?x:x.t); }
   if (a==='card'||a==='led'){ PROMPT=null; return p.resolve(v); }
   if (a==='cl'){ if(v==='ok'){ PROMPT=null; return p.resolve([...p.sel].sort()); } if(v==='none'){ PROMPT=null; return p.resolve([]); } const i=+v; p.sel=p.sel.includes(i)?p.sel.filter(x=>x!==i):[...p.sel,i]; return render(); }
-  if (a==='chip'){ const ta=document.getElementById('desc'); const t=p.chips[+v]; ta.value = ta.value.trim() ? (ta.value.trim().replace(/\.$/,'')+'. '+t) : t; p.val=ta.value; syncDesc(); ta.focus(); return; }
+  if (a==='chip'){ const ta=document.getElementById('desc'); const t=p.chips[+v]; const parts=ta.value.split(/\.\s*/).map(x=>x.trim()).filter(Boolean); const i=parts.indexOf(t); if(i>=0) parts.splice(i,1); else parts.push(t); ta.value = parts.join('. '); p.val=ta.value; syncDesc(); ta.focus(); return; }
   if (a==='desc'){ const t=document.getElementById('desc').value.trim(); if(t.length<10) return; PROMPT=null; return p.resolve(t); }
   if (a==='phone'){ const n=(document.getElementById('ph').value||'').replace(/\D/g,''); if(n.length!==10){ document.getElementById('ph').style.borderColor='#B3261E'; return; } PROMPT=null; return p.resolve(n); }
   if (a==='resend'){ p.sent=Date.now(); return otpTimer(); }
   if (a==='otp'){ const c=[...app.querySelectorAll('[data-otp]')].map(i=>i.value).join(''); if(c.length<4){ PROMPT_ERR='Enter all 4 digits'; return render(); } PROMPT=null; return p.resolve(c); }
 });
-function syncDesc(){ const ta=document.getElementById('desc'), b=app.querySelector('[data-act="desc"]'), h=document.getElementById('dh'); if(!ta||!b) return; const n=ta.value.trim().length; b.disabled=n<10; h.textContent = n<10 ? 'Required · at least 10 characters' : 'Looks good'; h.style.color = n<10 ? '' : 'var(--g700)'; if(PROMPT) PROMPT.val=ta.value; }
+function syncDesc(){ const ta=document.getElementById('desc'), b=app.querySelector('[data-act="desc"]'), h=document.getElementById('dh'); if(!ta||!b) return; const n=ta.value.trim().length; b.disabled=n<10; h.textContent = n<10 ? 'Required. The technician reads this before calling you.' : 'Thanks, that helps the technician come prepared.'; app.querySelectorAll('[data-act^="chip:"]').forEach(b2=>{ const on=ta.value.includes(PROMPT.chips[+b2.dataset.act.split(':')[1]]); b2.classList.toggle('chipon',on); b2.setAttribute('aria-pressed',on); }); h.style.color = n<10 ? '' : 'var(--g700)'; if(PROMPT) PROMPT.val=ta.value; }
 app.addEventListener('input', e=>{ if(e.target.id==='desc') return syncDesc(); const d=e.target.dataset.otp; if(d==null) return; e.target.value=e.target.value.replace(/\D/g,''); if(e.target.value&&+d<3) app.querySelector(`[data-otp="${+d+1}"]`).focus(); });
 app.addEventListener('keydown', e=>{ const d=e.target.dataset.otp; if(d!=null&&e.key==='Backspace'&&!e.target.value&&+d>0) app.querySelector(`[data-otp="${+d-1}"]`).focus(); });
 start();
