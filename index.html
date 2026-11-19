@@ -15,6 +15,9 @@
   --red:#B3261E;--red50:#FDECEA;--amber:#8A5A00;--amber50:#FFF4D6;--blue:#1F4FB8;--blue50:#EAF0FD;
 }
 *{box-sizing:border-box}
+:root{color-scheme:light}
+input,textarea{background:#fff;color:var(--ink);-webkit-text-fill-color:var(--ink);caret-color:var(--g600)}
+input::placeholder,textarea::placeholder{color:var(--ink4);-webkit-text-fill-color:var(--ink4);opacity:1}
 html,body{height:100%;margin:0}
 body{background:var(--page);font-family:Inter,system-ui,sans-serif;color:var(--ink);display:flex;align-items:center;justify-content:center;min-height:100vh;-webkit-font-smoothing:antialiased}
 button{font-family:inherit;cursor:pointer;color:inherit}
