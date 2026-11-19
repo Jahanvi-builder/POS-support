@@ -64,6 +64,11 @@ input{font-family:inherit;color:inherit}
 .pinned{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:var(--bg)}
 .pinned .pt{flex:1;font-size:13px;color:var(--ink2)}.pinned .pt b{color:var(--ink);font-weight:600}
 .linkbtn{border:none;background:none;color:var(--g600);font-weight:600;font-size:13px;padding:6px 4px}
+.p1foot{flex-shrink:0;border:none;border-top:1px solid var(--line);background:var(--g50);padding:12px 16px;display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;font-size:12px;color:var(--ink3)}
+.p1foot b{color:var(--g700);font-size:13px;display:flex;align-items:center;gap:4px}
+.qr{width:84px;height:84px;display:grid;grid-template-columns:repeat(7,1fr);gap:2px;padding:6px;border:1px solid var(--line);border-radius:8px;flex-shrink:0}.qr i{border-radius:1px}
+.p1steps{margin:0;padding-left:18px;font-size:13px;line-height:20px;display:flex;flex-direction:column;gap:4px}
+.thread.lift{padding-bottom:260px}
 .olist{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
 .orow{width:100%;border:none;background:#fff;display:flex;align-items:center;gap:12px;padding:12px 14px;text-align:left;min-height:52px;border-bottom:1px solid var(--line2)}
 .orow:last-child{border-bottom:none}
@@ -180,6 +185,7 @@ input{font-family:inherit;color:inherit}
     <div class="sim">
       <label><input type="checkbox" id="simOff"> Device can't be reached</label>
       <label><input type="checkbox" id="simFix"> Fixes don't solve it</label>
+      <label><input type="checkbox" id="simTouch"> Touch screen fully dead</label>
     </div>
     <p style="font-size:12px;color:var(--ink3)">OTP: any 4 digits · 0000 shows the wrong-code state.</p>
   </aside>
@@ -229,7 +235,7 @@ const DEVICE = {
    checks:['Battery health|72%','Overheating errors|None in 7 days'],
    finding:'Battery health is <b>72%</b> and there are no heating errors.',
    steps:[ST('Charge it to 100%','Keep it on an eligible charger until full.'),ST('Unplug and use as normal','Use it on battery for about 10 minutes.')]},
-  {n:'Dead / replacement needed',t:'G',route:'Field – battery replacement',checks:['Battery health|!12%'],finding:'Battery health is <b>12%</b>. The battery has failed and needs to be replaced.'},
+  {n:'Dead / replacement needed',t:'G',pineone:true,route:'Field – battery replacement',checks:['Battery health|!12%'],finding:'Battery health is <b>12%</b>. The battery has failed and needs to be replaced.'},
   {n:'Swollen / bulging / heating',t:'E',route:'Field',danger:['Stop using the device','Unplug it from the charger','Don\'t charge it again','Keep it away from heat and water']}
  ]},
  power:{n:'Power & Charging',ic:'plug',issues:[
@@ -251,11 +257,11 @@ const DEVICE = {
   {n:'Touch not working / unresponsive',t:'D',route:'Field – EDC replacement'},
   {n:'Display not working properly',t:'C',route:'Field – EDC replacement',verify:'ask',restart:'remote',checks:['Brightness|!Set to 5%','Display driver|Responding'],
    finding:'Screen brightness was set to <b>5%</b>.',fixes:['Reset brightness to 60%']},
-  {n:'Lines / flicker / dim',t:'C',route:'Field – EDC replacement',verify:'ask',restart:'remote',photo:true,checks:['Brightness|Normal','Firmware|!Update available'],
+  {n:'Lines / flicker / dim',t:'C',route:'Field – EDC replacement',verify:'ask',restart:'remote',checks:['Brightness|Normal','Firmware|!Update available'],
    finding:'A <b>firmware update</b> is available that fixes display issues.',fixes:['Reset brightness','Install the firmware update']},
   {n:'Power button not working',t:'C',route:'Field – EDC replacement',verify:'ask',restart:'remote',checks:['Device status|Online','Button signal|!No press detected'],
    finding:'The device <b>isn\'t detecting power button presses</b>.',steps:[ST('Check the button isn\'t stuck','Press it gently a few times. It should click back.')]},
-  {n:'Screen broken / cracked',t:'F',route:'Field – EDC replacement',photo:true}
+  {n:'Screen broken / cracked',t:'F',route:'Field – EDC replacement',inspect:true}
  ]},
  printer:{n:'Printer',ic:'printer',issues:[
   {n:'Not printing',t:'C',route:'Field',verify:'print',checks:['Paper sensor|Paper detected','Print head temperature|Normal','Printer service|!Not responding'],
@@ -281,14 +287,14 @@ const DEVICE = {
    finding:'Memory is <b>92% full</b> and 6 apps are running in the background.',fixes:['Settle open transactions and save logs','Clear memory','Close background apps'],note:'Your payments are settled first. Nothing is lost.'},
   {n:'Auto restart / reboot',t:'C',route:'Field – battery / EDC',verify:'later',checks:['Battery health|78%','Overheating|!3 times in 24 hours','Firmware|Up to date'],
    finding:'The device <b>overheated 3 times</b> in the last 24 hours.',steps:[ST('Charge it to 100%','Keep it on an eligible charger until full.'),ST('Keep it ventilated','Out of direct sun and off hot surfaces.')]},
-  {n:'Stuck on logo / boot loop',t:'B',route:'Field – EDC replacement',verify:'ask',restart:'manual',steps:[ST('Charge it for 30 minutes','Use an eligible charger.')]},
+  {n:'Stuck on logo / boot loop',t:'B',pineone:true,route:'Field – EDC replacement',verify:'ask',restart:'manual',steps:[ST('Charge it for 30 minutes','Use an eligible charger.')]},
   {n:'App crash',t:'A',route:'RTT first, then Field',verify:'ask',restart:'remote',checks:['Payment app|!Older version','Memory|!88% full'],
    finding:'The payment app is <b>out of date</b> and memory is almost full.',fixes:['Update the payment app','Clear memory']}
  ]},
  damage:{n:'Physical damage',ic:'damage',issues:[
-  {n:'Device broken / cracked',t:'F',route:'Field – EDC replacement',photo:true,policy:'Damage charges may apply as per your agreement.'},
-  {n:'Base / stand / flap broken',t:'F',route:'Field – part replacement',photo:true},
-  {n:'Lost / stolen / misplaced',t:'F',route:'RTT / Ops',policy:'We\'ll block this terminal so nobody else can use it, and send a replacement.'},
+  {n:'Device broken / cracked',t:'F',route:'Field – EDC replacement',inspect:true,policy:'Damage charges may apply as per your agreement.'},
+  {n:'Base / stand / flap broken',t:'F',route:'Field – part replacement',inspect:true},
+  {n:'Lost / stolen / misplaced',t:'F',pineone:true,route:'RTT / Ops',policy:'We\'ll block this terminal so nobody else can use it, and send a replacement.'},
   {n:'Water / burn damage',t:'E',route:'Field – EDC replacement',danger:['Switch the device off','Unplug it from the charger','Don\'t charge it','Don\'t dry it with heat']}
  ]},
  network:{n:'Network & Connectivity',ic:'wifi',issues:[
@@ -392,11 +398,12 @@ async function nonDevice(){
   }
   C.reason=''; await confirmTicket();
 }
-async function somethingElse(){ await bot('Our support team will <b>call you</b> to understand the issue.'); C.callback=true; C.reason=''; await confirmTicket(); }
+async function somethingElse(){ await bot('Tell us what\'s wrong and our support team will look into it.'); C.callback=true; C.reason=''; await confirmTicket(); }
 
 /* ---------- device issue ---------- */
 async function runIssue(){
   const it=C.issue; C.done=[]; C.tried=[]; C.fixedBy=null; C.found=[];
+  if (it.pineone) return pineOne('issue');
   if (it.t==='E') return safety();
   if (it.t==='F') return direct();
   if (it.t==='D') return touchTest(1);
@@ -457,7 +464,9 @@ async function firmware(){
   await bot('A <b>firmware update</b> should fix this. It takes about 5 minutes and you can\'t take payments while it runs.');
   card({type:'notice',kind:'warn',text:'Keep the charger connected and WiFi on until it finishes.'});
   const a = await ask({type:'pills',items:[{t:'Update now',go:true},{t:'After I close for the day'}]}); me(a);
-  if (a!=='Update now'){ await bot('Okay. I\'ll install it <b>tonight at 11 PM</b>. If cards still don\'t work tomorrow, come back and I\'ll raise a request with everything we\'ve tried.'); C.done.push('Firmware update scheduled for tonight'); C.watch=true; return true; }
+  if (a!=='Update now'){ await bot('Okay. I\'ll install it <b>tonight at 11 PM</b>. If cards still don\'t work tomorrow, come back and I\'ll raise a request with everything we\'ve tried.'); C.done.push('Firmware update scheduled for tonight');
+    const b = await ask({type:'pills',items:[{t:'Done',go:true},{t:'Raise a request now instead'}]}); me(b);
+    if (b==='Done'){ C.watch=true; return true; } return false; }
   const k = card({type:'fix',title:'Updating firmware',items:[{t:'Downloading update',st:'wait'},{t:'Installing',st:'wait'},{t:'Restarting the card reader',st:'wait'}],state:'run'});
   for (const x of k.items){ x.st='run'; render(); await sleep(1000); guard(r); x.st='done'; render(); }
   k.state='done'; k.title='Firmware updated'; C.done.push('Firmware updated'); render();
@@ -505,7 +514,7 @@ async function merchantSteps(){
     else if (['charge','net'].includes(it.verify)){
       s.st='checking'; render(); await sleep(1600); guard(r);
       if (!sim('simFix') && i===fixAt){ s.st='ok'; s.res=it.verify==='charge'?'Charging started':'Back online'; C.tried.push(s.t); C.fixedBy=s.t; render();
-        await bot(`${it.verify==='charge'?'Charging started':'Your device is back online'}. It was fixed by <b>${esc(s.t.charAt(0).toLowerCase()+s.t.slice(1))}</b>.`); return true; }
+        await bot(`${it.verify==='charge'?'Charging started':'Your device is back online'} after <b>${esc(s.t.charAt(0).toLowerCase()+s.t.slice(1))}</b>.`); return gone(); }
       s.st='ok'; s.res=it.verify==='charge'?'Done · still not charging':'Done · still offline'; C.tried.push(s.t);
     } else { s.st='ok'; s.res='Done'; C.tried.push(s.t); }
     if (k.steps[i+1]) k.steps[i+1].st='cur'; render();
@@ -515,13 +524,19 @@ async function merchantSteps(){
 }
 
 /* How a fix is confirmed */
+async function gone(){
+  await bot('Is the problem gone?',{q:true});
+  const a = await ask({type:'pills',items:[{t:'Yes, it\'s fixed',go:true},{t:'No, still not working'}]}); me(a);
+  if (a.startsWith('Yes')) return true;
+  C.passedButNot=true; return false;
+}
 async function verify(after){
   const v=C.issue.verify, r=RUN;
   if (v==='print'){
     const a = await ask({type:'pills',items:[{t:'Print a test slip',go:true}]}); me(a);
     const k=card({type:'check',rows:[{l:'Printing test slip',st:'run'}]}); await sleep(1500); guard(r);
     const ok=!sim('simFix'); k.rows[0]={l:'Test slip',r:ok?'Printed clearly':'Came out blank',bad:!ok,st:'done'}; k.time=now(); render();
-    if (ok){ C.fixedBy=after==='fix'?'Fix it for me':'Your steps'; await bot('The test slip <b>printed clearly</b>. Your printer is working.'); return true; }
+    if (ok){ C.fixedBy=after==='fix'?'Fix it for me':'Your steps'; await bot('The test slip <b>printed clearly</b>.'); return gone(); }
     await bot('The test slip <b>came out blank</b>.'); return false;
   }
   if (v==='txn'){
@@ -529,20 +544,22 @@ async function verify(after){
     await bot('Insert, swipe or tap any card on the device now.',{fast:true});
     const k=card({type:'check',rows:[{l:'Waiting for card',st:'run'}]}); await sleep(2000); guard(r);
     const ok=!sim('simFix'); k.rows[0]={l:'₹1 test transaction',r:ok?'Approved · refunded automatically':'Card not read',bad:!ok,st:'done'}; k.time=now(); render();
-    if (ok){ C.fixedBy=C.done.includes('Firmware updated')?'Firmware update':'Fix it for me'; await bot('The test transaction <b>went through</b>. The ₹1 is refunded automatically.'); return true; }
+    if (ok){ C.fixedBy=C.done.includes('Firmware updated')?'Firmware update':'Fix it for me'; await bot('The test transaction <b>went through</b>. The ₹1 is refunded automatically.'); return gone(); }
     await bot('The card reader <b>still couldn\'t read the card</b>.'); return false;
   }
   if (v==='later'){
     await bot('This one takes a little time to show. Keep using the device as normal.');
     const a = await ask({type:'pills',items:[{t:'Okay, I\'ll keep an eye on it'},{t:'It\'s still happening'}]}); me(a);
-    if (a.startsWith('Okay')){ await bot('Great. If it happens again, come back and I\'ll raise a request with everything we\'ve tried.'); C.watch=true; return true; }
+    if (a.startsWith('Okay')){ await bot('If it happens again, come back here and raise a request with everything we\'ve tried.');
+      const b = await ask({type:'pills',items:[{t:'Done',go:true},{t:'Raise a request now instead'}]}); me(b);
+      if (b==='Done'){ C.watch=true; return true; } return false; }
     return false;
   }
   if (v==='charge'||v==='net'){
     const k=card({type:'check',rows:[{l:v==='charge'?'Charging current':'Internet',st:'run'}]}); await sleep(1500); guard(r);
     const ok = after==='fix' && !sim('simFix') && v==='net';
     k.rows[0]={l:k.rows[0].l,r:ok?'Connected':v==='charge'?'No current coming in':'Not reachable',bad:!ok,st:'done'}; k.time=now(); render();
-    if (ok){ C.fixedBy='Fix it for me'; await bot('Your device is <b>back online</b>.'); return true; }
+    if (ok){ C.fixedBy='Fix it for me'; await bot('Your device is <b>back online</b>.'); return gone(); }
     return false;
   }
   await bot(after==='restart'?'Is it working normally now?':'Is it working now?');
@@ -556,7 +573,11 @@ async function resolved(){
   if (C.fixedBy && !C.watch) card({type:'resolved'});
   await bot('Did this help?',{q:true});
   const a = await ask({type:'pills',items:[{t:'It solved my problem'},{t:'It needs improvement'}]}); me(a);
-  
+  if (a.startsWith('It needs')){
+    await bot('Want to raise a request so the team can take a look?');
+    const b = await ask({type:'pills',items:[{t:'Raise support ticket',ticket:true},{t:'No, I\'m done'}]}); me(b);
+    if (b.startsWith('Raise')){ C.reason=''; return confirmTicket(); }
+  }
   return endPills();
 }
 async function endPills(){
@@ -566,6 +587,7 @@ async function endPills(){
 const teamOf = r => /^Field/.test(r) ? 'field service team' : /^RTT/.test(r) ? 'remote support team' : 'support team';
 async function escalate(){
   const last = C.done.includes('Device restarted') ? 'restarting' : (C.done.length||C.tried.length) ? 'these fixes' : 'the check';
+  if (C.passedButNot){ C.reason = `The device check passed, but you still see the problem. I'll raise a request so the <b>${teamOf(C.issue.route)}</b> can look at it.`; return confirmTicket(); }
   C.reason = `Since ${last} didn't fix it, I'll raise a request so the <b>${teamOf(C.issue.route)}</b> can take over. I'll attach the device report, so you won't need to explain again.`;
   return confirmTicket();
 }
@@ -578,21 +600,20 @@ async function direct(){
   const it=C.issue;
   await bot('There\'s nothing I can fix remotely for this one, so I\'ll send it straight to our team.');
   if (it.policy) card({type:'notice',kind:'info',text:it.policy});
-  if (it.photo){
-    await bot('A photo helps the technician bring the right part. Want to add one?');
-    const a = await ask({type:'pills',items:[{t:'Take a photo',go:true},{t:'Skip'}]}); me(a);
-    if (a==='Take a photo'){ card({type:'photo'}); C.photo=true; }
-  }
+  if (it.inspect) await bot('The technician will <b>inspect the device</b> on the visit.');
   C.reason=''; return confirmTicket();
 }
 async function touchTest(attempt){
   if (attempt===1){
     await bot('Let\'s test your touch screen. First, <b>remove any screen guard</b> and wipe the screen with a dry cloth. Both can stop touch from registering.');
-    const g = await ask({type:'pills',items:[{t:'Done, screen is clean',go:true},{t:'There\'s no screen guard'}]}); me(g);
-    C.tried.push(g.startsWith('Done')?'Removed screen guard and wiped screen':'No screen guard on the device');
-    await bot('<b>6 green spots</b> will appear one by one. Tap each one within 5 seconds.');
+    await bot('Then <b>6 green spots</b> will appear one by one. Tap each one within 5 seconds. The test starts by itself, so you don\'t need to tap anything if the screen isn\'t responding.');
+    C.tried.push('Asked to remove screen guard and wipe screen');
   }
-  const a = attempt===1 ? await ask({type:'pills',items:[{t:'Start touch test',go:true}]}) : 'Run the test again'; me(a);
+  let a='Run the test again';
+  if (attempt===1){ const r0=RUN; const P={type:'pills',items:[{t:'Start touch test',go:true}],auto:15};
+    const tick=()=>{ if(PROMPT!==P||r0!==RUN) return; P.auto--; if(P.auto<=0){ PROMPT=null; P.resolve('Start touch test'); } else { render(); setTimeout(tick,1000);} };
+    setTimeout(tick,1000); a = await ask(P); }
+  me(a);
   const res = await runTouch();
   card({type:'tmap',res,time:now()});
   const fail = res.filter(x=>x==='f').length;
@@ -606,18 +627,22 @@ async function touchTest(attempt){
     return confirmTicket();
   }
   C.found=[`${fail} of 6 touch spots didn't respond`];
+  if (fail===6){ C.tried.push('Touch test: no spot responded'); return pineOne('touch'); }
+  const lift = res[4]==='f' || res[5]==='f';
+  if (lift) card({type:'notice',kind:'info',text:'Buttons moved up, because the bottom of the screen isn\'t responding.'});
   if (attempt===1){
     await bot(`<b>${fail} spot${fail>1?'s':''} didn't respond</b>. Let's run the test once more to be sure.`);
-    const b = await ask({type:'pills',items:[{t:'Run the test again',go:true},{t:'Raise support ticket',ticket:true}]});
+    const b = await ask({type:'pills',lift,items:[{t:'Run the test again',go:true},{t:'Raise support ticket',ticket:true},{t:'Continue on PineOne'}]});
+    if (b.startsWith('Continue')){ me(b); return pineOne('other'); }
     if (b.startsWith('Run')){ PROMPT=null; return touchTest(2); }
     me(b); C.reason=''; return confirmTicket();
   }
   C.reason = `The same area${fail>1?'s':''} didn't respond twice, so the screen needs a check. I'll raise a request for the <b>field service team</b>.`;
-  return confirmTicket();
+  C.lift = lift; return confirmTicket();
 }
 function runTouch(){ const r=RUN; return new Promise(res=>{
   const L={type:'tt',res:Array(6).fill(null),active:null,retry:false}; LAYER=L; let q=[0,1,2,3,4,5], missed=[], tm;
-  const dead = sim('simFix') ? [3,4] : [];
+  const dead = sim('simTouch') ? [0,1,2,3,4,5] : sim('simFix') ? [3,4] : [];
   const next=()=>{ clearTimeout(tm); if(r!==RUN) return;
     if (!q.length){ if(!L.retry && missed.length){ L.retry=true; q=missed; missed=[]; q.forEach(i=>L.res[i]=null); } else { LAYER=null; render(); return res(L.res); } }
     L.active=q.shift(); render();
@@ -626,7 +651,25 @@ function runTouch(){ const r=RUN; return new Promise(res=>{
   next();
 });}
 
+/* ---------- PineOne handoff: terminal can't be used ---------- */
+async function pineOne(why){
+  const msg = why==='touch' ? 'Your screen <b>isn\'t responding to touch</b>, so let\'s continue on <b>PineOne</b> from your phone. You don\'t need to tap anything here.'
+            : why==='issue' ? 'You can\'t use this terminal for this issue, so raise it from <b>PineOne</b> on your phone.'
+            : 'Continue on <b>PineOne</b> from your phone.';
+  await bot(msg);
+  card({type:'pineone'});
+  if (why==='touch') return; // no further taps possible
+  const a = await ask({type:'pills',items:[{t:'Done'}]}); me(a); start();
+}
 /* ---------- request ---------- */
+const CHIPS = {
+  battery:['Drains within a few hours','Started this week','Happens every day'], power:['Not charging at all','Charges only sometimes','Started today'],
+  cable:['Cable is loose','Charges only at an angle','Started today'], display:['Screen is dim','Lines on the screen','Started today'],
+  printer:['Happens on every slip','Started today','Only some slips'], card:['All cards fail','Only chip cards fail','Started today'],
+  hang:['Freezes during payment','Restarts by itself','Started today'], damage:['Fell down','Cracked screen','Device not usable'],
+  network:['No internet all day','Drops in and out','Started today'], _:['Happened once','Happens every time','Started today','Need it urgently']
+};
+const chipsFor = () => C.cat==='device' && C.sub ? CHIPS[C.sub] : CHIPS._;
 const caseKey = () => [C.cat,C.sub,C.issue?C.issue.n:C.issueName||'other'].join('|');
 async function confirmTicket(auto){
   const dup = REQS.find(x=>x.key===caseKey());
@@ -638,6 +681,8 @@ async function confirmTicket(auto){
   }
   if (C.reason) await bot(C.reason);
   if (auto) return submitTicket();
+  await bot('Describe the problem in a few words.',{q:true});
+  const d = await ask({type:'desc',chips:chipsFor(),val:C.desc||''}); C.desc=d; me(d);
   await bot('I\'ll create a support request with these details:');
   card({type:'summary'});
   const a = await ask({type:'pills',items:[{t:'Create request',ticket:true},{t:'Cancel',cancel:true}]}); me(a);
@@ -670,10 +715,10 @@ function caseRows(){
   const rows=[['Issue',C.issue?C.issue.n:C.issueName||'Not listed (call back)']];
   if (C.cat) rows.push(['Category',(C.cat==='device'?'Device':NONDEV[C.cat].n)+(C.sub?' › '+(C.cat==='device'?DEVICE[C.sub].n:NONDEV[C.cat].subs[C.sub].n):'')]);
   if (C.when) rows.push(['When',C.when]);
+  if (C.desc) rows.push(['Description',C.desc]);
   if (C.cat==='device') rows.push(['Device','POS 4287664 · Sharma Stores']);
   if (C.found&&C.found.length) rows.push(['Found',C.found.join('; ')]);
   const did=[...(C.done||[]),...(C.tried||[])]; if (did.length) rows.push(['Tried',did.join('; ')]);
-  if (C.photo) rows.push(['Photo','Attached']);
   if (C.issue&&C.issue.checks) rows.push(['Report','Attached']);
   return rows;
 }
@@ -700,6 +745,7 @@ function renderCard(m, active){
    case 'ticket': { const r=m.r; return `<div class="card"><div class="okhead">${m.existing?`<span class="okic" style="background:var(--blue50)">${ic('ticket',18,'#1F4FB8')}</span>`:`<span class="okic">${ic('check',20,'#1E8E4F',2.8)}</span>`}<div style="flex:1"><div class="ct">${esc(r.name)}</div><div class="cs">${esc(r.id)} · <span style="color:${m.existing?'#1F4FB8':'#1E7A45'};font-weight:600">Open</span>${r.priority?' · Urgent':''}</div></div></div>
        <div class="kv"><span class="k">Sent to</span><span class="v">${esc(r.team)}</span></div><div class="kv"><span class="k">Expected update</span><span class="v">${esc(r.eta)}</span></div></div>`; }
    case 'resolved': return `<div class="card" style="background:var(--g50);border-color:var(--g100)"><div class="okhead"><span class="okic">${ic('check',20,'#1E8E4F',2.8)}</span><div><div class="ct">Issue fixed</div><div class="cs">Fixed by: ${esc(C.fixedBy)}</div></div></div></div>`;
+   case 'pineone': return P1CARD();
    case 'openreq': return `<div class="notice info">${ic('ticket',18)}<span>You have <b>${REQS.length} open request${REQS.length>1?'s':''}</b>. Latest: ${esc(REQS[0].id)} · ${esc(REQS[0].name)}</span></div>`;
   }
   return '';
@@ -707,9 +753,13 @@ function renderCard(m, active){
 function renderPrompt(p){
   if (!p) return '';
   if (p.type==='list') return `<div class="olist m">${p.items.map((x,i)=>`<button class="orow ${x.muted?'muted':''}" data-act="pick:${i}">${p.plain||!x.ic?'':`<span class="oi">${ic(x.ic,17,x.muted?'#5A6580':'#1E8E4F')}</span>`}<div style="flex:1"><div class="ot" style="${x.more?'color:var(--g600);font-weight:600':''}">${esc(x.t)}</div>${x.d?`<div class="od">${esc(x.d)}</div>`:''}</div>${ic('right',16,'#8A93A8')}</button>`).join('')}</div>`;
-  if (p.type==='pills') return `<div class="pills m">${p.items.map((x,i)=>{ x=typeof x==='string'?{t:x}:x; return `<button class="pill ${x.go?'go':''} ${x.ticket?'ticket':''} ${x.cancel?'cancel':''}" data-act="pill:${i}">${x.ticket?ic('ticket',15):''}${esc(x.t)}${x.d?`<span style="font-weight:400;opacity:.65">· ${x.d}</span>`:''}</button>`;}).join('')}</div>`;
+  if (p.type==='pills') return `<div class="pills m">${p.items.map((x,i)=>{ x=typeof x==='string'?{t:x}:x; return `<button class="pill ${x.go?'go':''} ${x.ticket?'ticket':''} ${x.cancel?'cancel':''}" data-act="pill:${i}">${x.ticket?ic('ticket',15):''}${esc(x.t)}${p.auto&&i===0?` <span style="opacity:.7;font-weight:400">· starts in ${p.auto}s</span>`:''}${x.d?`<span style="font-weight:400;opacity:.65">· ${x.d}</span>`:''}</button>`;}).join('')}</div>`;
   if (p.type==='checklist') return `<div class="card m"><div class="cl">${p.items.map((t,i)=>`<button class="clrow ${p.sel.includes(i)?'on':''}" data-act="cl:${i}" role="checkbox" aria-checked="${p.sel.includes(i)}"><span class="cbox">${p.sel.includes(i)?ic('check',13,'#fff',3):''}</span>${esc(t)}</button>`).join('')}</div>
      <div class="btnrow"><button class="btn sec" data-act="cl:none">None of these</button><button class="btn primary" data-act="cl:ok" ${p.sel.length?'':'disabled'}>Confirm</button></div></div>`;
+  if (p.type==='desc') return `<div class="card m"><div class="pills">${p.chips.map((t,i)=>`<button class="pill" data-act="chip:${i}" style="min-height:34px;font-size:13px">${esc(t)}</button>`).join('')}</div>
+     <textarea id="desc" class="inp" rows="3" style="height:auto;padding:10px 12px;font-size:14px;letter-spacing:0;resize:none" placeholder="e.g. Printer stops halfway through the slip" aria-describedby="dh">${esc(p.val)}</textarea>
+     <div class="cs" id="dh">Required · at least 10 characters</div>
+     <button class="btn primary" data-act="desc" ${p.val.trim().length>=10?'':'disabled'}>Continue</button></div>`;
   if (p.type==='phone') return `<div class="card m"><input class="inp" id="ph" inputmode="numeric" maxlength="10" placeholder="10-digit mobile number" autocomplete="off"><button class="btn primary" data-act="phone">Send code</button></div>`;
   if (p.type==='otp') return `<div class="card m"><div class="otp ${PROMPT_ERR?'bad':''}">${[0,1,2,3].map(i=>`<input inputmode="numeric" maxlength="1" data-otp="${i}" aria-label="Digit ${i+1}">`).join('')}</div>${PROMPT_ERR?`<div class="cs" style="color:var(--red)" role="alert">${PROMPT_ERR}</div>`:''}<div class="cs" id="rs"></div><button class="btn primary" data-act="otp">Verify</button></div>`;
   return '';
@@ -723,8 +773,14 @@ function renderPicker(){
    <div class="tabs" role="tablist">${[...CATS.filter(c=>c.id===TAB),...CATS.filter(c=>c.id!==TAB)].map(c=>`<button class="tab ${TAB===c.id?'on':''}" role="tab" aria-selected="${TAB===c.id}" data-act="tab:${c.id}">${ic(c.ic,16)}${short[c.id]}</button>`).join('')}</div>
    <div class="picklist">${open}<div class="ph">What's the issue about?</div>
    <div style="padding:0 16px 16px"><div class="olist">${subs.map(x=>`<button class="orow" data-act="sub:${x.k}"><span class="oi">${ic(x.ic,17,'#1E8E4F')}</span><div style="flex:1;min-width:0"><div class="ot">${esc(x.n)}</div><div class="od" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(x.d)}</div></div>${ic('right',16,'#8A93A8')}</button>`).join('')}
-   <button class="orow muted" data-act="sub:other"><span class="oi" style="background:var(--line2)">${ic('more',17,'#5A6580')}</span><div class="ot">Something else</div>${ic('right',16,'#8A93A8')}</button></div></div></div>`;
+   <button class="orow muted" data-act="sub:other"><span class="oi" style="background:var(--line2)">${ic('more',17,'#5A6580')}</span><div class="ot">Something else</div>${ic('right',16,'#8A93A8')}</button></div></div></div>
+   <button class="p1foot" data-act="p1"><span>Screen not responding or device won't turn on?</span><b>Get help on PineOne ${ic('right',14,'#1E8E4F',2.4)}</b></button>`;
 }
+const P1CARD = () => `<div class="card"><div class="ch">${ic('phone',18,'#1E8E4F')}<div class="ct">Continue on PineOne</div></div>
+  <div style="display:flex;gap:14px;align-items:center"><div class="qr" aria-label="QR code to open PineOne">${Array.from({length:49},(_,i)=>`<i style="background:${[0,1,2,7,9,14,15,16,4,5,6,11,13,18,19,20,28,29,30,35,37,42,43,44,24,17,31,39,46,22,26,33].includes(i)?'#2C3448':'transparent'}"></i>`).join('')}</div>
+  <div class="cs" style="flex:1">Scan with your phone camera to open PineOne.</div></div>
+  <ol class="p1steps"><li>Open the <b>PineOne</b> app on your phone</li><li>Go to <b>Help &amp; Support</b></li><li>Tap <b>Log a complaint</b> and choose this issue</li></ol>
+  <div class="cs" style="border-top:1px solid var(--line2);padding-top:8px">No smartphone? Call support on the number printed on your device sticker.</div></div>`;
 function renderLayer(){
   const L=LAYER; if(!L) return '';
   if (L.type==='tt'){ const done=L.res.filter(Boolean).length;
@@ -746,6 +802,7 @@ function render(){
     if (m.k==='divider') return `<div class="${A} divider">${esc(m.text)}</div>`;
     if (m.k==='card') return `<div class="${A}">${renderCard(m, PROMPT && PROMPT.card===m)}</div>`;
   }).join('');
+  if (VIEW==='p1'){ app.innerHTML = `<div class="appbar"><button class="iconbtn" data-act="to-pick" aria-label="Back">${ic('back',22)}</button><div class="ab-t">Get help on PineOne</div></div><div class="thread"><div class="bot">Use PineOne on your phone when this terminal's screen isn't responding or it won't turn on.</div>${P1CARD()}</div>`; return; }
   if (VIEW==='pick'){
     const before={}; app.querySelectorAll('.tab').forEach(t=>before[t.dataset.act]=t.getBoundingClientRect().left);
     app.innerHTML = renderPicker();
@@ -759,11 +816,12 @@ function render(){
   const oldTh = app.querySelector('.thread'); const oldTop = oldTh ? oldTh.scrollTop : 0;
   const cat = CATS.find(c=>c.id===C.cat), subN = C.sub ? (C.cat==='device'?DEVICE[C.sub].n:NONDEV[C.cat].subs[C.sub].n) : 'Something else';
   app.innerHTML = `<div class="appbar"><button class="iconbtn" data-act="to-pick" aria-label="Back">${ic('back',22)}</button><div class="ab-t">Log a complaint</div></div>
-   <div class="thread" role="log" aria-live="polite"><div class="pinned"><span style="width:28px;height:28px;border-radius:8px;background:var(--g100);display:flex;align-items:center;justify-content:center;flex-shrink:0">${ic(cat.ic,15,'#1E8E4F')}</span><div class="pt">${esc(cat.n)} › <b>${esc(subN)}</b></div><button class="linkbtn" data-act="to-pick">Change</button></div>${msgs}${inline}</div>${renderLayer()}`;
+   <div class="thread ${(PROMPT&&PROMPT.lift)||C.lift?'lift':''}" role="log" aria-live="polite"><div class="pinned"><span style="width:28px;height:28px;border-radius:8px;background:var(--g100);display:flex;align-items:center;justify-content:center;flex-shrink:0">${ic(cat.ic,15,'#1E8E4F')}</span><div class="pt">${esc(cat.n)} › <b>${esc(subN)}</b></div><button class="linkbtn" data-act="to-pick">Change</button></div>${msgs}${inline}</div>${renderLayer()}`;
   SEEN=T.length; LASTP=PROMPT;
   const th=app.querySelector('.thread'); th.scrollTop=oldTop;
   if (th.scrollHeight-th.clientHeight-oldTop>4) requestAnimationFrame(()=>th.scrollTo({top:th.scrollHeight,behavior:'smooth'}));
   if (PROMPT&&PROMPT.type==='otp'){ const f=app.querySelector('[data-otp="0"]'); f&&f.focus(); PROMPT.sent=PROMPT.sent||Date.now(); otpTimer(); }
+  if (PROMPT&&PROMPT.type==='desc'){ const f=document.getElementById('desc'); if(f){ f.focus(); f.setSelectionRange(f.value.length,f.value.length);} }
   if (PROMPT&&PROMPT.type==='phone'){ const f=document.getElementById('ph'); f&&f.focus(); }
 }
 let otpT; function otpTimer(){ clearTimeout(otpT); const el=document.getElementById('rs'); if(!el||!PROMPT) return; const left=30-Math.floor((Date.now()-PROMPT.sent)/1000);
@@ -773,6 +831,7 @@ app.addEventListener('click', e=>{
   const b=e.target.closest('[data-act]'); if(!b||b.disabled) return;
   const [a,v]=b.dataset.act.split(':'); const p=PROMPT;
   if (a==='restart-chat'||a==='to-pick') return start();
+  if (a==='p1'){ VIEW='p1'; return render(); }
   if (a==='tab'){ if(TAB===v) return; TAB=v; SWAP=true; return render(); }
   if (a==='sub') return openSub(TAB, v);
   if (a==='resume' && LAYER && LAYER.resume) return LAYER.resume();
@@ -783,11 +842,14 @@ app.addEventListener('click', e=>{
   if (a==='pill'){ const x=p.items[+v]; PROMPT=null; return p.resolve(typeof x==='string'?x:x.t); }
   if (a==='card'||a==='led'){ PROMPT=null; return p.resolve(v); }
   if (a==='cl'){ if(v==='ok'){ PROMPT=null; return p.resolve([...p.sel].sort()); } if(v==='none'){ PROMPT=null; return p.resolve([]); } const i=+v; p.sel=p.sel.includes(i)?p.sel.filter(x=>x!==i):[...p.sel,i]; return render(); }
+  if (a==='chip'){ const ta=document.getElementById('desc'); const t=p.chips[+v]; ta.value = ta.value.trim() ? (ta.value.trim().replace(/\.$/,'')+'. '+t) : t; p.val=ta.value; syncDesc(); ta.focus(); return; }
+  if (a==='desc'){ const t=document.getElementById('desc').value.trim(); if(t.length<10) return; PROMPT=null; return p.resolve(t); }
   if (a==='phone'){ const n=(document.getElementById('ph').value||'').replace(/\D/g,''); if(n.length!==10){ document.getElementById('ph').style.borderColor='#B3261E'; return; } PROMPT=null; return p.resolve(n); }
   if (a==='resend'){ p.sent=Date.now(); return otpTimer(); }
   if (a==='otp'){ const c=[...app.querySelectorAll('[data-otp]')].map(i=>i.value).join(''); if(c.length<4){ PROMPT_ERR='Enter all 4 digits'; return render(); } PROMPT=null; return p.resolve(c); }
 });
-app.addEventListener('input', e=>{ const d=e.target.dataset.otp; if(d==null) return; e.target.value=e.target.value.replace(/\D/g,''); if(e.target.value&&+d<3) app.querySelector(`[data-otp="${+d+1}"]`).focus(); });
+function syncDesc(){ const ta=document.getElementById('desc'), b=app.querySelector('[data-act="desc"]'), h=document.getElementById('dh'); if(!ta||!b) return; const n=ta.value.trim().length; b.disabled=n<10; h.textContent = n<10 ? 'Required · at least 10 characters' : 'Looks good'; h.style.color = n<10 ? '' : 'var(--g700)'; if(PROMPT) PROMPT.val=ta.value; }
+app.addEventListener('input', e=>{ if(e.target.id==='desc') return syncDesc(); const d=e.target.dataset.otp; if(d==null) return; e.target.value=e.target.value.replace(/\D/g,''); if(e.target.value&&+d<3) app.querySelector(`[data-otp="${+d+1}"]`).focus(); });
 app.addEventListener('keydown', e=>{ const d=e.target.dataset.otp; if(d!=null&&e.key==='Backspace'&&!e.target.value&&+d>0) app.querySelector(`[data-otp="${+d-1}"]`).focus(); });
 start();
 </script>
