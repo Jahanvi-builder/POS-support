@@ -257,6 +257,7 @@ const DEVICE = {
   {n:'Touch not working / unresponsive',t:'D',route:'Field – EDC replacement'},
   {n:'Display not working properly',t:'C',route:'Field – EDC replacement',verify:'ask',restart:'remote',checks:['Brightness|!Set to 5%','Display driver|Responding'],
    finding:'Screen brightness was set to <b>5%</b>.',fixes:['Reset brightness to 60%']},
+  {n:'Blank / black / white screen',t:'B',pineone:true,route:'Field – EDC replacement'},
   {n:'Lines / flicker / dim',t:'C',route:'Field – EDC replacement',verify:'ask',restart:'remote',checks:['Brightness|Normal','Firmware|!Update available'],
    finding:'A <b>firmware update</b> is available that fixes display issues.',fixes:['Reset brightness','Install the firmware update']},
   {n:'Power button not working',t:'C',route:'Field – EDC replacement',verify:'ask',restart:'remote',checks:['Device status|Online','Button signal|!No press detected'],
