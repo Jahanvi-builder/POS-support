@@ -110,7 +110,16 @@ input,textarea{font-family:inherit;color:inherit}
 
 .fixcard{background:var(--g900);color:#fff;border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px}
 .fixcard .ct{color:#fff}.fixcard .cs{color:#9FC9B2}
-.fixcard .li{display:flex;gap:8px;font-size:13px;color:#CFE9DA;line-height:18px;align-items:center}
+.fixcard .fh{display:flex;gap:10px;align-items:flex-start}
+.fixcard .fic{width:28px;height:28px;border-radius:8px;background:rgba(80,211,135,.14);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.fixcard.done .fic{background:var(--g400)}
+.fixcard .fl{display:flex;flex-direction:column;gap:2px;background:rgba(255,255,255,.05);border-radius:10px;padding:6px 10px}
+.fixcard .li{display:flex;gap:10px;font-size:13px;color:#9FC9B2;line-height:18px;align-items:center;padding:6px 0;transition:color .2s}
+.fixcard .li.run,.fixcard .li.done{color:#fff}
+.fixcard .li>span:first-child,.fixcard .li>svg{flex-shrink:0}
+.fixcard .pend{width:14px;height:14px;border-radius:7px;border:1.5px solid #4F7A66;margin:1px}
+.fixcard.skipped{opacity:.6}
+.btn.sec2{background:none;color:#CFE9DA;box-shadow:inset 0 0 0 1.5px #2E5A48}
 
 .ledger{display:flex;flex-direction:column}
 .lrow{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--line2)}
@@ -744,10 +753,12 @@ function renderCard(m, active){
   switch(m.type){
    case 'check': return m.bare ? `<div class="cs" style="display:flex;gap:8px;align-items:center"><span class="spin"></span>${esc(m.rows[0].l)}…</div>` :
      `<div class="card"><div class="ch">${ic('shield',18,'#1E8E4F')}<div style="flex:1"><div class="ct">${m.rows.length>1?'Device health check':'Device check'}</div><div class="cs">${m.time?'POS 4287664 · '+m.time:'Checking…'}</div></div></div><div>${m.rows.map(chk).join('')}</div></div>`;
-   case 'fix': { const offer=m.state==='offer'&&active;
-     return `<div class="fixcard"><div class="ch">${ic('bolt',18,'#50D387')}<div><div class="ct">${m.title||(m.state==='done'?'Fixes applied':m.state==='skipped'?'Fixes not applied':'I can fix this for you')}</div>${m.note&&m.state==='offer'?`<div class="cs">${esc(m.note)}</div>`:''}</div></div>
-     <div style="display:flex;flex-direction:column;gap:6px">${m.items.map(x=>`<div class="li">${x.st==='run'?'<span class="spin" style="border-color:#2E5A48;border-top-color:#50D387"></span>':x.st==='done'?ic('check',16,'#50D387',2.6):ic('check',16,'#4F7A66',2)}<span>${esc(x.t)}</span></div>`).join('')}</div>
-     ${offer?`<div class="btnrow"><button class="btn light" data-act="card:yes">Fix it for me</button><button class="btn" style="background:none;color:#CFE9DA;flex:0 0 auto" data-act="card:no">Not now</button></div>`:''}</div>`; }
+   case 'fix': { const offer=m.state==='offer'&&active; const n=m.items.filter(x=>x.st==='done').length;
+     const title = m.title||(m.state==='done'?'Fixes applied':m.state==='skipped'?'Not applied':m.state==='run'?'Fixing your device…':'I can fix this for you');
+     const sub = m.state==='offer' ? (m.note||'Takes about 30 seconds. Your payments aren\'t affected.') : m.state==='run' ? `${n} of ${m.items.length} done · keep the device on` : m.state==='done' ? `All ${m.items.length} done` : 'You chose not to run these';
+     return `<div class="fixcard ${m.state}"><div class="fh"><span class="fic">${ic(m.state==='done'?'check':'bolt',16,m.state==='done'?'#003323':'#50D387',2.4)}</span><div style="flex:1"><div class="ct">${title}</div><div class="cs">${esc(sub)}</div></div></div>
+     <div class="fl">${m.items.map(x=>`<div class="li ${x.st}">${x.st==='run'?'<span class="spin" style="border-color:#2E5A48;border-top-color:#50D387"></span>':x.st==='done'?ic('check',16,'#50D387',2.8):'<span class="pend"></span>'}<span>${esc(x.t)}</span></div>`).join('')}</div>
+     ${offer?`<div class="btnrow"><button class="btn sec2" data-act="card:no">Not now</button><button class="btn light" style="flex:2" data-act="card:yes">${ic('bolt',16,'#003323',2.4)}Fix it for me</button></div>`:''}</div>`; }
    case 'tips': return `<div class="card">${m.tips.map(([i,t,d])=>`<div style="display:flex;gap:10px"><span style="width:32px;height:32px;border-radius:9px;background:var(--amber50);display:flex;align-items:center;justify-content:center;flex-shrink:0">${ic(i,16,'#8A5A00')}</span><div><div style="font-size:14px;font-weight:600">${esc(t)}</div><div class="cs">${esc(d)}</div></div></div>`).join('')}<div class="cs" style="border-top:1px solid var(--line2);padding-top:8px">Suggestions only. Nothing is changed on your device.</div></div>`;
    case 'ledger': { const n=m.steps.filter(s=>s.st==='ok'||s.st==='no').length;
      return `<div class="card"><div class="ch"><div class="ct" style="flex:1">Steps to try</div><div class="cs">${n} of ${m.steps.length} done</div></div><div class="ledger">${m.steps.map((s,i)=>{
