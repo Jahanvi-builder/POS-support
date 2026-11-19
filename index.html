@@ -774,8 +774,7 @@ function renderPicker(){
    <div class="tabs" role="tablist">${[...CATS.filter(c=>c.id===TAB),...CATS.filter(c=>c.id!==TAB)].map(c=>`<button class="tab ${TAB===c.id?'on':''}" role="tab" aria-selected="${TAB===c.id}" data-act="tab:${c.id}">${ic(c.ic,16)}${short[c.id]}</button>`).join('')}</div>
    <div class="picklist">${open}<div class="ph">What's the issue about?</div>
    <div style="padding:0 16px 16px"><div class="olist">${subs.map(x=>`<button class="orow" data-act="sub:${x.k}"><span class="oi">${ic(x.ic,17,'#1E8E4F')}</span><div style="flex:1;min-width:0"><div class="ot">${esc(x.n)}</div><div class="od" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(x.d)}</div></div>${ic('right',16,'#8A93A8')}</button>`).join('')}
-   <button class="orow muted" data-act="sub:other"><span class="oi" style="background:var(--line2)">${ic('more',17,'#5A6580')}</span><div class="ot">Something else</div>${ic('right',16,'#8A93A8')}</button></div></div></div>
-   <button class="p1foot" data-act="p1"><span>Screen not responding or device won't turn on?</span><b>Get help on PineOne ${ic('right',14,'#1E8E4F',2.4)}</b></button>`;
+   <button class="orow muted" data-act="sub:other"><span class="oi" style="background:var(--line2)">${ic('more',17,'#5A6580')}</span><div class="ot">Something else</div>${ic('right',16,'#8A93A8')}</button></div></div></div>`;
 }
 const P1CARD = () => `<div class="card"><div class="ch">${ic('phone',18,'#1E8E4F')}<div class="ct">Continue on PineOne</div></div>
   <div style="display:flex;gap:14px;align-items:center"><div class="qr" aria-label="QR code to open PineOne">${Array.from({length:49},(_,i)=>`<i style="background:${[0,1,2,7,9,14,15,16,4,5,6,11,13,18,19,20,28,29,30,35,37,42,43,44,24,17,31,39,46,22,26,33].includes(i)?'#2C3448':'transparent'}"></i>`).join('')}</div>
