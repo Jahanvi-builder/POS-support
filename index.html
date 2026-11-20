@@ -4,817 +4,884 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>POS guided help — prototype</title>
+<title>POS Help & Support — v2 prototype</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-body{margin:0}
-a{color:#1E8E4F}a:hover{color:#003323}
-button{font-family:inherit;cursor:pointer}
+:root{
+  --g900:#003323;--g700:#1E7A45;--g600:#1E8E4F;--g400:#50D387;--g100:#E8F7EE;--g50:#F3FBF6;
+  --ink:#2C3448;--ink2:#495678;--ink3:#5A6580;--ink4:#8A93A8;
+  --line:#DBDDE4;--line2:#ECEEF2;--bg:#F4F5F7;--page:#EEF0F3;
+  --red:#B3261E;--red50:#FDECEA;--amber:#8A5A00;--amber50:#FFF4D6;--blue:#1F4FB8;--blue50:#EAF0FD;
+}
+*{box-sizing:border-box}
+:root{color-scheme:light}
+input,textarea{background:#fff;color:var(--ink);-webkit-text-fill-color:var(--ink);caret-color:var(--g600)}
+input::placeholder,textarea::placeholder{color:var(--ink4);-webkit-text-fill-color:var(--ink4);opacity:1}
+html,body{height:100%;margin:0}
+body{background:var(--page);font-family:Inter,system-ui,sans-serif;color:var(--ink);display:flex;align-items:center;justify-content:center;min-height:100vh;-webkit-font-smoothing:antialiased}
+button{font-family:inherit;cursor:pointer;color:inherit}
+input,textarea{font-family:inherit;color:inherit}
 @keyframes spin{to{transform:rotate(360deg)}}
-@keyframes drain{from{width:100%}to{width:0%}}
-@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-@keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.08)}100%{transform:scale(1)}}
-html,body{height:100%}
-body{background:#EEF0F3;font-family:Inter,sans-serif;color:#2C3448;display:flex;align-items:center;justify-content:center;min-height:100vh}
-.stage{box-sizing:border-box;padding:40px;display:flex;gap:40px;width:720px;max-width:100%}
-@media (max-width:760px){body{align-items:flex-start}.stage{flex-direction:column;align-items:center;padding:16px;gap:24px;width:100%}.stage>div:last-child{width:100%;max-width:360px}}
+@keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+@keyframes drain{from{width:100%}to{width:0}}
+@keyframes blink{0%,80%,100%{opacity:.25}40%{opacity:1}}
+@keyframes pop{0%{transform:scale(.5);opacity:0}70%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+
+.stage{display:flex;gap:32px;align-items:flex-start;padding:32px}
+.device{width:360px;height:640px;background:#fff;border-radius:6px;box-shadow:0 10px 30px rgba(0,0,0,.14);display:flex;flex-direction:column;overflow:hidden;position:relative;flex-shrink:0}
+.statusbar{height:24px;background:var(--g900);flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 10px;color:#CFE9DA;font-size:11px;font-weight:500}
+.notes{width:280px;font-size:13px;line-height:19px;color:var(--ink2)}
+.notes h3{font-size:12px;margin:0 0 6px;color:var(--ink);text-transform:uppercase;letter-spacing:.05em}
+.notes ul{margin:0 0 16px;padding-left:18px}.notes li{margin-bottom:4px}
+.notes .v{display:inline-block;background:var(--g100);color:var(--g700);font-weight:600;font-size:11px;padding:2px 8px;border-radius:10px;margin-bottom:10px}
+.sim{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}.sim label{display:flex;gap:8px;align-items:center;cursor:pointer}
+@media (max-width:720px){.stage{flex-direction:column;align-items:center;padding:12px}.notes{width:360px}}
+
+.appbar{height:56px;flex-shrink:0;display:flex;align-items:center;gap:4px;padding:0 8px;border-bottom:1px solid var(--line)}
+.iconbtn{width:44px;height:44px;border:none;background:none;border-radius:22px;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0}
+.iconbtn:active{background:var(--line2)}
+.ab-t{flex:1;font-size:17px;font-weight:600}
+
+.thread{flex:1;min-height:0;overflow-y:auto;padding:16px 16px 20px;display:flex;flex-direction:column;gap:14px}
+.m{animation:in .25s ease-out}
+.bot{font-size:14px;line-height:21px;max-width:312px}
+.bot b{font-weight:600}
+.bot.err{color:var(--red)}
+.bot.q{font-size:15px;font-weight:600}
+.me{align-self:flex-end;display:flex;justify-content:flex-end;max-width:270px}
+.me>*{background:var(--line2);border-radius:20px 20px 4px 20px;padding:10px 14px;font-size:14px;line-height:19px;border:none;text-align:left;display:inline-flex;align-items:center;gap:8px}
+.me button:active{background:var(--line)}
+.typing{display:flex;gap:4px;padding:6px 0}.typing i{width:7px;height:7px;border-radius:4px;background:var(--ink4);animation:blink 1.2s infinite}.typing i:nth-child(2){animation-delay:.2s}.typing i:nth-child(3){animation-delay:.4s}
+.divider{display:flex;align-items:center;gap:10px;font-size:11px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line)}
+
+.tabs{position:relative;display:flex;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none;flex-shrink:0}
+.tab{flex-shrink:0;height:40px;border-radius:20px;border:1px solid var(--line);background:#fff;padding:0 14px;font-size:14px;font-weight:500;display:flex;align-items:center;gap:6px}
+.tab{transition:background .25s,color .25s,border-color .25s}
+.tab.on{position:relative;z-index:1;background:var(--g900);border-color:var(--g900);color:#fff}
+.picklist.swap{animation:in .25s ease-out}
+.picklist{flex:1;overflow-y:auto}
+.picklist .ph{padding:14px 16px 6px;font-size:12px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em}
+.pinned{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:var(--bg)}
+.pinned .pt{flex:1;font-size:13px;color:var(--ink2)}.pinned .pt b{color:var(--ink);font-weight:600}
+.linkbtn{border:none;background:none;color:var(--g600);font-weight:600;font-size:13px;padding:6px 4px}
+.p1foot{flex-shrink:0;border:none;border-top:1px solid var(--line);background:var(--g50);padding:12px 16px;display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;font-size:12px;color:var(--ink3)}
+.p1foot b{color:var(--g700);font-size:13px;display:flex;align-items:center;gap:4px}
+.qr{width:84px;height:84px;display:grid;grid-template-columns:repeat(7,1fr);gap:2px;padding:6px;border:1px solid var(--line);border-radius:8px;flex-shrink:0}.qr i{border-radius:1px}
+.p1steps{margin:0;padding-left:18px;font-size:13px;line-height:20px;display:flex;flex-direction:column;gap:4px}
+.thread.lift{padding-bottom:260px}
+.olist{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.orow{width:100%;border:none;background:#fff;display:flex;align-items:center;gap:12px;padding:12px 14px;text-align:left;min-height:52px;border-bottom:1px solid var(--line2)}
+.orow:last-child{border-bottom:none}
+.orow:active{background:var(--g50)}
+.orow .oi{width:32px;height:32px;border-radius:9px;background:var(--g100);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.orow .ot{flex:1;font-size:14px;font-weight:500;line-height:19px}.orow .od{font-size:12px;color:var(--ink3);font-weight:400;margin-top:1px}
+.orow.muted .ot{color:var(--ink2);font-weight:400}
+
+.pills{display:flex;flex-wrap:wrap;gap:8px}
+.pill{min-height:40px;border-radius:20px;border:1px solid var(--line);background:#fff;padding:0 14px;font-size:14px;font-weight:500;display:inline-flex;align-items:center;gap:6px}
+.pill:active{background:var(--g50);border-color:var(--g600)}
+.pill.chipon{background:var(--g100);border-color:var(--g600);color:var(--g700)}
+.pill.go{background:var(--g900);border-color:var(--g900);color:#fff}
+.pill.ticket{background:var(--g100);border-color:var(--g100);color:var(--g700)}
+.pill.cancel{background:var(--red50);border-color:var(--red50);color:var(--red)}
+
+.card{border:1px solid var(--line);border-radius:12px;background:#fff;padding:14px;display:flex;flex-direction:column;gap:10px}
+.card.soft{background:var(--bg);border-color:transparent}
+.card .ch{display:flex;align-items:center;gap:10px}
+.ct{font-size:14px;font-weight:600}
+.cs{font-size:12px;color:var(--ink3);line-height:17px}
+.kv{display:flex;justify-content:space-between;gap:12px;font-size:13px;line-height:18px}.kv .k{color:var(--ink3);flex-shrink:0}.kv .v{font-weight:500;text-align:right}
+.btnrow{display:flex;gap:8px}
+.btn{flex:1;min-height:44px;border-radius:22px;border:none;font-size:14px;font-weight:600;padding:0 16px;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.btn.primary{background:var(--g900);color:#fff}.btn.sec{background:#fff;color:var(--g900);box-shadow:inset 0 0 0 1.5px var(--g900)}
+.btn.light{background:var(--g400);color:var(--g900)}
+.btn[disabled]{opacity:.4;cursor:default}
+
+.chk{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-top:1px solid var(--line2)}
+.chk:first-child{border-top:none}
+.chk .st{width:20px;height:20px;flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.chk .l{font-size:13px}.chk .r{font-size:12px;color:var(--ink3);margin-top:1px}
+.chk.wait .l{color:var(--ink4)}
+.spin{width:16px;height:16px;border-radius:8px;border:2.5px solid var(--line);border-top-color:var(--g600);animation:spin .8s linear infinite;display:inline-block;flex-shrink:0}
+.dot{width:7px;height:7px;border-radius:4px;background:var(--line)}
+
+.fixcard{background:var(--g900);color:#fff;border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.fixcard .ct{color:#fff}.fixcard .cs{color:#9FC9B2}
+.fixcard .fh{display:flex;gap:10px;align-items:flex-start}
+.fixcard .fic{width:28px;height:28px;border-radius:8px;background:rgba(80,211,135,.14);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.fixcard.done .fic{background:var(--g400)}
+.fixcard .fl{display:flex;flex-direction:column;gap:2px;background:rgba(255,255,255,.05);border-radius:10px;padding:6px 10px}
+.fixcard .li{display:flex;gap:10px;font-size:13px;color:#9FC9B2;line-height:18px;align-items:center;padding:6px 0;transition:color .2s}
+.fixcard .li.run,.fixcard .li.done{color:#fff}
+.fixcard .li>span:first-child,.fixcard .li>svg{flex-shrink:0}
+.fixcard .pend{width:14px;height:14px;border-radius:7px;border:1.5px solid #4F7A66;margin:1px}
+.fixcard.skipped{opacity:.6}
+.btn.sec2{background:none;color:#CFE9DA;box-shadow:inset 0 0 0 1.5px #2E5A48}
+
+.ledger{display:flex;flex-direction:column}
+.lrow{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--line2)}
+.lrow:first-child{border-top:none;padding-top:4px}
+.lnum{width:26px;height:26px;border-radius:13px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;background:var(--line2);color:var(--ink3)}
+.lrow.cur .lnum{background:var(--g900);color:#fff}
+.lrow.ok .lnum{background:var(--g600);color:#fff}
+.lrow.lock{opacity:.5}
+.lt{font-size:14px;font-weight:600}.ld{font-size:12px;color:var(--ink3);margin-top:2px;line-height:17px}
+.lres{font-size:12px;margin-top:4px;font-weight:500}
+.lact{display:flex;gap:8px;margin-top:10px}
+.sbtn{min-height:34px;border-radius:17px;font-size:13px;font-weight:600;padding:0 14px;border:none}
+.sbtn.p{background:var(--g900);color:#fff}.sbtn.q{background:none;color:var(--ink3)}
+
+.cl{display:flex;flex-direction:column}
+.clrow{display:flex;align-items:center;gap:10px;border:none;background:none;padding:10px 2px;text-align:left;font-size:14px;width:100%}
+.cbox{width:20px;height:20px;border-radius:5px;border:2px solid var(--ink4);flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.clrow.on .cbox{background:var(--g600);border-color:var(--g600)}
+
+.danger{background:var(--red50);border-radius:12px;padding:14px;color:#8C1D18;font-size:13px;display:flex;flex-direction:column;gap:6px}
+.danger .ct{color:var(--red);font-size:15px;display:flex;gap:8px;align-items:center}
+.danger .x{display:flex;gap:8px;align-items:center}
+.notice{display:flex;gap:10px;border-radius:12px;padding:12px;font-size:13px;line-height:18px}
+.notice.info{background:var(--blue50);color:#1B3A80}.notice.warn{background:var(--amber50);color:var(--amber)}
+
+.tmap{display:grid;grid-template-columns:1fr 1fr;gap:4px;width:110px;flex-shrink:0}
+.tmap i{height:28px;border-radius:5px;display:flex;align-items:center;justify-content:center}
+.tmap i.p{background:var(--g100)}.tmap i.f{background:var(--red50)}
+
+.inp{width:100%;height:48px;border:1px solid var(--line);border-radius:10px;padding:0 12px;font-size:16px;outline:none;letter-spacing:.04em}
+.inp:focus{border-color:var(--g600);box-shadow:0 0 0 3px rgba(30,142,79,.12)}
+.otp{display:flex;gap:10px}
+.otp input{width:48px;height:52px;text-align:center;font-size:20px;font-weight:600;border:1px solid var(--line);border-radius:10px;outline:none}
+.otp input:focus{border-color:var(--g600);box-shadow:0 0 0 3px rgba(30,142,79,.12)}
+.otp.bad input{border-color:var(--red)}
+.okhead{display:flex;align-items:center;gap:10px}
+.okic{width:36px;height:36px;border-radius:18px;background:var(--g100);display:flex;align-items:center;justify-content:center;animation:pop .35s;flex-shrink:0}
+
+.layer{position:absolute;inset:24px 0 0 0;z-index:5;display:flex;flex-direction:column}
+.tt{background:#101418;color:#fff}
+.tt-grid{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(3,1fr);gap:2px;background:#2A3038}
+.tt-cell{border:none;background:#101418;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:0}
+.tt-spot{width:80px;height:80px;border-radius:40px;background:var(--g400);color:var(--g900);font-weight:700;display:flex;align-items:center;justify-content:center;animation:pulse 1s infinite}
+.tt-bar{width:80px;height:4px;border-radius:2px;background:#2A3038;overflow:hidden;display:block}.tt-bar div{height:100%;background:var(--g400)}
+.boot{background:#000;color:#fff;align-items:center;justify-content:center;gap:18px}
+.boot .logo{font-size:20px;font-weight:700;color:#CFE9DA}
+.poshome{background:var(--bg)}
+.tile{background:#fff;border-radius:12px;height:72px;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--ink3)}
+.notif{margin:12px;background:#fff;border-radius:14px;box-shadow:0 6px 20px rgba(0,0,0,.15);padding:14px;display:flex;flex-direction:column;gap:10px;animation:in .35s}
 </style>
 </head>
 <body>
-<div id="app"></div>
-<template id="tpl">
-
 <div class="stage">
-
-<!-- PHONE -->
-<div style="width: 360px; height: 640px; flex-shrink: 0; background: #FFFFFF; display: flex; flex-direction: column; overflow: hidden; border-radius: 4px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); position: relative">
-<div style="height: 24px; background: #003323; flex-shrink: 0"></div>
-
-<!-- ============ FULL-SCREEN TOUCH TEST ============ -->
-<sc-if value="{{isTest}}" hint-placeholder-val="{{ false }}">
-<div style="flex: 1; display: flex; flex-direction: column; background: #101418; min-height: 0">
-<div style="padding: 14px 16px 10px; color: #FFFFFF; text-align: center; pointer-events: none">
-<div style="font-size: 16px; font-weight: 600">Tap the green spot</div>
-<div style="font-size: 13px; color: #B7BCC8; margin-top: 2px">{{testCount}}</div>
-</div>
-<div style="flex: 1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 2px; background: #2A3038; min-height: 0">
-<sc-for list="{{cells}}" as="c" hint-placeholder-count="6">
-<button onClick="{{c.tap}}" aria-label="{{c.name}}" style="border: none; background: #101418; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 0">
-<sc-if value="{{c.active}}" hint-placeholder-val="{{ false }}">
-<div style="width: 84px; height: 84px; border-radius: 42px; background: #50D387; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; color: #003323; animation: pulse 1s ease-in-out infinite">Tap</div>
-<div style="width: 84px; height: 4px; border-radius: 2px; background: #2A3038; overflow: hidden"><div style="height: 4px; background: #50D387; animation: drain 5s linear forwards"></div></div>
-</sc-if>
-<sc-if value="{{c.pass}}" hint-placeholder-val="{{ false }}">
-<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#50D387" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>
-</sc-if>
-<sc-if value="{{c.fail}}" hint-placeholder-val="{{ false }}">
-<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#F28B82" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
-</sc-if>
-</button>
-</sc-for>
-</div>
-<div style="padding: 10px 16px; text-align: center; font-size: 12px; color: #B7BCC8; pointer-events: none">No need to exit. The test ends by itself.</div>
-</div>
-</sc-if>
-
-<!-- ============ NORMAL SCREENS ============ -->
-<sc-if value="{{notTest}}" hint-placeholder-val="{{ true }}">
-
-<!-- Header -->
-<div style="height: 56px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 0 12px; border-bottom: 1px solid #DBDDE4">
-<button onClick="{{back}}" aria-label="Back" style="width: 44px; height: 44px; border: none; background: none; display: flex; align-items: center; justify-content: center; padding: 0">
-<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2C3448" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
-</button>
-<div style="flex: 1; display: flex; flex-direction: column; gap: 1px">
-<div style="font-size: 18px; font-weight: 500; line-height: 22px">{{title}}</div>
-<sc-if value="{{hasSub}}" hint-placeholder-val="{{ false }}"><div style="font-size: 12px; color: #5A6580">{{subtitle}}</div></sc-if>
-</div>
+  <div class="device"><div class="statusbar"><span>Pine Labs</span><span>4G · 82%</span></div><div id="app" style="flex:1;display:flex;flex-direction:column;min-height:0;position:relative"></div></div>
+  <aside class="notes">
+    <span class="v">v2.2 · guided flow</span>
+    <h3>How it works</h3>
+    <ul>
+      <li>Category tabs and sub-categories on one screen.</li>
+      <li>From the issue onwards, each answer stays on screen and the next step appears below it. Your selection stays pinned at the top.</li>
+      <li>Fix before request: the request only appears once fixes run out, or straight away for safety and damage.</li>
+      <li>Your steps: "Already tried any?" first, then one list that unlocks in order. The device checks itself where it can.</li>
+      <li>Restart: you come back to the same screen after the device boots.</li>
+    </ul>
+    <h3>Try</h3>
+    <ul>
+      <li>Device › Power &amp; Charging › Charger not working</li>
+      <li>Device › Device hanging / restarting › Hanging</li>
+      <li>Device › Printer › Not printing</li>
+      <li>Device › Card reader › Chip card</li>
+      <li>Device › Display and touch › Touch not working</li>
+      <li>Device › Battery › Swollen</li>
+      <li>Settlement › Settlement credit</li>
+    </ul>
+    <h3>Simulate</h3>
+    <div class="sim">
+      <label><input type="checkbox" id="simOff"> Device can't be reached</label>
+      <label><input type="checkbox" id="simFix"> Fixes don't solve it</label>
+      <label><input type="checkbox" id="simTouch"> Touch screen fully dead</label>
+    </div>
+    <p style="font-size:12px;color:var(--ink3)">OTP: any 4 digits · 0000 shows the wrong-code state.</p>
+  </aside>
 </div>
 
-<!-- Help & Support (static, unchanged entry) -->
-<sc-if value="{{isHelp}}" hint-placeholder-val="{{ true }}">
-<div style="flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 4px">
-<sc-for list="{{helpItems}}" as="it" hint-placeholder-count="4">
-<button onClick="{{it.go}}" style="display: flex; align-items: center; gap: 16px; padding: 12px 4px; border: none; background: none; text-align: left; min-height: 56px; opacity: {{it.op}}">
-<div style="width: 24px; height: 24px; border-radius: 12px; background: #E8F7EE; flex-shrink: 0"></div>
-<div style="flex: 1"><div style="font-size: 16px; color: #2C3448">{{it.t}}</div><div style="font-size: 12px; color: #5A6580; margin-top: 2px">{{it.d}}</div></div>
-<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#003323" stroke-width="2.5" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
-</button>
-</sc-for>
-</div>
-</sc-if>
-
-<!-- ============ GUIDED FLOW: one conversation, starts at the top ============ -->
-<sc-if value="{{isFlow}}" hint-placeholder-val="{{ false }}">
-<div style="flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column-reverse">
-<div style="margin-bottom: auto; padding: 16px; display: flex; flex-direction: column; gap: 14px">
-
-<sc-for list="{{msgs}}" as="m" hint-placeholder-count="3">
-<div style="display: flex; flex-direction: column; gap: 6px; animation: {{m.anim}}">
-
-<sc-if value="{{m.isBot}}" hint-placeholder-val="{{ true }}">
-<div style="font-size: 14px; line-height: 21px; color: #2C3448; max-width: 304px">{{m.t}}<span style="font-weight: 700">{{m.b}}</span>{{m.t2}}</div>
-</sc-if>
-
-<sc-if value="{{m.isErr}}" hint-placeholder-val="{{ false }}">
-<div style="font-size: 14px; line-height: 21px; color: #B3261E; max-width: 304px">{{m.t}}</div>
-</sc-if>
-
-<sc-if value="{{m.isUser}}" hint-placeholder-val="{{ false }}">
-<div style="display: flex; justify-content: flex-end">
-<sc-if value="{{m.fixedReply}}" hint-placeholder-val="{{ true }}">
-<div style="background: #EEF0F3; border-radius: 20px; padding: 10px 16px; font-size: 14px; color: #2C3448; max-width: 260px">{{m.t}}</div>
-</sc-if>
-<sc-if value="{{m.canChange}}" hint-placeholder-val="{{ false }}">
-<button onClick="{{m.change}}" aria-label="{{m.changeAria}}" style="background: #EEF0F3; border: none; border-radius: 20px; min-height: 44px; padding: 10px 12px 10px 16px; font-size: 14px; color: #2C3448; max-width: 260px; display: inline-flex; align-items: center; gap: 8px; text-align: left">{{m.t}}<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#003323" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg></button>
-</sc-if>
-</div>
-</sc-if>
-
-<sc-if value="{{m.isBusy}}" hint-placeholder-val="{{ false }}">
-<div style="display: flex; align-items: center; gap: 10px; font-size: 14px; color: #495678">
-<div style="width: 18px; height: 18px; border-radius: 9px; border: 3px solid #DBDDE4; border-top-color: #1E8E4F; animation: spin 0.9s linear infinite; flex-shrink: 0"></div>{{m.t}}
-</div>
-</sc-if>
-
-<sc-if value="{{m.isStep}}" hint-placeholder-val="{{ false }}">
-<div style="border: 1px solid #DBDDE4; border-radius: 8px; overflow: hidden; max-width: 300px">
-<div style="height: 88px; background: #F4F5F7; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #5A6580">{{m.img}}</div>
-<div style="padding: 12px 14px; display: flex; flex-direction: column; gap: 4px">
-<div style="font-size: 12px; font-weight: 600; color: #1E7A45">{{m.cap}}</div>
-<div style="font-size: 17px; line-height: 23px; font-weight: 600; color: #2C3448">{{m.title}}</div>
-<div style="font-size: 13px; line-height: 19px; color: #495678">{{m.d}}</div>
-</div>
-</div>
-</sc-if>
-
-<sc-if value="{{m.isResult}}" hint-placeholder-val="{{ false }}">
-<div style="border: 1px solid #DBDDE4; border-radius: 8px; padding: 12px 14px; display: flex; align-items: center; gap: 14px; max-width: 300px">
-<div style="width: 56px; height: 84px; border: 2px solid #2C3448; border-radius: 6px; padding: 3px; box-sizing: border-box; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px; flex-shrink: 0">
-<sc-for list="{{m.zones}}" as="z" hint-placeholder-count="6">
-<div style="background: {{z.bg}}; border-radius: 2px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: {{z.col}}">{{z.mark}}</div>
-</sc-for>
-</div>
-<div style="display: flex; flex-direction: column; gap: 2px">
-<div style="font-size: 12px; color: #5A6580">Touch test result</div>
-<div style="font-size: 13px; line-height: 18px; color: #2C3448">{{m.d}}</div>
-</div>
-</div>
-</sc-if>
-
-<sc-if value="{{m.isCard}}" hint-placeholder-val="{{ false }}">
-<div style="border: 1px solid {{m.border}}; background: {{m.bg}}; border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; max-width: 300px">
-<div style="font-size: 15px; font-weight: 600">{{m.title}}</div>
-<sc-for list="{{m.rows}}" as="r" hint-placeholder-count="3">
-<div style="display: flex; justify-content: space-between; gap: 12px; font-size: 13px"><span style="color: #5A6580; flex-shrink: 0">{{r.a}}</span><span style="font-weight: 500; text-align: right">{{r.b}}</span></div>
-</sc-for>
-</div>
-</sc-if>
-
-<sc-if value="{{m.isTicket}}" hint-placeholder-val="{{ false }}">
-<div style="border: 1px solid #DBDDE4; border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; max-width: 300px">
-<div style="align-self: flex-start; background: #FFE9A8; color: #5C4400; font-size: 12px; font-weight: 600; border-radius: 10px; padding: 2px 10px">Open</div>
-<div style="font-size: 15px; font-weight: 600">{{m.title}}</div>
-<div style="font-size: 12px; color: #5A6580">{{m.d}}</div>
-</div>
-</sc-if>
-
-<sc-if value="{{m.isAlert}}" hint-placeholder-val="{{ false }}">
-<div role="alert" style="border: 1.5px solid #D93025; background: #FDECEA; border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px">
-<div style="display: flex; align-items: center; gap: 10px">
-<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#B3261E" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0"><path d="M12 3L2 20h20L12 3z"/><path d="M12 10v4M12 17v.5"/></svg>
-<div style="font-size: 18px; line-height: 23px; font-weight: 700; color: #8C1D18">{{m.title}}</div>
-</div>
-<sc-for list="{{m.items}}" as="it" hint-placeholder-count="3">
-<div style="display: flex; gap: 10px; font-size: 15px; line-height: 21px; font-weight: 600; color: #2C3448"><span style="color: #B3261E" aria-hidden="true">•</span><span>{{it.name}}</span></div>
-</sc-for>
-</div>
-</sc-if>
-
-<sc-if value="{{m.isFixlist}}" hint-placeholder-val="{{ false }}">
-<div style="border: 1px solid #DBDDE4; border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 14px">
-<div style="font-size: 12px; font-weight: 600; color: #1E7A45">{{m.title}}</div>
-<sc-for list="{{m.items}}" as="it" hint-placeholder-count="2">
-<div style="display: flex; gap: 12px">
-<div style="width: 26px; height: 26px; border-radius: 13px; background: #E8F7EE; color: #003323; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0">{{it.n}}</div>
-<div style="display: flex; flex-direction: column; gap: 2px">
-<div style="font-size: 16px; line-height: 22px; font-weight: 600; color: #2C3448">{{it.name}}</div>
-<div style="font-size: 13px; line-height: 19px; color: #495678">{{it.d}}</div>
-</div>
-</div>
-</sc-for>
-</div>
-</sc-if>
-
-<sc-if value="{{m.isDone}}" hint-placeholder-val="{{ false }}">
-<div style="border: 1px solid #A8DDBF; background: #EEF9F2; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
-<div style="width: 36px; height: 36px; border-radius: 10px; background: #FFFFFF; display: flex; align-items: center; justify-content: center">
-<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1E7A45" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>
-</div>
-<div style="display: flex; flex-direction: column; gap: 2px">
-<div style="font-size: 15px; font-weight: 600">{{m.title}}</div>
-<div style="font-size: 13px; line-height: 19px; color: #495678">{{m.d}}</div>
-</div>
-</div>
-</sc-if>
-
-</div>
-</sc-for>
-
-<!-- ============ SELECTION: sizes itself to the number of options ============ -->
-<sc-if value="{{hasOpts}}" hint-placeholder-val="{{ false }}">
-<div style="display: flex; flex-direction: column; gap: 10px; order: {{optOrder}}; position: {{optPos}}; top: 0; background: #FFFFFF; z-index: 1; padding-bottom: 4px">
-
-<sc-if value="{{optsTop}}" hint-placeholder-val="{{ false }}">
-<div style="font-size: 12px; color: #5A6580">Buttons moved up, because the bottom of the screen isn't responding.</div>
-</sc-if>
-
-<!-- "already tried?" tick list -->
-<sc-if value="{{hasChecks}}" hint-placeholder-val="{{ false }}">
-<div style="border: 1px solid #DBDDE4; border-radius: 8px; overflow: hidden; display: flex; flex-direction: column">
-<sc-for list="{{checks}}" as="c" hint-placeholder-count="3">
-<button onClick="{{c.tap}}" aria-pressed="{{c.on}}" style="display: flex; align-items: center; gap: 12px; padding: 0 14px; min-height: 52px; border: none; border-bottom: 1px solid #EEF0F3; background: #FFFFFF; text-align: left; font-size: 15px; color: #2C3448">
-<span style="width: 22px; height: 22px; border-radius: 5px; border: 2px solid #003323; background: {{c.box}}; color: #FFFFFF; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0" aria-hidden="true">{{c.mark}}</span>
-<span>{{c.label}}</span>
-</button>
-</sc-for>
-</div>
-</sc-if>
-
-<!-- one action: a single filled button -->
-<sc-for list="{{actions}}" as="o" hint-placeholder-count="1">
-<button onClick="{{o.pick}}" style="min-height: 48px; border-radius: 24px; border: none; background: #003323; color: #FFFFFF; font-size: 15px; font-weight: 600; padding: 8px 16px">{{o.label}}</button>
-</sc-for>
-
-<!-- the request: a quieter, hug-width green pill -->
-<sc-for list="{{reqPills}}" as="o" hint-placeholder-count="1">
-<button onClick="{{o.pick}}" style="align-self: flex-start; min-height: 46px; border-radius: 24px; border: none; background: #003323; color: #FFFFFF; font-size: 15px; font-weight: 600; padding: 6px 18px 6px 20px; display: inline-flex; align-items: center; gap: 8px">{{o.label}}<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0"><path d="M7 5v8h10"/><path d="M13 9l4 4-4 4"/></svg></button>
-</sc-for>
-
-<!-- 2 to 3 answers: pills -->
-<sc-if value="{{isPills}}" hint-placeholder-val="{{ false }}">
-<div style="display: flex; flex-direction: column; align-items: flex-start; gap: 10px">
-<sc-for list="{{answers}}" as="o" hint-placeholder-count="2">
-<button onClick="{{o.pick}}" style="min-height: 44px; border-radius: 22px; border: 1px solid #003323; background: #FFFFFF; color: #2C3448; font-size: 14px; font-weight: 500; padding: 6px 16px 6px 18px; display: inline-flex; align-items: center; gap: 8px; text-align: left; opacity: {{o.op}}">{{o.label}}<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#003323" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0"><path d="M7 5v8h10"/><path d="M13 9l4 4-4 4"/></svg></button>
-</sc-for>
-</div>
-</sc-if>
-
-<!-- 4 or more answers: compact list, with More from 7 -->
-<sc-if value="{{isList}}" hint-placeholder-val="{{ false }}">
-<div style="border: 1px solid #DBDDE4; border-radius: 8px; overflow: hidden; display: flex; flex-direction: column">
-<sc-for list="{{answers}}" as="o" hint-placeholder-count="5">
-<button onClick="{{o.pick}}" style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 14px; min-height: 48px; border: none; border-bottom: 1px solid #EEF0F3; background: #FFFFFF; text-align: left; font-size: 15px; color: #2C3448; opacity: {{o.op}}">
-<span>{{o.label}}</span>
-<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#003323" stroke-width="2.5" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
-</button>
-</sc-for>
-<sc-if value="{{showMore}}" hint-placeholder-val="{{ false }}">
-<button onClick="{{moreGo}}" style="display: flex; align-items: center; justify-content: space-between; padding: 0 14px; min-height: 48px; border: none; background: #F7F8FA; text-align: left; font-size: 15px; color: #495678">
-<span>More</span>
-<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#495678" stroke-width="2.5" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
-</button>
-</sc-if>
-</div>
-</sc-if>
-
-<!-- the quiet last resort -->
-<sc-for list="{{quiet}}" as="o" hint-placeholder-count="1">
-<button onClick="{{o.pick}}" style="align-self: flex-start; border: none; background: none; font-size: 13px; color: #495678; text-decoration: underline; padding: 10px 4px; min-height: 44px">{{o.label}}</button>
-</sc-for>
-
-</div>
-</sc-if>
-
-</div>
-</div>
-
-<!-- describe the issue: optional free text -->
-<sc-if value="{{descOn}}" hint-placeholder-val="{{ false }}">
-<div style="flex-shrink: 0; border-top: 1px solid #DBDDE4; background: #F7F8FA; padding: 12px 16px; display: flex; flex-direction: column; gap: 8px">
-<label for="desc" style="font-size: 12px; color: #5A6580">Describe the issue (optional)</label>
-<textarea id="desc" onInput="{{descInput}}" rows="3" placeholder="The charger gets hot after a few minutes" style="border: 1.5px solid #003323; border-radius: 8px; background: #FFFFFF; padding: 10px 12px; font-family: inherit; font-size: 15px; line-height: 21px; color: #2C3448; resize: none"></textarea>
-<button onClick="{{descGo}}" style="height: 46px; border-radius: 24px; border: none; background: #003323; color: #FFFFFF; font-size: 15px; font-weight: 600">Continue</button>
-<button onClick="{{descSkip}}" style="align-self: center; border: none; background: none; font-size: 13px; color: #495678; text-decoration: underline; min-height: 30px">Skip</button>
-</div>
-</sc-if>
-
-<!-- number pad: the only place the merchant types -->
-<sc-if value="{{padOn}}" hint-placeholder-val="{{ false }}">
-<div style="flex-shrink: 0; border-top: 1px solid #DBDDE4; background: #F7F8FA; padding: 10px 16px 10px; display: flex; flex-direction: column; gap: 8px">
-<div style="font-size: 12px; color: #5A6580">{{padLabel}}</div>
-<div style="height: 44px; border: 1.5px solid #003323; border-radius: 8px; background: #FFFFFF; display: flex; align-items: center; padding: 0 14px; font-size: 20px; font-weight: 600; letter-spacing: 0.04em; color: #2C3448">{{padShown}}</div>
-<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px">
-<sc-for list="{{padKeys}}" as="k" hint-placeholder-count="12">
-<button onClick="{{k.tap}}" aria-label="{{k.aria}}" style="height: 40px; border-radius: 8px; border: 1px solid #DBDDE4; background: #FFFFFF; font-size: 18px; font-weight: 500; color: #2C3448; opacity: {{k.op}}">{{k.t}}</button>
-</sc-for>
-</div>
-<button onClick="{{padGo}}" style="height: 46px; border-radius: 24px; border: none; background: #003323; color: #FFFFFF; font-size: 15px; font-weight: 600; opacity: {{padGoOp}}">{{padCta}}</button>
-<button onClick="{{padCancel}}" style="align-self: center; border: none; background: none; font-size: 13px; color: #495678; text-decoration: underline; min-height: 30px">Use the registered number instead</button>
-</div>
-</sc-if>
-</sc-if>
-
-<!-- Leave sheet -->
-<sc-if value="{{sheet}}" hint-placeholder-val="{{ false }}">
-<div style="position: absolute; left: 0; right: 0; top: 24px; bottom: 40px; background: rgba(0,0,0,0.45); display: flex; flex-direction: column; justify-content: flex-end; z-index: 5">
-<div style="background: #FFFFFF; border-radius: 16px 16px 0 0; padding: 20px 16px 16px; display: flex; flex-direction: column; gap: 10px">
-<div style="font-size: 17px; font-weight: 600">Leave this check?</div>
-<div style="font-size: 14px; line-height: 20px; color: #495678">We'll save your progress. You can continue from Help &amp; Support.</div>
-<button onClick="{{stay}}" style="height: 48px; border-radius: 24px; border: none; background: #003323; color: #FFFFFF; font-size: 15px; font-weight: 600; margin-top: 6px">Keep going</button>
-<button onClick="{{startOver}}" style="height: 48px; border-radius: 24px; border: 1.5px solid #003323; background: #FFFFFF; color: #003323; font-size: 15px; font-weight: 600">Start over</button>
-<button onClick="{{leave}}" style="height: 48px; border: none; background: none; color: #003323; font-size: 15px; font-weight: 600">Leave</button>
-</div>
-</div>
-</sc-if>
-
-</sc-if>
-
-<div style="height: 40px; background: #000; flex-shrink: 0; display: flex; align-items: center; justify-content: space-around">
-<div style="width: 0; height: 0; border-top: 7px solid transparent; border-bottom: 7px solid transparent; border-right: 11px solid #FFF"></div>
-<div style="width: 14px; height: 14px; border-radius: 7px; border: 2px solid #FFF"></div>
-<div style="width: 12px; height: 12px; background: #FFF"></div>
-</div>
-</div>
-
-<!-- SIDE PANEL -->
-<div style="flex: 1; display: flex; flex-direction: column; gap: 10px; padding-top: 8px">
-<div style="font-size: 12px; font-weight: 600; color: #5A6580; letter-spacing: 0.06em">PROTOTYPE NOTES</div>
-<div style="font-size: 18px; font-weight: 700; line-height: 24px">Guided flow from Log a complaint</div>
-<div style="font-size: 12px; line-height: 17px; color: #2C3448; display: flex; flex-direction: column; gap: 6px">
-<div style="border: 1px solid #DBDDE4; border-radius: 8px; padding: 8px 10px"><b>Built:</b> Power and charging, Screen and buttons. Greyed options aren't built.</div>
-<div style="border: 1px solid #DBDDE4; border-radius: 8px; padding: 8px 10px"><b>Touch test:</b> tap a green spot to pass it, or leave it 5 seconds to miss it. Missed spots get a second try.</div>
-<div style="border: 1px solid #DBDDE4; border-radius: 8px; padding: 8px 10px"><b>Changing an answer:</b> tap your last reply (it shows a pencil) or press back. Once a check has run, back offers Keep going, Start over or Leave.</div>
-</div>
-<sc-for list="{{toggles}}" as="tg" hint-placeholder-count="3">
-<div style="display: flex; flex-direction: column; gap: 6px">
-<div style="font-size: 12px; font-weight: 600; color: #2C3448">{{tg.label}}</div>
-<div style="display: flex; flex-wrap: wrap; gap: 6px">
-<sc-for list="{{tg.items}}" as="x" hint-placeholder-count="2">
-<button onClick="{{x.pick}}" style="min-height: 34px; border-radius: 8px; border: 1.5px solid {{x.border}}; background: {{x.bg}}; font-size: 12px; font-weight: 600; color: #2C3448; padding: 5px 9px">{{x.label}}</button>
-</sc-for>
-</div>
-</div>
-</sc-for>
-<button onClick="{{restart}}" style="height: 40px; border-radius: 20px; border: 1.5px solid #2C3448; background: transparent; font-size: 13px; font-weight: 600; color: #2C3448; margin-top: 4px">Restart prototype</button>
-</div>
-
-</div>
-</template>
 <script>
-/* Tiny renderer: reads the template above, fills {{holes}} from renderVals(), and redraws on setState. */
-class DCLogic {
-  constructor() { this.state = {}; }
-  setState(u) { Object.assign(this.state, u); if (!this._q) { this._q = true; Promise.resolve().then(() => { this._q = false; draw(this); }); } }
+const P = {
+  back:'<path d="M19 12H5M11 6l-6 6 6 6"/>', right:'<path d="M9 6l6 6-6 6"/>', check:'<path d="M5 12l5 5 9-10"/>', close:'<path d="M6 6l12 12M18 6L6 18"/>',
+  alert:'<path d="M12 3l10 18H2L12 3z"/><path d="M12 10v5M12 18h.01"/>', info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/>',
+  edit:'<path d="M4 20h4L19 9l-4-4L4 16v4z"/>', lock:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/>', refresh:'<path d="M20 11a8 8 0 10-2 6"/><path d="M20 4v7h-7"/>',
+  device:'<rect x="6" y="2" width="12" height="20" rx="2"/><path d="M9 6h6M10 18h4"/>', battery:'<rect x="3" y="7" width="16" height="10" rx="2"/><path d="M22 11v2M7 10v4M10 10v4"/>',
+  plug:'<path d="M9 2v5M15 2v5M6 7h12v4a6 6 0 01-12 0V7zM12 17v5"/>', cable:'<path d="M4 20c4 0 4-6 8-6s4 6 8 6M12 14V4M9 4h6"/>',
+  touch:'<path d="M9 11V5a2 2 0 014 0v6"/><path d="M13 9a2 2 0 014 0v3a7 7 0 01-7 7h-.5A5.5 5.5 0 014 13.5V12a2 2 0 014 0"/>', printer:'<path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/>',
+  card:'<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/>', hang:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  damage:'<path d="M12 3l9 16H3z"/><path d="M10 9l2 3-2 2 2 3"/>', wifi:'<path d="M2 9a15 15 0 0120 0M5 12.5a10 10 0 0114 0M8.5 16a5 5 0 017 0"/><path d="M12 19.5h.01"/>',
+  txn:'<path d="M4 7h14l-3-3M20 17H6l3 3"/>', rupee:'<path d="M6 4h12M6 9h12M6 4c7 0 7 9 0 9l8 8"/>', user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/>',
+  bank:'<path d="M3 10l9-6 9 6M5 10v8M10 10v8M14 10v8M19 10v8M3 20h18"/>', more:'<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>',
+  ticket:'<path d="M3 8a2 2 0 002-2h14a2 2 0 002 2v2a2 2 0 000 4v2a2 2 0 00-2 2H5a2 2 0 00-2-2v-2a2 2 0 000-4z"/>', shield:'<path d="M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/>',
+  bolt:'<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>', sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.4 1.4M17.6 17.6L19 19M5 19l1.4-1.4M17.6 6.4L19 5"/>',
+  phone:'<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/>', apps:'<rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/>',
+  camera:'<path d="M4 7h4l2-3h4l2 3h4v13H4z"/><circle cx="12" cy="13" r="4"/>', chat:'<path d="M4 5h16v11H8l-4 4z"/>'
+};
+const ic = (n,s=18,c='currentColor',w=2) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]||P.info}</svg>`;
+const esc = s => String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ===== DATA: issues from EDC sheet, steps from Confluence + fix-plan pattern =====
+   fixes = device does it, quick (one "Fix it for me")   restart = remote | manual
+   update = firmware update (Now / After closing)        steps = merchant does it
+   verify = charge | net | print | txn | ask | later */
+const ST = (t,d) => ({t,d});
+const DEVICE = {
+ battery:{n:'Battery',ic:'battery',issues:[
+  {n:'Draining fast / low backup',t:'A',route:'Field – battery replacement',verify:'later',
+   checks:['Charger type|Eligible charger','Payment app|!Update available','Background apps|!4 apps using battery','Battery drain, last 7 days|!18% an hour'],
+   finding:'Your battery is draining <b>faster than normal</b>. 4 background apps are using power and the payment app is out of date.',
+   fixes:['Close 4 background apps','Update the payment app'],
+   tips:[['sun','Lower the screen brightness','It\'s at 100%. Lower it if you work indoors.'],['plug','Charge fully with an eligible charger','Other chargers can wear the battery faster.']]},
+  {n:'Not charging / not holding charge',t:'C',route:'Field',verify:'charge',
+   checks:['Charging current|!No current coming in','Charger type|Eligible charger','Battery health|Good (86%)'],
+   finding:'Your device <b>isn\'t getting any charging current</b>. The battery itself looks healthy.',
+   steps:[ST('Try a different wall socket','Use one you know is working.'),ST('Reconnect the cable at both ends','Push it in firmly at the device and the adapter.'),ST('Try another eligible charger','If you have a spare one.')]},
+  {n:'Device not charging',t:'C',route:'Field',verify:'charge',
+   checks:['Charging current|!No current coming in','Charger type|Eligible charger','Battery health|Good (86%)'],
+   finding:'Your device <b>isn\'t getting any charging current</b>. The battery itself looks healthy.',
+   steps:[ST('Try a different wall socket','Use one you know is working.'),ST('Reconnect the cable at both ends','Push it in firmly at the device and the adapter.'),ST('Try another eligible charger','If you have a spare one.')]},
+  {n:'Switches off on battery / sudden shutdown',t:'C',route:'Field – battery replacement',verify:'later',
+   checks:['Battery health|72%','Overheating errors|None in 7 days'],
+   finding:'Battery health is <b>72%</b> and there are no heating errors.',
+   steps:[ST('Charge it to 100%','Keep it on an eligible charger until full.'),ST('Unplug and use as normal','Use it on battery for about 10 minutes.')]},
+  {n:'Dead / replacement needed',t:'G',pineone:true,route:'Field – battery replacement',checks:['Battery health|!12%'],finding:'Battery health is <b>12%</b>. The battery has failed and needs to be replaced.'},
+  {n:'Swollen / bulging / heating',t:'E',route:'Field',danger:['Stop using the device','Unplug it from the charger','Don\'t charge it again','Keep it away from heat and water']}
+ ]},
+ power:{n:'Power & Charging',ic:'plug',issues:[
+  {n:'Charger / adapter not working',t:'C',route:'Field – adapter',verify:'charge',
+   checks:['Charging current|!No current coming in','Charger type|!Not an eligible charger','Battery health|Good (88%)'],
+   finding:'No charging current, and the charger <b>isn\'t recognised as an eligible charger</b>.',
+   steps:[ST('Try a different wall socket','Use one you know is working.'),ST('Use an eligible charger','Other chargers may not supply enough power.')]},
+  {n:'Charger cable damaged',t:'E',route:'Field',danger:['Stop using the damaged cable','Unplug it from the wall socket','Use another eligible charger if you have one']}
+ ]},
+ cable:{n:'Charger cable',ic:'cable',issues:[
+  {n:'Cable loose / connection problem',t:'C',route:'Field',verify:'charge',checks:['Charging status|!Keeps stopping and starting','Battery health|Good (90%)'],
+   finding:'Charging <b>keeps stopping and starting</b>, which usually means a loose connection.',
+   steps:[ST('Reconnect both ends firmly','At the device and at the adapter.'),ST('Try another eligible charger','If you have a spare one.')]},
+  {n:'Charging port / pin loose or damaged',t:'B',route:'Field – port repair',verify:'charge',
+   steps:[ST('Clean the charging port','Remove dust gently with a dry brush.'),ST('Check the pin isn\'t bent','It should sit straight in the middle.'),ST('Reconnect the cable firmly','Push until it clicks.'),ST('Try another charger','If you have a spare one.')]},
+  {n:'Charger missing / new charger needed',t:'F',route:'Field'}
+ ]},
+ display:{n:'Display and touch',ic:'touch',issues:[
+  {n:'Touch not working / unresponsive',t:'D',route:'Field – EDC replacement'},
+  {n:'Display not working properly',t:'C',route:'Field – EDC replacement',verify:'ask',restart:'remote',checks:['Brightness|!Set to 5%','Display driver|Responding'],
+   finding:'Screen brightness was set to <b>5%</b>.',fixes:['Reset brightness to 60%']},
+  {n:'Blank / black / white screen',t:'B',pineone:true,route:'Field – EDC replacement'},
+  {n:'Lines / flicker / dim',t:'C',route:'Field – EDC replacement',verify:'ask',restart:'remote',checks:['Brightness|Normal','Firmware|!Update available'],
+   finding:'A <b>firmware update</b> is available that fixes display issues.',fixes:['Reset brightness','Install the firmware update']},
+  {n:'Power button not working',t:'C',route:'Field – EDC replacement',verify:'ask',restart:'remote',checks:['Device status|Online','Button signal|!No press detected'],
+   finding:'The device <b>isn\'t detecting power button presses</b>.',steps:[ST('Check the button isn\'t stuck','Press it gently a few times. It should click back.')]},
+  {n:'Screen broken / cracked',t:'F',route:'Field – EDC replacement',inspect:true}
+ ]},
+ printer:{n:'Printer',ic:'printer',issues:[
+  {n:'Not printing',t:'C',route:'Field',verify:'print',checks:['Paper sensor|Paper detected','Print head temperature|Normal','Printer service|!Not responding'],
+   finding:'The <b>printer service stopped responding</b>.',fixes:['Restart the printer service','Reset print darkness'],
+   steps:[ST('Load the roll the right way','Shiny side up, feeding from underneath.'),ST('Close the flap firmly','Press until it clicks.')]},
+  {n:'Blank / half / faint print',t:'C',route:'Field – printer',verify:'print',checks:['Paper sensor|Paper detected','Print darkness|!Set too low'],
+   finding:'Print darkness is <b>set too low</b>.',fixes:['Reset print darkness','Restart the printer service'],
+   steps:[ST('Load the roll the right way','Shiny side up. Thermal paper only prints on one side.'),ST('Close the flap firmly','Press until it clicks.')]},
+  {n:'Printer error message',t:'C',route:'Field – printer',verify:'print',checks:['Printer error|!E-04 · cover open','Paper sensor|Paper detected'],
+   finding:'The printer reports <b>error E-04: cover open</b>.',fixes:['Restart the printer service'],
+   steps:[ST('Close the flap firmly','Press both corners until it clicks.')]},
+  {n:'Flap issue / paper roll jam',t:'B',route:'Field – printer part',verify:'print',
+   steps:[ST('Open the flap','Lift the printer cover.'),ST('Clear the jam','Remove any torn paper inside.'),ST('Reseat the roll and close','Shiny side up, press until it clicks.')]}
+ ]},
+ card:{n:'Card reader',ic:'card',issues:[
+  {n:'Chip card / mag stripe not working',t:'A',route:'Field – EDC replacement',verify:'txn',update:true,checks:['Card reader|Connected','Firmware|!Unstable version'],finding:'Your card reader is on an <b>unstable firmware version</b>.'},
+  {n:'Card not reading (not sure which)',t:'A',route:'RTT first, then Field',verify:'txn',update:true,checks:['Card reader|Connected','Firmware|!Unstable version'],finding:'Your card reader is on an <b>unstable firmware version</b>.'},
+  {n:'Swipe not working',t:'A',route:'Field – EDC replacement',verify:'txn',update:true,checks:['Magstripe reader|Connected','Firmware|!Unstable version'],finding:'Your card reader is on an <b>unstable firmware version</b>.'},
+  {n:'Card reader error message',t:'A',route:'RTT if config; Field if hardware',verify:'txn',checks:['Reader error|!CR-12 · configuration','Firmware|Stable'],finding:'The reader shows <b>error CR-12</b>, a configuration problem.',fixes:['Reload the card reader configuration']}
+ ]},
+ hang:{n:'Device hanging / restarting',ic:'hang',issues:[
+  {n:'Hanging / freezing / slow',t:'A',route:'RTT',verify:'ask',restart:'remote',checks:['Memory|!92% full','Background apps|!6 running','App & firmware|Up to date'],
+   finding:'Memory is <b>92% full</b> and 6 apps are running in the background.',fixes:['Settle open transactions and save logs','Clear memory','Close background apps'],note:'Your payments are settled first. Nothing is lost.'},
+  {n:'Auto restart / reboot',t:'C',route:'Field – battery / EDC',verify:'later',checks:['Battery health|78%','Overheating|!3 times in 24 hours','Firmware|Up to date'],
+   finding:'The device <b>overheated 3 times</b> in the last 24 hours.',steps:[ST('Charge it to 100%','Keep it on an eligible charger until full.'),ST('Keep it ventilated','Out of direct sun and off hot surfaces.')]},
+  {n:'Stuck on logo / boot loop',t:'B',pineone:true,route:'Field – EDC replacement',verify:'ask',restart:'manual',steps:[ST('Charge it for 30 minutes','Use an eligible charger.')]},
+  {n:'App crash',t:'A',route:'RTT first, then Field',verify:'ask',restart:'remote',checks:['Payment app|!Older version','Memory|!88% full'],
+   finding:'The payment app is <b>out of date</b> and memory is almost full.',fixes:['Update the payment app','Clear memory']}
+ ]},
+ damage:{n:'Physical damage',ic:'damage',issues:[
+  {n:'Device broken / cracked',t:'F',route:'Field – EDC replacement',inspect:true,policy:'Damage charges may apply as per your agreement.'},
+  {n:'Base / stand / flap broken',t:'F',route:'Field – part replacement',inspect:true},
+  {n:'Lost / stolen / misplaced',t:'F',pineone:true,route:'RTT / Ops',policy:'We\'ll block this terminal so nobody else can use it, and send a replacement.'},
+  {n:'Water / burn damage',t:'E',route:'Field – EDC replacement',danger:['Switch the device off','Unplug it from the charger','Don\'t charge it','Don\'t dry it with heat']}
+ ]},
+ network:{n:'Network & Connectivity',ic:'wifi',issues:[
+  {n:'Internet not connected',t:'C',route:'RTT',verify:'net',checks:['Signal strength|!Weak (1 bar)','Internet|!Not reachable','APN settings|Correct'],
+   finding:'Mobile signal is <b>weak (1 bar)</b>, so the device can\'t reach the internet.',fixes:['Reset connection settings'],
+   steps:[ST('Switch on WiFi','Swipe down from the top and turn it on.'),ST('Move to a stronger signal','Near the entrance or a window.')]}
+ ]}
+};
+const NONDEV = {
+ transaction:{n:'Payment / Transaction',ic:'txn',d:'Card, UPI/QR, EMI, disputes',subs:{
+  card:{n:'Card payments',ic:'card',issues:['Transaction status query','Amex not accepted','Charge slip / receipt query','Credit cards failing','Card declined','All cards failing','Customer charged twice / payment failed','Void a transaction','International cards not working','Refund to customer','RuPay not accepted','Tap / contactless failing','Debit cards failing','Diners / JCB not accepted']},
+  upi:{n:'UPI / QR',ic:'phone',issues:['QR not generating on terminal','UPI payment failing','Enable UPI / QR on terminal','UPI sound alert not working','Disable UPI / QR','QR not scanning','UPI payment pending','Customer debited, payment not received']},
+  emi:{n:'EMI',ic:'rupee',issues:['Brand EMI / offer not showing','EMI transaction failing','Brand / product not mapped','"Acquirer could not be found" error','No-cost EMI / cashback not applied']},
+  fuel:{n:'Fuel station automation',ic:'bolt',issues:['Tank / ATG data not syncing','Automation PC / FCC / IOT down','Dispenser (MPD) offline','ALP / UFill payments not working']},
+  dispute:{n:'Disputes & fraud',ic:'shield',issues:['Transaction reported as fraud','Customer dispute on transaction','Chargeback raised']},
+  pbl:{n:'Pay by Link',ic:'txn',issues:['Pay by Link query','Link not working','Payment via link pending']}
+ }},
+ settlement:{n:'Settlement',ic:'bank',d:'Money not credited, batch, reports',subs:{
+  credit:{n:'Settlement credit',ic:'rupee',issues:['Amount not credited','Settlement status / UTR','Settlement delayed','Less amount credited','When will money be credited']},
+  batch:{n:'Terminal batch',ic:'device',issues:['Auto-settlement setup','Batch partially / not settled','Invalid batch / ROC error','Batch locked','Batch open / cannot initialise','Batch full']},
+  report:{n:'Settlement reports',ic:'printer',issues:['Settlement / MPR / transaction report needed']},
+  hold:{n:'Holds & freezes',ic:'shield',issues:['Funds frozen by cyber cell / police / court','Money on hold (risk / documents)']}
+ }},
+ account:{n:'Accounts, services & charges',ic:'user',d:'Paper rolls, charges, add-ons, login',subs:{
+  paper:{n:'Paper rolls',ic:'printer',issues:['Paper rolls needed','Paper rolls not delivered','Stop paper roll supply']},
+  charges:{n:'Charges & billing',ic:'rupee',issues:['Unexpected auto-debit','Invoice copy / query','Ledger / account statement','Refund of charges','Rental / plan charges','MDR deduction query','Outstanding dues','Platform fee query','Charged despite no-rental plan','ACH bounce charges']},
+  service:{n:'Machine service requests',ic:'device',issues:['Fuel station maintenance visit','Fuel station re-onboarding','Return machine / close account','Training / how to use','Shift machine to new location','New / additional machine','New machine not delivered']},
+  vas:{n:'Add-on services',ic:'apps',issues:['Stop MITC & refund','Activate instant cashback','Deactivate terminal / TID','Stop Pay by Link & refund','Stop Prime & refund','Activate Pay by Link','Stop other add-on & refund','Deactivate UPI / VPA','Stop platform fee & refund','Activate Prime','Activate other add-on','Stop ACH bounce fee & refund','Stop SUF & refund','Stop EMI World & refund','Activate SDS','Activate UPI / QR','Stop V-POS','Stop low-output fee & refund','Stop SDS & refund','Activate V-POS / cardless']},
+  details:{n:'Account details',ic:'user',issues:['Change bank account','Update contact / address / email','KYC / documents status','TID / MID change','Onboarding / reactivation status','Change business name']},
+  login:{n:'Login & access',ic:'shield',issues:["Can't log in to Pine One",'Password reset','New user ID','Merchant app / portal not working']},
+  query:{n:'Queries & escalations',ic:'info',issues:['Product / process information','Follow up on an earlier complaint','Sales follow-up','Complaint to RBI / Consumer Affairs']}
+ }}
+};
+const CAT_ORDER = [
+ {id:'device',n:'Device',ic:'device',d:'Battery, charging, printer, screen…'},
+ {id:'transaction',...NONDEV.transaction},{id:'settlement',...NONDEV.settlement},{id:'account',...NONDEV.account}
+];
+const SHORTCUTS = [
+ {l:'Paper rolls needed',go:['account','paper','Paper rolls needed']},
+ {l:'Device not charging',go:['device','battery',1]},
+ {l:'Amount not credited',go:['settlement','credit','Amount not credited']},
+ {l:'Card not reading',go:['device','card',0]},
+ {l:'Printer not printing',go:['device','printer',0]}
+];
+const ISSUE_VISIBLE = 6;
+
+const CATS = [
+ {id:'device',n:'Device',d:'Battery, charging, printer, screen, card reader',ic:'device'},
+ {id:'transaction',n:'Payment / Transaction',d:'Card, UPI / QR, EMI, disputes',ic:'txn'},
+ {id:'settlement',n:'Settlement',d:'Money not credited, batch, reports',ic:'bank'},
+ {id:'account',n:'Accounts, services & charges',d:'Paper rolls, charges, add-ons, login',ic:'user'}
+];
+
+/* ============================ CHAT ENGINE ============================ */
+let SEEN=0, LASTP=null; let T=[], PROMPT=null, C={}, LAYER=null, RUN=0, PROMPT_ERR='', VIEW='pick', TAB='device', TABX=0, SWAP=false;
+const REQS=[];
+const sim = k => document.getElementById(k).checked;
+const now = () => new Date().toLocaleTimeString('en-IN',{hour:'numeric',minute:'2-digit'});
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+const guard = r => { if(r!==RUN) throw 'stale'; };
+
+async function bot(html, opt={}){ const r=RUN; T.push({k:'bot',html,err:opt.err,q:opt.q}); render(); await sleep(180); guard(r); }
+function card(o){ T.push({k:'card',...o}); render(); return T[T.length-1]; }
+function me(text, editable){ T.push({k:'me',text,edit:editable?snap():null}); PROMPT=null; render(); }
+function snap(){ return {len:T.length, prompt:PROMPT, C:Object.assign({},C)}; }
+function ask(p){ PROMPT=p; render(); return new Promise(res=>{ p.resolve=res; }); }
+async function go(fn){ try{ await fn(); }catch(e){ if(e!=='stale') throw e; } }
+
+function start(){ SEEN=0; RUN++; T=[]; PROMPT=null; C={}; LAYER=null; VIEW='pick'; render(); }
+function openSub(cat, sub){
+  SEEN=0; RUN++; T=[]; PROMPT=null; LAYER=null; C={cat}; VIEW='flow';
+  if (sub==='other'){ render(); return go(somethingElse); }
+  C.sub=sub; render(); go(()=>pickIssue());
 }
-function look(path, scope) {
-  path = path.trim(); if (path === 'true') return true; if (path === 'false') return false;
-  const parts = path.split('.'); let v;
-  for (let s = scope; s; s = s.up) { if (parts[0] in s.vars) { v = s.vars[parts[0]]; break; } }
-  for (let i = 1; i < parts.length && v != null; i++) v = v[parts[i]];
-  return v;
+function pickCategory(){
+  ask({type:'list',items:CATS.map(c=>({id:c.id,t:c.n,d:c.d,ic:c.ic})),onPick:it=>{ me(it.t,true); C={cat:it.id}; go(pickSub); }});
 }
-const WHOLE = /^\s*\{\{([^}]+)\}\}\s*$/;
-const fill = (str, scope) => str.replace(/\{\{([^}]+)\}\}/g, (m, p) => { const v = look(p, scope); return v == null ? '' : v; });
-function build(node, scope, out) {
-  if (node.nodeType === 3) { out.appendChild(document.createTextNode(fill(node.nodeValue, scope))); return; }
-  if (node.nodeType !== 1) return;
-  const tag = node.localName;
-  if (tag === 'sc-if') { const m = WHOLE.exec(node.getAttribute('value') || ''); if (m && look(m[1], scope)) node.childNodes.forEach((c) => build(c, scope, out)); return; }
-  if (tag === 'sc-for') {
-    const m = WHOLE.exec(node.getAttribute('list') || ''); const list = (m && look(m[1], scope)) || []; const as = node.getAttribute('as');
-    list.forEach((item, i) => { const vars = { $index: i }; vars[as] = item; node.childNodes.forEach((c) => build(c, { vars: vars, up: scope }, out)); });
-    return;
-  }
-  const el = node.cloneNode(false);
-  for (const at of Array.from(node.attributes)) {
-    if (at.name.startsWith('hint-')) { el.removeAttribute(at.name); continue; }
-    if (at.name.startsWith('on')) { el.removeAttribute(at.name); const m = WHOLE.exec(at.value); const fn = m && look(m[1], scope); if (typeof fn === 'function') el.addEventListener(at.name.slice(2).toLowerCase(), fn); continue; }
-    if (at.value.includes('{{')) el.setAttribute(at.name, fill(at.value, scope));
-  }
-  node.childNodes.forEach((c) => build(c, scope, el));
-  out.appendChild(el);
+async function pickSub(){
+  const subs = C.cat==='device' ? Object.entries(DEVICE).map(([k,v])=>({id:k,t:v.n,ic:v.ic})) : Object.entries(NONDEV[C.cat].subs).map(([k,v])=>({id:k,t:v.n,ic:v.ic}));
+  await bot(C.cat==='device'?'What\'s the problem with your device?':'Which of these is it about?');
+  ask({type:'list',items:[...subs,{id:'other',t:'Something else',ic:'more',muted:true}],onPick:it=>{
+    me(it.t,true); if(it.id==='other') return go(somethingElse); C.sub=it.id; go(()=>pickIssue()); }});
 }
-function draw(c) {
-  const frag = document.createDocumentFragment();
-  document.getElementById('tpl').content.childNodes.forEach((n) => build(n, { vars: c.renderVals(), up: null }, frag));
-  const app = document.getElementById('app'); app.replaceChildren(frag);
-  c._seen = c.state.hist ? c.state.hist.length : 0;
-}
-
-class Component extends DCLogic {
-  constructor(p) {
-    super(p);
-    this.state = Object.assign(this.fresh(), { scen: 'port', openReq: 'no', failMode: 'no', sw: 'old', lowBatt: 'no' });
-  }
-  fresh() {
-    return { screen: 'help', hist: [], opts: [], undo: [], more: false, tq: [], tpos: 0, tmap: {}, tpass: 1, pad: null, descOn: false, ticks: {}, note: '', ptried: [], failedNames: [], run: 0, optsTop: false, sheet: false, fixI: 0, pfixI: 0, failedOnce: false, num: '', ftitle: 'Log a complaint', fsub: '' };
-  }
-  componentWillUnmount() { this.clearAll(); }
-  clearAll() { (this._t || []).forEach(clearTimeout); this._t = []; }
-  later(fn, ms) { this._t = this._t || []; const id = setTimeout(fn, ms); this._t.push(id); return id; }
-
-  /* ---------- questions that narrow down the problem ---------- */
-  nodes() {
-    return {
-      root: { head: "Tell us what's going wrong. We'll try to fix it right here.", rows: [
-        { label: 'Device issue', to: 'part' },
-        { label: 'Payment issue', off: true }
-      ], quiet: [] },
-      part: { head: 'Which part is giving trouble?', rows: [
-        { label: 'Power and charging', to: 'psym' },
-        { label: 'Card reader', off: true },
-        { label: 'Printer', off: true },
-        { label: 'Screen and buttons', to: 'sym' },
-        { label: 'Network', off: true },
-        { label: 'Device slow or restarting', off: true },
-        { label: 'Damage or security alert', off: true }
-      ], quiet: [{ label: "My issue isn't listed", to: 'when' }] },
-      when: { head: 'When does the problem happen?', rows: [
-        { label: 'While taking a payment', to: 'payq' },
-        { label: 'While printing a receipt', off: true },
-        { label: 'While charging, or the battery runs out', to: 'psym' },
-        { label: 'When I touch or look at the screen', to: 'sym' },
-        { label: 'All the time: slow, hangs or restarts', off: true }
-      ], quiet: [{ label: "I'm not sure when it happens", flow: 'cantSay' }] },
-      payq: { head: 'What happens with the payment?', rows: [
-        { label: "The card isn't read", off: true },
-        { label: 'It keeps loading or fails', off: true }
-      ], quiet: [] },
-      psym: { head: "What's happening with charging?", rows: [
-        { label: "Won't charge", flow: 'charge' },
-        { label: 'Battery runs out fast', flow: 'drain' },
-        { label: 'Switches off by itself', off: true },
-        { label: 'Battery swollen or hot', flow: 'swollen' },
-        { label: 'Charger or cable missing or damaged', off: true }
-      ], quiet: [{ label: "My issue isn't listed", flow: 'chargeAny' }] },
-      sym: { head: "What's happening with the screen?", rows: [
-        { label: 'Touch not working properly', flow: 'touch' },
-        { label: 'Screen dim, flickering or lines', off: true },
-        { label: 'Power button not working', off: true },
-        { label: 'Screen cracked', flow: 'crack' }
-      ], quiet: [{ label: "My issue isn't listed", flow: 'screenAny' }] }
-    };
-  }
-  ask(key) {
-    const n = this.nodes()[key];
-    return { entries: [{ k: 'bot', t: n.head }], opts: n.rows.map((r) => ({ id: 'node', label: r.label, off: r.off, r: r })).concat(n.quiet.map((r) => ({ id: 'node', label: r.label, r: r }))) };
-  }
-  sum(rows) { return { k: 'card', tone: 'info', title: 'Request summary', rows: rows }; }
-  raiseOpts() { return [{ id: 'raise', label: 'Raise a request', primary: true }, { id: 'else', label: 'I have a different issue' }]; }
-  /* a quiet way out, offered once one check or fix has been tried */
-  reqOpt(rows, label, quiet) { return { id: 'req', label: label || 'Raise a request', quiet: quiet !== false, rows: rows.concat([{ a: 'Diagnostic report', b: 'Attached' }]) }; }
-  testIntro() {
-    return { k: 'step', img: '[Picture: screen with 6 spots]', cap: 'Touch test', title: 'Tap each spot when it turns green', d: "We'll light up 6 spots, one at a time. You get 5 seconds for each, and a second try for any you miss." };
-  }
-  flowStart(kind) {
-    const start = [{ id: 'start', label: 'Start touch test', primary: true }];
-    const pStart = [{ id: 'pStart', label: 'Start check', primary: true }, this.reqOpt([{ a: 'Problem', b: "Won't charge" }, { a: 'Power check', b: 'Could not be run' }], "I can't do this")];
-    const plug = { k: 'step', img: '[Picture: charger plugged into the device]', cap: 'Before we check', title: 'Plug in your charger and keep it connected', d: "We'll check the charger, the charging and the battery. It takes about 10 seconds." };
-    const P = 'Power and charging'; const S = 'Screen and buttons';
-    if (kind === 'touch') return { title: 'Touch not working', sub: S, entries: [{ k: 'bot', t: "Let's check your touch screen." }, this.testIntro()], opts: start };
-    if (kind === 'screenAny') return { title: 'Screen check', sub: S, entries: [{ k: 'bot', t: "No problem. We'll run the screen check for you." }, this.testIntro()], opts: start };
-    if (kind === 'crack') return { title: 'Screen cracked', sub: S, entries: [{ k: 'bot', t: 'A cracked screen ', b: 'has to be replaced', t2: '. If any glass is loose, stop using the device.' }, this.sum([{ a: 'Problem', b: 'Screen cracked' }, { a: 'Needs', b: 'Device replacement' }, { a: 'Diagnostic report', b: 'Attached' }])], opts: this.raiseOpts() };
-    if (kind === 'charge') return { title: "Won't charge", sub: P, entries: [{ k: 'bot', t: "Let's find out why it isn't charging." }, plug], opts: pStart };
-    if (kind === 'chargeAny') return { title: 'Power check', sub: P, entries: [{ k: 'bot', t: "No problem. We'll run the power check for you." }, plug], opts: pStart };
-    if (kind === 'drain') return { title: 'Battery runs out fast', sub: P, entries: [{ k: 'bot', t: "Let's see what is using your battery. We'll check the battery, the charger and the software. It takes a few seconds." }], opts: [{ id: 'dStart', label: 'Start check', primary: true }] };
-    if (kind === 'swollen') return { title: 'Battery swollen or hot', sub: P, entries: [{ k: 'alert', title: 'Stop using this device now', items: [{ name: 'Unplug it from the charger' }, { name: 'Do not charge it' }, { name: 'Keep it away from heat' }] }, { k: 'bot', t: "We're treating this as a ", b: 'safety priority', t2: '.' }, this.sum([{ a: 'Problem', b: 'Battery swollen or hot' }, { a: 'Priority', b: 'Safety' }, { a: 'Diagnostic report', b: 'Attached' }])], opts: this.raiseOpts() };
-    return { title: 'Log a complaint', sub: '', entries: [{ k: 'bot', t: "That's okay. Our support team will call you to understand the problem." }, this.sum([{ a: 'Problem', b: 'Not identified' }, { a: 'Diagnostic report', b: 'Latest device readings attached' }])], opts: this.raiseOpts() };
-  }
-  keep() { const st = this.state; return { scen: st.scen, openReq: st.openReq, failMode: st.failMode, sw: st.sw, lowBatt: st.lowBatt }; }
-  enterStart() { this.clearAll(); this.setState(Object.assign(this.fresh(), this.keep(), { screen: 'start' })); }
-  enterFlow() {
-    this.clearAll();
-    const head = [];
-    if (this.state.openReq === 'yes') {
-      this.setState(Object.assign(this.fresh(), this.keep(), { screen: 'flow',
-        hist: head.concat([{ k: 'bot', t: 'You already have an open request for this device. We will call you ', b: 'within [SLA]', t2: '.' }, { k: 'ticket', title: 'Touch not working', d: 'Request no. [SR number] · Raised [date and time]' }]),
-        opts: [{ id: 'resolved', label: 'My issue is resolved' }, { id: 'followUp', label: 'Follow up on this request' }, { id: 'different', label: 'I have a different issue' }] }));
-      return;
-    }
-    const a = this.ask('root');
-    this.setState(Object.assign(this.fresh(), this.keep(), { screen: 'flow', hist: head.concat(a.entries), opts: a.opts }));
-  }
-
-  /* ---------- conversation mechanics ---------- */
-  step(userLabel, entries, opts, lock, extra) {
-    const st = this.state;
-    const undo = lock ? [] : st.undo.concat([{ n: st.hist.length, opts: st.opts, ftitle: st.ftitle, fsub: st.fsub }]);
-    const hist = st.hist.concat(userLabel ? [{ k: 'user', t: userLabel }] : [], entries);
-    this.setState(Object.assign({ hist: hist, opts: opts, undo: undo, more: false }, extra || {}));
-  }
-  change() {
-    const st = this.state; if (!st.undo.length) return;
-    const u = st.undo[st.undo.length - 1];
-    this.setState({ hist: st.hist.slice(0, u.n), opts: u.opts, ftitle: u.ftitle, fsub: u.fsub, undo: st.undo.slice(0, -1), more: false, descOn: false, pad: null, ticks: {} });
-  }
-  busyThen(label, text, ms, fn) {
-    this.step(label, [{ k: 'busy', t: text }], [], true);
-    this.later(() => fn(this.state.hist.filter((h) => h.k !== 'busy')), ms);
-  }
-
-  /* ---------- touch test: 5 seconds a spot, and a second try for missed spots ---------- */
-  beginTest(label, fresh) {
-    const st = this.state;
-    this.setState({ screen: 'test', tq: [0, 1, 2, 3, 4, 5], tpos: 0, tmap: {}, tpass: 1, undo: [], opts: [], run: fresh ? 0 : st.run, hist: st.hist.concat([{ k: 'user', t: label }]) });
-    this.arm();
-  }
-  arm() { clearTimeout(this._tt); this._tt = this.later(() => this.mark(false), 5000); }
-  mark(ok) {
-    const st = this.state; if (st.screen !== 'test' || st.tpos >= st.tq.length) return;
-    const tmap = Object.assign({}, st.tmap); tmap[st.tq[st.tpos]] = ok;
-    const pos = st.tpos + 1;
-    if (pos < st.tq.length) { this.setState({ tmap: tmap, tpos: pos }); this.arm(); return; }
-    clearTimeout(this._tt);
-    const all = [0, 1, 2, 3, 4, 5];
-    const missed = all.filter((i) => !tmap[i]);
-    this.setState({ tmap: tmap, tpos: pos });
-    if (st.tpass === 1 && missed.length > 0 && missed.length < 6) {
-      this.later(() => { const m2 = Object.assign({}, this.state.tmap); missed.forEach((i) => { delete m2[i]; }); this.setState({ tpass: 2, tq: missed, tpos: 0, tmap: m2 }); this.arm(); }, 900);
-      return;
-    }
-    this.later(() => this.finishTest(all.map((i) => !!tmap[i])), 700);
-  }
-  finishTest(res) {
-    const st = this.state;
-    const names = ['Top left', 'Top right', 'Middle left', 'Middle right', 'Bottom left', 'Bottom right'];
-    const failed = names.filter((n, i) => !res[i]);
-    const f = failed.length; const run = st.run + 1;
-    const result = { k: 'result', zones: res, d: f ? 'Not responding: ' + failed.join(', ') : 'Every spot responded' };
-    let entries = []; let opts = [];
-    const done = [{ id: 'close', label: 'Done', primary: true }];
-    if (f === 0 && run === 1) {
-      entries = [{ k: 'bot', t: '', b: 'Touch is working in all 6 spots.', t2: '' }, result, { k: 'bot', t: "What's still wrong?" }];
-      opts = [{ id: 'slowYes', label: "It's slow to respond" }, { id: 'else', label: 'I have a different issue' }, { id: 'works0', label: "It's working now" }, this.reqOpt([{ a: 'Problem', b: 'Screen or touch issue' }, { a: 'Touch test', b: '6 of 6 spots working' }])];
-    } else if (f === 0) {
-      entries = [{ k: 'bot', t: '', b: 'Touch is working in all 6 spots now.', t2: '' }, result, { k: 'done', title: 'Touch is working again', d: 'The screen guard or dirt was the problem.' }];
-      opts = done;
-    } else if (f === 6) {
-      entries = [{ k: 'bot', t: '', b: "We didn't register any taps.", t2: " If you weren't ready, try again. If the screen isn't responding at all, raise the request from PineOne on your phone." }, result,
-        { k: 'step', img: '[QR code]', cap: 'No touch needed', title: 'Scan with your phone to raise this in PineOne', d: 'The test result is sent along, so you will not have to explain it again.' }];
-      opts = [{ id: 'retest0', label: 'Try again', primary: true }];
-    } else if (run === 1) {
-      entries = [{ k: 'bot', t: '', b: (6 - f) + ' of 6 spots are working.', t2: ' We tried the missed spots twice. A screen guard or dirt is often the cause.' }, result, { k: 'bot', t: 'Have you already removed the screen guard and wiped the screen?' }];
-      opts = [{ id: 'cleanNo', label: 'No, not yet' }, { id: 'cleanYes', label: 'Yes, already done' }];
-    } else {
-      entries = [{ k: 'bot', t: "The same area still isn't responding after cleaning, so ", b: 'the screen needs a repair', t2: '.' }, result, this.sum([{ a: 'Problem', b: 'Touch not working' }, { a: 'Not responding', b: failed.join(', ') }, { a: 'Already tried', b: 'Screen guard removed, screen cleaned' }, { a: 'Diagnostic report', b: 'Attached' }])];
-      opts = this.raiseOpts();
-    }
-    const bottomDead = !res[4] || !res[5];
-    const topOk = res[0] && res[1];
-    this.setState({ screen: 'flow', run: run, failedNames: failed, hist: st.hist.concat(entries), opts: opts, undo: [], more: false, optsTop: f > 0 && f < 6 && bottomDead && topOk });
-  }
-
-  /* ---------- power helpers ---------- */
-  pcard(a, b, c) { return { k: 'card', tone: 'plain', title: 'Power check', rows: [{ a: 'Charger', b: a }, { a: 'Charging', b: b }, { a: 'Battery health', b: c }] }; }
-  /* merchant-done fixes: asked about up front, then shown together, with one re-check */
-  pfixes() {
-    return [
-      { key: 'socket', short: 'Different socket', ask: 'Tried a different wall socket', name: 'Plug the charger into a different wall socket', d: 'Use a socket you know is working.' },
-      { key: 'cable', short: 'Cable reconnected', ask: 'Unplugged the cable and pushed it back in', name: 'Unplug the cable at both ends and push it back in firmly', d: 'Check the charger end and the device end.' },
-      { key: 'port', short: 'Port cleaned', ask: 'Cleaned the charging port', name: 'Gently blow the dust out of the charging port', d: 'Do not use a pin or anything sharp.' }
-    ];
-  }
-  triedOpts() { return this.pfixes().map((f) => ({ id: 'tick', key: f.key, label: f.ask, check: true })).concat([{ id: 'triedGo', label: 'Continue', primary: true }]); }
-  chargeRows() { const st = this.state; const rows = [{ a: 'Problem', b: "Won't charge" }]; const did = this.pfixes().filter((f) => st.ptried.indexOf(f.short) < 0).map((f) => f.short); if (did.length) rows.push({ a: 'Tried just now', b: did.join(', ') }); if (st.ptried.length) rows.push({ a: 'You told us you tried', b: st.ptried.join(', ') }); return rows; }
-  recheck(L) {
-    this.busyThen(L, 'Checking for charging…', 1800, (hist) => {
-      if (this.state.scen === 'socket') this.setState({ hist: hist.concat([{ k: 'done', title: 'Charging now', d: 'Your device is charging normally.' }]), opts: [{ id: 'close', label: 'Done', primary: true }] });
-      else this.setState({ hist: hist.concat([{ k: 'bot', t: '', b: "It's still not charging.", t2: ' Do you have another Pine Labs charger or cable to try?' }]), opts: [{ id: 'spYes', label: 'Yes, it charges with the other one' }, { id: 'spNo', label: 'Yes, but still not charging' }, { id: 'spNone', label: "No, I don't have a spare" }] });
-    });
-  }
-  /* describe the issue, then the number */
-  descDone(skip) {
-    const st = this.state; const text = skip ? '' : String(this._desc || '').trim(); this._desc = '';
-    this.setState({ descOn: false, note: text, undo: [], hist: st.hist.concat([{ k: 'user', t: text || 'Skip' }, { k: 'bot', t: 'Which number should we call?' }]), opts: [{ id: 'numThis', label: 'Call 98XXX XXXXX' }, { id: 'numOther', label: 'Call a different number' }] });
-  }
-  /* ---------- number pad ---------- */
-  padKey(k) { const p = this.state.pad; if (!p) return; const max = p.mode === 'num' ? 10 : 4; let v = p.val; if (k === 'del') v = v.slice(0, -1); else if (v.length < max) v += k; this.setState({ pad: { mode: p.mode, val: v, num: p.num } }); }
-  padGo() {
-    const st = this.state; const p = st.pad; if (!p) return;
-    if (p.mode === 'num') {
-      if (p.val.length < 10) return;
-      const shown = '+91 ' + p.val.slice(0, 5) + ' ' + p.val.slice(5);
-      this.setState({ hist: st.hist.concat([{ k: 'user', t: shown }, { k: 'bot', t: 'Enter the 4-digit code we sent to that number by SMS.' }]), pad: { mode: 'otp', val: '', num: shown }, undo: [] });
-      return;
-    }
-    if (p.val.length < 4) return;
-    this.setState({ pad: null }); this.raiseNow('Code entered', p.num);
-  }
-  padCancel() { const st = this.state; this.setState({ pad: null, undo: [], hist: st.hist.concat([{ k: 'bot', t: 'Which number should we call?' }]), opts: [{ id: 'numThis', label: 'Call 98XXX XXXXX' }, { id: 'numOther', label: 'Call a different number' }] }); }
-  /* battery runs out fast: battery, charger, software and battery use, as in the Issue and Sub Issue matrix */
-  drainRows(extra) { const st = this.state; const wrong = st.scen === 'charger' || st.scen === 'chargerBad'; return [{ a: 'Problem', b: 'Battery runs out fast' }, { a: 'Battery health', b: 'Good' }, { a: 'Last 7 days', b: 'Draining faster than normal' }, { a: 'Charger', b: wrong ? 'Not a Pine Labs charger' : 'Pine Labs charger' }].concat(extra || []); }
-  runDrain(L) {
-    this.busyThen(L, 'Checking battery, charger, software and battery use…', 2400, (hist) => {
-      const st = this.state; const wrong = st.scen === 'charger' || st.scen === 'chargerBad';
-      if (st.scen === 'battery') {
-        this.setState({ hist: hist.concat([{ k: 'bot', t: '', b: 'The battery needs replacing.', t2: " Keep the device plugged in until it's replaced." }, { k: 'card', tone: 'plain', title: 'Battery check', rows: [{ a: 'Battery health', b: '38%' }, { a: 'Last 7 days', b: 'Draining much faster than normal' }] }, this.sum([{ a: 'Problem', b: 'Battery runs out fast' }, { a: 'Part to replace', b: 'Battery' }, { a: 'Diagnostic report', b: 'Attached' }])]), opts: this.raiseOpts() });
-        return;
-      }
-      const found = ['the screen and background apps are using most of the power'].concat(st.sw === 'old' ? ['the software is out of date'] : [], wrong ? ["the charger isn't a Pine Labs charger"] : []);
-      const line = found.length === 1 ? found[0] : found.slice(0, -1).join(', ') + ' and ' + found[found.length - 1];
-      this.setState({ hist: hist.concat([{ k: 'bot', t: 'Your battery is healthy. ', b: 'We found ' + found.length + (found.length > 1 ? ' things' : ' thing') + ' draining it:', t2: ' ' + line + '.' },
-        { k: 'card', tone: 'plain', title: 'Battery check', rows: [{ a: 'Battery health', b: 'Good' }, { a: 'Last 7 days', b: 'Draining faster than normal' }, { a: 'Screen brightness', b: '100%' }, { a: 'Background apps', b: 'Many running' }, { a: 'Software', b: st.sw === 'old' ? 'Update available' : 'Up to date' }, { a: 'Charger', b: wrong ? 'Not a Pine Labs charger' : 'Pine Labs charger' }] },
-        { k: 'bot', t: "Let's start with the quick one." }, { k: 'card', tone: 'plain', title: 'Battery saver', rows: [{ a: 'What happens', b: 'Lower brightness, close background apps' }, { a: 'Takes', b: 'A few seconds' }] }]), opts: [{ id: 'dFix', label: 'Fix it for me', primary: true }] });
-    });
-  }
-  drainUpdate() {
-    return { entries: [{ k: 'bot', t: 'Next, ', b: 'a software update is available.', t2: ' Older versions can use more battery.' }, { k: 'card', tone: 'plain', title: 'Update the software', rows: [{ a: 'Takes', b: 'About 10 minutes' }, { a: 'During the update', b: "The device can't take payments" }, { a: 'Needs', b: 'Charger connected' }] }],
-      opts: [{ id: 'dUpd', label: 'Update now', primary: true }, { id: 'dUpdLater', label: 'Update after closing' }, this.reqOpt(this.drainRows([{ a: 'Already tried', b: 'Brightness lowered, apps closed' }, { a: 'Software', b: 'Update available, not installed' }]))] };
-  }
-  drainEnd(hist, swLine) {
-    const st = this.state; const wrong = st.scen === 'charger' || st.scen === 'chargerBad';
-    const e = wrong ? [{ k: 'step', img: '[Photo: the Pine Labs charger]', cap: 'From now on', title: 'Charge only with the Pine Labs charger', d: 'Other chargers charge slowly and wear the battery out. Charge it fully tonight.' }] : [{ k: 'bot', t: 'Charge it fully tonight with the Pine Labs charger. ', b: 'It can take a day to see the difference.', t2: '' }];
-    this.setState({ hist: hist.concat(e), opts: [{ id: 'close', label: 'Done', primary: true }, this.reqOpt(this.drainRows([{ a: 'Already tried', b: 'Brightness lowered, apps closed' }, { a: 'Software', b: swLine }]), 'Still not fixed', false)] });
-  }
-  drainInstall(L) { this.busyThen(L, 'Updating the software…', 2600, (hist) => this.drainEnd(hist.concat([{ k: 'done', title: 'Software updated', d: 'You are on the latest version.' }]), 'Updated today')); }
-
-  /* device-run fixes for a slow screen: quick one first, disruptive ones only if needed */
-  fixes() {
-    return [
-      { name: 'Clear memory', short: 'Memory cleared', why: 'Memory is almost full, which slows the screen down.', rows: [{ a: 'What happens', b: 'Close background apps, clear memory' }, { a: 'Takes', b: 'About a minute' }, { a: 'Your payments', b: 'Settled first, nothing is lost' }], cta: 'Fix it for me', busy: 'Closing apps and clearing memory…', doneT: 'Memory cleared', doneD: 'Background apps are closed.' },
-      { name: 'Restart the device', short: 'Device restarted', why: 'A restart clears anything that is still stuck.', rows: [{ a: 'What happens', b: 'The device restarts' }, { a: 'Takes', b: 'About 2 minutes' }, { a: 'After the restart', b: 'We continue from here' }], cta: 'Restart now', busy: 'Restarting…', doneT: 'Restarted', doneD: "You're back where you left off." },
-      { name: 'Update the software', short: 'Software updated', why: 'A newer version is available and may fix this.', rows: [{ a: 'Takes', b: 'About 10 minutes' }, { a: 'During the update', b: "The device can't take payments" }, { a: 'Needs', b: 'Charger connected' }], cta: 'Update now', busy: 'Updating the software…', doneT: 'Software updated', doneD: 'You are on the latest version.' }
-    ];
-  }
-  slowRows(n) { const rows = [{ a: 'Problem', b: 'Screen slow to respond' }, { a: 'Touch test', b: '6 of 6 spots working' }]; if (n > 0) rows.push({ a: 'Already tried', b: this.fixes().slice(0, n).map((f) => f.short).join(', ') }); return rows; }
-  offer(i) {
-    const f = this.fixes()[i];
-    return {
-      entries: [{ k: 'bot', t: f.why }, { k: 'card', tone: 'plain', title: f.name, rows: f.rows }],
-      opts: [{ id: 'doFix', label: f.cta, primary: true }].concat(i === 2 ? [{ id: 'fixLater', label: 'Update after closing' }] : [], i > 0 ? [this.reqOpt(this.slowRows(i))] : [])
-    };
-  }
-  afterFix(i) { return [{ id: 'works', label: "It's working now" }, i < 2 ? { id: 'nextFix', label: 'Try the next fix' } : { id: 'stillNo', label: 'Still slow' }].concat(i < 2 ? [this.reqOpt(this.slowRows(i + 1))] : []); }
-  raiseNow(L, num) {
-    this.busyThen(L, 'Raising your request…', 1600, (hist) => {
-      const st = this.state;
-      if (st.failMode === 'yes' && !st.failedOnce) {
-        this.setState({ hist: hist.concat([{ k: 'err', t: "We couldn't raise the request right now. Your details are saved, so you won't need to enter them again." }]), opts: [{ id: 'retryRaise', label: 'Try again', primary: true }, { id: 'cancelReq', label: 'Not now' }], failedOnce: true, num: num });
-      } else {
-        this.setState({ hist: hist.concat([{ k: 'card', tone: 'ok', title: 'Request raised', rows: [{ a: 'Request no.', b: '[SR number]' }, { a: "We'll call", b: num }, { a: 'Expect a call', b: '[within SLA]' }, { a: 'Your note', b: st.note ? 'Added' : 'Not added' }, { a: 'WhatsApp', b: 'Confirmation sent' }] }, { k: 'bot', t: 'You can track this in Help & Support, under My Requests.' }]), opts: [{ id: 'close', label: 'Done', primary: true }] });
-      }
-    });
-  }
-
-  pick(o) {
-    if (o.off) return;
-    const st0 = this.state; const id = o.id; const L = o.label;
-    const done = [{ id: 'close', label: 'Done', primary: true }];
-    if (id === 'node') {
-      const r = o.r;
-      if (r.to) { const a = this.ask(r.to); this.step(L, a.entries, a.opts, false); return; }
-      const f = this.flowStart(r.flow);
-      this.step(L, f.entries, f.opts, false, { ftitle: f.title, fsub: f.sub, run: 0, fixI: 0, optsTop: false, ptried: [], ticks: {} });
-      return;
-    }
-    if (id === 'resolved') { this.step(L, [{ k: 'done', title: 'Request closed', d: 'Glad it is working again. No one will call or visit for this request.' }], done, true); return; }
-    if (id === 'followUp') { this.step(L, [{ k: 'done', title: 'Follow-up sent', d: 'We have told our support team you are still waiting. They will call you within [SLA].' }], done, true); return; }
-    if (id === 'different') { const a = this.ask('root'); this.step(L, a.entries, a.opts, true); return; }
-    if (id === 'else') { const a = this.ask('when'); this.step(L, a.entries, a.opts, true, { ftitle: 'Log a complaint', fsub: '', optsTop: false }); return; }
-    if (id === 'req') { this.step(L, [{ k: 'bot', t: "Here's what we'll send to our support team." }, this.sum(o.rows)], this.raiseOpts(), false, { optsTop: false }); return; }
-    if (id === 'works0') { this.step(L, [{ k: 'done', title: 'All good', d: "We didn't find a problem. You can run this check again anytime." }], done, true); return; }
-    if (id === 'start' || id === 'retest') { this.beginTest(L); return; }
-    if (id === 'retest0') { this.beginTest(L, true); return; }
-
-    /* touch: ask before telling them to clean */
-    if (id === 'cleanNo') {
-      this.step(L, [{ k: 'step', img: '[Photo: peeling off the screen guard]', cap: 'Try this', title: 'Remove the screen guard and wipe the screen with a dry cloth', d: 'Then run the test again.' }],
-        [{ id: 'retest', label: "I've done this, test again", primary: true }, this.reqOpt([{ a: 'Problem', b: 'Touch not working' }, { a: 'Not responding', b: st0.failedNames.join(', ') }], "I can't do this")], false);
-      return;
-    }
-    if (id === 'cleanYes') { this.step(L, [{ k: 'bot', t: 'Then ', b: 'the screen needs a repair', t2: '.' }, this.sum([{ a: 'Problem', b: 'Touch not working' }, { a: 'Not responding', b: st0.failedNames.join(', ') }, { a: 'You told us you tried', b: 'Screen guard removed, screen cleaned' }, { a: 'Diagnostic report', b: 'Attached' }])], this.raiseOpts(), false, { optsTop: false }); return; }
-
-    /* slow screen */
-    if (id === 'slowYes') {
-      const f = this.offer(0);
-      this.step(L, [{ k: 'card', tone: 'plain', title: 'Screen check', rows: [{ a: 'Touch', b: 'Working' }, { a: 'Memory', b: 'Almost full' }, { a: 'Software', b: 'Update available' }] }].concat(f.entries), f.opts, false, { fixI: 0 });
-      return;
-    }
-    if (id === 'doFix') {
-      const i = st0.fixI; const f = this.fixes()[i];
-      this.busyThen(L, f.busy, 2200, (hist) => {
-        if (i === 1) this.setState({ hist: hist.concat([{ k: 'done', title: f.doneT, d: f.doneD }, { k: 'bot', t: 'Is it faster now?' }]), opts: this.afterFix(i) });
-        else this.setState({ hist: hist.concat([{ k: 'done', title: f.doneT, d: f.doneD }, { k: 'bot', t: 'Now ', b: 'restart the app', t2: ' so you can feel the difference.' }]), opts: [{ id: 'restartApp', label: 'Restart the app', primary: true }] });
-      });
-      return;
-    }
-    if (id === 'restartApp') { const i = st0.fixI; this.busyThen(L, 'Restarting the app…', 2000, (hist) => this.setState({ hist: hist.concat([{ k: 'bot', t: "You're back where you left off. Is it faster now?" }]), opts: this.afterFix(i) })); return; }
-    if (id === 'nextFix') { const i = st0.fixI + 1; const f = this.offer(i); this.step(L, f.entries, f.opts, true, { fixI: i }); return; }
-    if (id === 'fixLater') { this.step(L, [{ k: 'done', title: 'Update scheduled', d: "We'll update the software after closing tonight." }], done.concat([this.reqOpt(this.slowRows(2).concat([{ a: 'Software update', b: 'Scheduled for tonight' }]), 'Still need help', false)]), true); return; }
-    if (id === 'works') { this.step(L, [{ k: 'done', title: 'Fixed', d: 'Glad it is working again.' }], done, true); return; }
-    if (id === 'stillNo') { this.step(L, [{ k: 'bot', t: "We've tried every fix we can run on the device, so ", b: 'an engineer should look at this', t2: '.' }, this.sum(this.slowRows(3).concat([{ a: 'Diagnostic report', b: 'Attached' }]))], this.raiseOpts(), true); return; }
-
-    /* power and charging */
-    if (id === 'pStart') {
-      this.busyThen(L, 'Checking charger, charging and battery…', 2400, (hist) => {
-        const sc = this.state.scen; let e = []; let op = [];
-        if (sc === 'battery') { e = [{ k: 'bot', t: '', b: 'The battery needs replacing.', t2: " Keep the device plugged in until it's replaced." }, this.pcard('Pine Labs charger', 'Working', '38%'), this.sum([{ a: 'Problem', b: "Won't charge" }, { a: 'Part to replace', b: 'Battery' }, { a: 'Diagnostic report', b: 'Attached' }])]; op = this.raiseOpts(); }
-        else if (sc === 'charger' || sc === 'chargerBad') { e = [{ k: 'bot', t: '', b: "This isn't a Pine Labs charger.", t2: " It doesn't give your device enough power. Your battery is fine." }, this.pcard('Not a Pine Labs charger', 'Too weak', 'Good'), { k: 'step', img: '[Photo: the Pine Labs charger]', cap: 'Try this', title: 'Plug in the Pine Labs charger', d: 'It came in the box with your device.' }]; op = [{ id: 'chgRe', label: "I've done this", primary: true }, { id: 'chgNo', label: "I don't have it" }]; }
-        else if (sc === 'fine') { e = [{ k: 'bot', t: '', b: 'Your device is charging normally.', t2: '' }, this.pcard('Pine Labs charger', 'Working', 'Good'), { k: 'bot', t: "What's still wrong?" }]; op = [{ id: 'toDrain', label: 'Battery runs out fast' }, { id: 'else', label: 'I have a different issue' }, { id: 'works0', label: "It's working now" }, this.reqOpt([{ a: 'Problem', b: "Won't charge" }, { a: 'Power check', b: 'No problem found' }])]; }
-        else { e = [{ k: 'bot', t: '', b: 'No power is reaching the device.', t2: '' }, this.pcard('Pine Labs charger', 'No power coming in', 'Good'), { k: 'bot', t: 'Have you already tried any of these?' }]; op = this.triedOpts(); }
-        this.setState({ hist: hist.concat(e), opts: op, ticks: {}, ptried: [] });
-      });
-      return;
-    }
-    if (id === 'tick') { const t = Object.assign({}, st0.ticks); t[o.key] = !t[o.key]; this.setState({ ticks: t }); return; }
-    if (id === 'triedGo') {
-      const all = this.pfixes(); const tried = all.filter((f) => st0.ticks[f.key]); const rest = all.filter((f) => !st0.ticks[f.key]);
-      const said = tried.length ? 'Already tried: ' + tried.map((f) => f.short.toLowerCase()).join(', ') : "I haven't tried these";
-      const ptried = tried.map((f) => f.short);
-      if (!rest.length) { this.setState({ ptried: ptried }); this.recheck(said); return; }
-      const rows = [{ a: 'Problem', b: "Won't charge" }].concat(ptried.length ? [{ a: 'You told us you tried', b: ptried.join(', ') }] : []);
-      this.step(said, [{ k: 'fixlist', title: rest.length > 1 ? 'Try these, in any order' : 'Try this', items: rest.map((f, i) => ({ n: i + 1, name: f.name, d: f.d })) }, { k: 'bot', t: "We'll check for charging as soon as you're done." }],
-        [{ id: 'pAll', label: rest.length > 1 ? "I've done these" : "I've done this", primary: true }, this.reqOpt(rows, rest.length > 1 ? "I can't do these" : "I can't do this")], true, { ptried: ptried });
-      return;
-    }
-    if (id === 'pAll') { this.recheck(L); return; }
-    if (id === 'spYes') { this.step(L, [{ k: 'bot', t: 'Then ', b: 'the charger or cable is faulty', t2: ". We'll send a replacement." }, this.sum(this.chargeRows().concat([{ a: 'Part to replace', b: 'Charger or cable' }, { a: 'Diagnostic report', b: 'Attached' }]))], this.raiseOpts(), true); return; }
-    if (id === 'spNo' || id === 'spNone') { this.step(L, [{ k: 'bot', t: 'Then ', b: 'the charging port most likely needs a repair', t2: '.' }, this.sum(this.chargeRows().concat([{ a: 'Part to check', b: 'Charging port' }, { a: 'Diagnostic report', b: 'Attached' }]))], this.raiseOpts(), true); return; }
-    if (id === 'chgRe') {
-      this.busyThen(L, 'Checking for charging…', 1800, (hist) => {
-        if (this.state.scen === 'chargerBad') this.setState({ hist: hist.concat([{ k: 'bot', t: '', b: "It's still not charging", t2: ', even with the Pine Labs charger. Have you already tried any of these?' }]), opts: this.triedOpts(), ticks: {}, ptried: [] });
-        else this.setState({ hist: hist.concat([{ k: 'done', title: 'Charging now', d: 'The Pine Labs charger is working. Use only this charger from now on.' }]), opts: done });
-      });
-      return;
-    }
-    if (id === 'chgNo') { this.step(L, [{ k: 'bot', t: "We'll send you a Pine Labs charger. ", b: 'No engineer visit is needed.', t2: '' }, this.sum([{ a: 'Problem', b: 'Wrong charger in use' }, { a: 'Needs', b: 'Pine Labs charger' }, { a: 'Diagnostic report', b: 'Attached' }])], this.raiseOpts(), false); return; }
-    if (id === 'dStart' || id === 'toDrain') { this.runDrain(L); return; }
-    if (id === 'dFix') {
-      this.busyThen(L, 'Lowering brightness and closing apps…', 1800, (hist) => {
-        const h = hist.concat([{ k: 'done', title: 'Battery saver applied', d: 'Brightness is lower and background apps are closed.' }]);
-        if (this.state.sw === 'old') { const u = this.drainUpdate(); this.setState({ hist: h.concat(u.entries), opts: u.opts }); }
-        else this.drainEnd(h, 'Up to date');
-      });
-      return;
-    }
-    if (id === 'dUpd') {
-      if (st0.lowBatt === 'yes') { this.step(L, [{ k: 'bot', t: 'The battery is at 12%. ', b: 'Plug in the charger', t2: ' so the update can start safely.' }], [{ id: 'dPlug', label: "I've plugged it in", primary: true }, { id: 'dUpdLater', label: 'Update after closing' }], false); return; }
-      this.drainInstall(L); return;
-    }
-    if (id === 'dPlug') { this.drainInstall(L); return; }
-    if (id === 'dUpdLater') { this.setState({ undo: [], more: false }); this.drainEnd(st0.hist.concat([{ k: 'user', t: L }, { k: 'done', title: 'Update scheduled', d: "We'll update the software after closing tonight. Keep the charger connected." }]), 'Update scheduled for tonight'); return; }
-
-    /* request: describe it, then the number */
-    if (id === 'raise') { this._desc = ''; this.step(L, [{ k: 'bot', t: 'Want to add anything in your own words? This is optional.' }], [], false, { descOn: true }); return; }
-    if (id === 'numOther') { this.step(L, [{ k: 'bot', t: 'Type the number we should call.' }], [], true, { pad: { mode: 'num', val: '', num: '' } }); return; }
-    if (id === 'numThis') { this.raiseNow(L, '98XXX XXXXX'); return; }
-    if (id === 'retryRaise') { this.raiseNow(L, this.state.num); return; }
-    if (id === 'cancelReq') { this.step(L, [{ k: 'bot', t: 'No request was raised. You can come back anytime from Help & Support.' }], done, true); return; }
-    if (id === 'close') { this.restart(); return; }
-  }
-  restart() { this.clearAll(); const st = this.state; this.setState(Object.assign(this.fresh(), { scen: st.scen, openReq: st.openReq, failMode: st.failMode, sw: st.sw, lowBatt: st.lowBatt })); }
-
-  renderVals() {
-    const st = this.state; const scr = st.screen;
-    const helpItems = [
-      { t: 'My Requests', d: 'View open and closed requests' },
-      { t: 'Request Paper Roll', d: 'Order thermal rolls' },
-      { t: 'Log a Complaint', d: 'Raise a device or payment issue', on: true },
-      { t: 'Help & Support', d: 'Contact for service related queries' }
-    ].map((h) => ({ t: h.t, d: h.d, op: h.on ? 1 : 0.55, go: h.on ? () => this.enterFlow() : () => {} }));
-
-    const names = ['Top left', 'Top right', 'Middle left', 'Middle right', 'Bottom left', 'Bottom right'];
-    const cur = st.tq[st.tpos];
-    const cells = names.map((n, i) => ({ name: n, active: i === cur, pass: st.tmap[i] === true, fail: st.tmap[i] === false, tap: () => { const z = this.state; if (z.tq[z.tpos] === i) this.mark(true); } }));
-    const testCount = st.tpass === 2 ? 'Second try for missed spots · ' + Math.min(st.tpos + 1, st.tq.length) + ' of ' + st.tq.length : 'Spot ' + Math.min(st.tpos + 1, 6) + ' of 6';
-    const pd = st.pad; const isNum = pd && pd.mode === 'num';
-    const padKeys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'del'].map((k) => ({ t: k === 'del' ? '⌫' : k, aria: k === 'del' ? 'Delete' : (k || 'Blank'), op: k === '' ? 0 : 1, tap: () => { if (k !== '') this.padKey(k); } }));
-    const padVal = pd ? pd.val : '';
-    const padShown = !pd ? '' : (isNum ? '+91 ' + padVal.slice(0, 5) + (padVal.length > 5 ? ' ' + padVal.slice(5) : '') : padVal.split('').join(' '));
-    const padValid = pd && padVal.length === (isNum ? 10 : 4);
-    const topUndo = st.undo.length ? st.undo[st.undo.length - 1].n : -1;
-    const tones = { info: ['#8CCBEA', '#EAF6FC'], ok: ['#A8DDBF', '#EEF9F2'], plain: ['#DBDDE4', '#FFFFFF'] };
-    const msgs = st.hist.map((h, i) => {
-      const m = { anim: i >= (this._seen || 0) ? 'fadeUp 0.28s ease-out' : 'none', t: h.t || '', b: h.b || '', t2: h.t2 || '', cap: h.cap || '', title: h.title, d: h.d, img: h.img, rows: h.rows || [],
-        isBot: h.k === 'bot', isErr: h.k === 'err', isUser: h.k === 'user', isBusy: h.k === 'busy', isStep: h.k === 'step', isResult: h.k === 'result', isCard: h.k === 'card', isDone: h.k === 'done', isTicket: h.k === 'ticket', isAlert: h.k === 'alert', isFixlist: h.k === 'fixlist', items: h.items || [],
-        canChange: h.k === 'user' && i === topUndo, fixedReply: h.k === 'user' && i !== topUndo, changeAria: 'Change answer: ' + (h.t || ''), change: () => this.change(), zones: [] };
-      if (h.k === 'result') m.zones = h.zones.map((ok) => ({ bg: ok ? '#1E8E4F' : '#FBE3E1', col: ok ? '#FFFFFF' : '#B3261E', mark: ok ? '✓' : '✕' }));
-      if (h.k === 'card') { const c = tones[h.tone] || tones.plain; m.border = c[0]; m.bg = c[1]; }
-      return m;
-    });
-
-    /* the selection sizes itself: pills for up to 3 answers, a list for more, a More row from 7 */
-    const mk = (o) => ({ label: o.label, op: o.off ? 0.45 : 1, pick: () => this.pick(o) });
-    const anyTick = Object.keys(st.ticks).some((k) => st.ticks[k]);
-    const actions = st.opts.filter((o) => o.primary && o.id !== 'raise').map((o) => ({ label: o.id === 'triedGo' && !anyTick ? "I haven't tried these" : o.label, op: 1, pick: () => this.pick(o) }));
-    const checks = st.opts.filter((o) => o.check).map((o) => ({ label: o.label, on: st.ticks[o.key] ? 'true' : 'false', box: st.ticks[o.key] ? '#003323' : '#FFFFFF', mark: st.ticks[o.key] ? '✓' : '', tap: () => this.pick(o) }));
-    const reqPills = st.opts.filter((o) => o.primary && o.id === 'raise').map(mk);
-    const quiet = st.opts.filter((o) => o.quiet).map(mk);
-    const allAnswers = st.opts.filter((o) => !o.primary && !o.quiet && !o.check);
-    const isList = allAnswers.length > 3;
-    const collapsed = allAnswers.length >= 7 && !st.more;
-    const answers = (collapsed ? allAnswers.slice(0, 5) : allAnswers).map(mk);
-
-    const T = (label, key, items) => ({ label: label, items: items.map((x) => ({ label: x[1], border: st[key] === x[0] ? '#003323' : '#DBDDE4', bg: st[key] === x[0] ? '#FFFFFF' : 'transparent', pick: () => { const u = {}; u[key] = x[0]; this.setState(u); } })) });
-    const toggles = [
-      T('The power check finds:', 'scen', [['battery', 'Battery failing'], ['charger', 'Wrong charger'], ['chargerBad', 'Right charger, still no charge'], ['socket', 'Socket was the problem'], ['port', 'Faulty part'], ['fine', 'Charging is fine']]),
-      T('Software on the device:', 'sw', [['old', 'Update available'], ['ok', 'Up to date']]),
-      T('Battery level for an update:', 'lowBatt', [['no', 'Enough charge'], ['yes', 'Too low']]),
-      T('Open request on this device:', 'openReq', [['no', 'None'], ['yes', 'One is open']]),
-      T('Raising a request:', 'failMode', [['no', 'Works'], ['yes', 'Fails the first time']])
-    ];
-    const answered = st.hist.some((h) => h.k === 'user');
-
-    return {
-      isTest: scr === 'test', notTest: scr !== 'test', isHelp: scr === 'help', isStart: scr === 'start', isFlow: scr === 'flow', goDevice: () => this.enterFlow(),
-      padOn: !!pd && scr === 'flow', padLabel: isNum ? 'Mobile number · 10 digits' : 'Code sent to ' + (pd ? pd.num : ''), padShown: padShown, padKeys: padKeys, padCta: isNum ? 'Send code' : 'Verify and raise request', padGoOp: padValid ? 1 : 0.4, padGo: () => this.padGo(), padCancel: () => this.padCancel(),
-      title: scr === 'help' ? 'Help & Support' : st.ftitle, subtitle: st.fsub, hasSub: scr === 'flow' && !!st.fsub,
-      back: () => { if (scr === 'start') this.restart(); else if (scr === 'flow') { if (st.undo.length && !st.pad) this.change(); else if (answered) this.setState({ sheet: true }); else this.restart(); } },
-      startOver: () => this.enterFlow(),
-      helpItems: helpItems, cells: cells, testCount: testCount,
-      msgs: msgs, hasOpts: st.opts.length > 0, actions: actions, reqPills: reqPills, answers: answers, checks: checks, hasChecks: checks.length > 0,
-      descOn: st.descOn && scr === 'flow', descInput: (e) => { this._desc = e.target.value; }, descGo: () => this.descDone(false), descSkip: () => this.descDone(true), quiet: quiet,
-      isPills: !isList && answers.length > 0, isList: isList, showMore: collapsed, moreGo: () => this.setState({ more: true }),
-      optsTop: st.optsTop, optOrder: st.optsTop ? -1 : 0, optPos: st.optsTop ? 'sticky' : 'static',
-      sheet: st.sheet && scr === 'flow', stay: () => this.setState({ sheet: false }), leave: () => this.restart(),
-      toggles: toggles, restart: () => this.restart()
-    };
-  }
+async function pickIssue(all){
+  let items;
+  if (C.cat==='device') items = DEVICE[C.sub].issues.map((x,i)=>({id:i,t:x.n}));
+  else { const l=NONDEV[C.cat].subs[C.sub].issues; items=(all?l:l.slice(0,6)).map(x=>({id:x,t:x})); if(!all&&l.length>6) items.push({id:'_more',t:`Show all ${l.length}`,more:true}); }
+  if (!all) await bot('Which of these is happening?',{q:true});
+  ask({type:'list',plain:true,items:[...items,{id:'other',t:'Something else',muted:true}],onPick:it=>{
+    if (it.id==='_more'){ PROMPT=null; return go(()=>pickIssue(true)); }
+    me(it.t,true); if(it.id==='other') return go(somethingElse);
+    if (C.cat==='device'){ C.issue=DEVICE[C.sub].issues[it.id]; go(runIssue); } else { C.issueName=it.t; go(nonDevice); }
+  }});
 }
 
-window.proto = new Component(); draw(window.proto);
+async function nonDevice(){
+  await bot(`This goes to our <b>${esc(NONDEV[C.cat].n)}</b> team.`);
+  if (C.cat==='transaction'||C.cat==='settlement'){
+    await bot(C.cat==='settlement'?'Which settlement is this about?':'When did this transaction happen?');
+    const w = await ask({type:'pills',items:['Today','Yesterday','Earlier this week','Older']}); me(w); C.when=w;
+  }
+  C.reason=''; await confirmTicket();
+}
+async function somethingElse(){ await bot('Since this isn\'t in our list, our support team will look into it personally.'); C.callback=true; C.reason=''; await confirmTicket(); }
+
+/* ---------- device issue ---------- */
+async function runIssue(){
+  const it=C.issue; C.done=[]; C.tried=[]; C.fixedBy=null; C.found=[];
+  if (it.pineone) return pineOne('issue');
+  if (it.t==='E') return safety();
+  if (it.t==='F') return direct();
+  if (it.t==='D') return touchTest(1);
+  if (it.t==='B'){ const r=await merchantSteps(); return r?resolved():escalate(); }
+  if (!await diagnose()) return;
+  if (it.t==='G'){ await bot('I\'ve raised a <b>battery replacement</b> request for you, so you don\'t need to do anything.'); C.priority=true; return confirmTicket(true); }
+  return afterDiagnosis();
+}
+async function afterDiagnosis(){
+  const it=C.issue;
+  if (it.fixes){ const r=await deviceFix(); if(r) return resolved(); }
+  if (it.update){ const r=await firmware(); if(r) return resolved(); }
+  if (it.restart){ const r=await restart(); if(r) return resolved(); }
+  if (it.steps){ const r=await merchantSteps(); if(r) return resolved(); }
+  return escalate();
+}
+async function diagnose(){
+  const it=C.issue, r=RUN;
+  await bot('Checking your device. <b>Keep this screen open</b> until it finishes.');
+  const rows = it.checks.map(s=>{const [l,v]=s.split('|'); return {l, r:v.replace(/^!/,''), bad:v[0]==='!', st:'wait'};});
+  const k = card({type:'check',rows});
+  for (let i=0;i<rows.length;i++){
+    rows[i].st='run'; render(); await sleep(850); guard(r);
+    if (sim('simOff') && i===0){ rows[i].st='fail'; render(); await unreachable(); return false; }
+    rows[i].st='done'; render();
+  }
+  k.time=now(); render();
+  await bot(it.finding);
+  C.found = rows.filter(x=>x.bad).map(x=>x.l+': '+x.r);
+  return true;
+}
+async function unreachable(){
+  await bot('I <b>couldn\'t reach your device</b>. It needs internet for the check.',{err:true});
+  await bot('Turn on WiFi or mobile data, then try again.');
+  const a = await ask({type:'pills',items:[{t:'Try again',go:true},...(C.issue.steps?[{t:'Skip to steps I can do'}]:[]),{t:'Raise support ticket',ticket:true}]}); me(a);
+  if (a==='Try again'){ if(await diagnose()) return afterDiagnosis(); return; }
+  C.found=['Device not reachable for a health check'];
+  if (a.startsWith('Skip')){ const r=await merchantSteps(); return r?resolved():escalate(); }
+  C.reason='Since I couldn\'t check the device remotely, I\'ll raise a request for the <b>remote support team</b>.'; return confirmTicket();
+}
+
+/* Device does it, quick: one "Fix it for me" */
+async function deviceFix(){
+  const it=C.issue, r=RUN;
+  const k = card({type:'fix',items:it.fixes.map(t=>({t,st:'wait'})),note:it.note,state:'offer'});
+  const a = await ask({type:'card',card:k});
+  if (a==='no'){ k.state='skipped'; me('Not now'); return false; }
+  me('Fix it for me'); k.state='run'; render();
+  for (const x of k.items){ x.st='run'; render(); await sleep(1100); guard(r); x.st='done'; C.done.push(x.t); render(); }
+  k.state='done'; render();
+  await bot(it.fixes.length>1?`Done. I've applied <b>${it.fixes.length} fixes</b>.`:`Done. I've <b>${esc(it.fixes[0].charAt(0).toLowerCase()+it.fixes[0].slice(1))}</b>.`);
+  if (it.tips){ await bot('A couple of things can help too. You know your shop best, so these are up to you:'); card({type:'tips',tips:it.tips}); }
+  return verify('fix');
+}
+/* Firmware: disruptive, Now / After closing */
+async function firmware(){
+  const r=RUN;
+  await bot('A <b>firmware update</b> should fix this. It takes about 5 minutes and you can\'t take payments while it runs.');
+  card({type:'notice',kind:'warn',text:'Keep the charger connected and WiFi on until it finishes.'});
+  const a = await ask({type:'pills',items:[{t:'Update now',go:true},{t:'After I close for the day'}]}); me(a);
+  if (a!=='Update now'){ await bot('Okay. I\'ll install it <b>tonight at 11 PM</b>. If cards still don\'t work tomorrow, come back and I\'ll raise a request with everything we\'ve tried.'); C.done.push('Firmware update scheduled for tonight');
+    const b = await ask({type:'pills',items:[{t:'Done',go:true},{t:'Raise a request now instead'}]}); me(b);
+    if (b==='Done'){ C.watch=true; return true; } return false; }
+  const k = card({type:'fix',title:'Updating firmware',items:[{t:'Downloading update',st:'wait'},{t:'Installing',st:'wait'},{t:'Restarting the card reader',st:'wait'}],state:'run'});
+  for (const x of k.items){ x.st='run'; render(); await sleep(1000); guard(r); x.st='done'; render(); }
+  k.state='done'; k.title='Firmware updated'; C.done.push('Firmware updated'); render();
+  await bot('Firmware updated. Let\'s check the card reader with a <b>₹1 test transaction</b>.');
+  return verify('fix');
+}
+/* Restart: chat resumes after boot */
+async function restart(){
+  const it=C.issue;
+  if (it.restart==='remote'){
+    await bot('Let\'s try a <b>restart</b>. It takes about a minute and you can\'t take payments meanwhile. You\'ll come back to this screen after it restarts.');
+    const a = await ask({type:'pills',items:[{t:'Restart now',go:true},{t:'Not now'}]}); me(a);
+    if (a!=='Restart now') return false;
+  } else {
+    await bot('Hold the <b>power button for 10 seconds</b> until the device restarts. You\'ll come back to this screen after it restarts.');
+    const a = await ask({type:'pills',items:[{t:'Okay, restarting',go:true},{t:'I can\'t do this'}]}); me(a);
+    if (a!=='Okay, restarting') return false;
+  }
+  C.done.push('Device restarted');
+  await reboot();
+  T.push({k:'divider',text:'Device restarted · '+now()}); render();
+  
+  return verify('restart');
+}
+function reboot(){ const r=RUN; return new Promise(res=>{ LAYER={type:'boot'}; render();
+  setTimeout(()=>{ if(r!==RUN) return; LAYER={type:'poshome',resume:()=>{ LAYER=null; render(); res(); }}; render(); },2600); }); }
+
+/* Merchant does it: "already tried?" → ledger unlocking in order */
+async function merchantSteps(){
+  const it=C.issue, r=RUN; let steps=it.steps.map((s,i)=>({...s,i}));
+  if (steps.length>1){
+    await bot('Here are a few things to try on your side. <b>Have you already tried any of these?</b>');
+    const picked = await ask({type:'checklist',items:steps.map(s=>s.t),sel:[]});
+    me(picked.length?'Already tried: '+picked.map(i=>steps[i].t.charAt(0).toLowerCase()+steps[i].t.slice(1)).join(', '):'None of these');
+    picked.forEach(i=>C.tried.push(steps[i].t+' (merchant reported)'));
+    steps = steps.filter(s=>!picked.includes(s.i));
+    if (!steps.length){ await bot('Thanks. Since you\'ve tried all of these, let me check the device once more.'); return verify('recheck'); }
+    await bot(steps.length===it.steps.length?'Let\'s go through them. Each one unlocks after you finish the one before:':'Let\'s try the rest. Each one unlocks after you finish the one before:');
+  } else await bot('Try this on your side:');
+  const k = card({type:'ledger',steps:steps.map(s=>({...s,st:'lock'})),watch:it.verify}); k.steps[0].st='cur'; render();
+  const fixAt = Math.min(1,k.steps.length-1);
+  for (let i=0;i<k.steps.length;i++){
+    const a = await ask({type:'ledger',card:k}); const s=k.steps[i];
+    if (a==='cant'){ s.st='no'; s.res='Couldn\'t do this'; C.tried.push(s.t+' (couldn\'t do)'); }
+    else if (['charge','net'].includes(it.verify)){
+      s.st='checking'; render(); await sleep(1600); guard(r);
+      if (!sim('simFix') && i===fixAt){ s.st='ok'; s.res=it.verify==='charge'?'Charging started':'Back online'; C.tried.push(s.t); C.fixedBy=s.t; render();
+        await bot(`${it.verify==='charge'?'Charging started':'Your device is back online'} after <b>${esc(s.t.charAt(0).toLowerCase()+s.t.slice(1))}</b>.`); return gone(); }
+      s.st='ok'; s.res=it.verify==='charge'?'Done · still not charging':'Done · still offline'; C.tried.push(s.t);
+    } else { s.st='ok'; s.res='Done'; C.tried.push(s.t); }
+    if (k.steps[i+1]) k.steps[i+1].st='cur'; render();
+  }
+  if (['charge','net'].includes(it.verify)){ await bot(it.verify==='charge'?'The device <b>still isn\'t charging</b> after these steps.':'The device <b>still can\'t connect</b> after these steps.'); return false; }
+  return verify('steps');
+}
+
+/* How a fix is confirmed */
+async function gone(){
+  await bot('Is the problem gone?',{q:true});
+  const a = await ask({type:'pills',items:[{t:'Yes, it\'s fixed',go:true},{t:'No, still not working'}]}); me(a);
+  if (a.startsWith('Yes')) return true;
+  C.passedButNot=true; return false;
+}
+async function verify(after){
+  const v=C.issue.verify, r=RUN;
+  if (v==='print'){
+    const a = await ask({type:'pills',items:[{t:'Print a test slip',go:true}]}); me(a);
+    const k=card({type:'check',rows:[{l:'Printing test slip',st:'run'}]}); await sleep(1500); guard(r);
+    const ok=!sim('simFix'); k.rows[0]={l:'Test slip',r:ok?'Printed clearly':'Came out blank',bad:!ok,st:'done'}; k.time=now(); render();
+    if (ok){ C.fixedBy=after==='fix'?'Fix it for me':'Your steps'; await bot('The test slip <b>printed clearly</b>.'); return gone(); }
+    await bot('The test slip <b>came out blank</b>.'); return false;
+  }
+  if (v==='txn'){
+    const a = await ask({type:'pills',items:[{t:'Start ₹1 test',go:true}]}); me(a);
+    await bot('Insert, swipe or tap any card on the device now.',{fast:true});
+    const k=card({type:'check',rows:[{l:'Waiting for card',st:'run'}]}); await sleep(2000); guard(r);
+    const ok=!sim('simFix'); k.rows[0]={l:'₹1 test transaction',r:ok?'Approved · refunded automatically':'Card not read',bad:!ok,st:'done'}; k.time=now(); render();
+    if (ok){ C.fixedBy=C.done.includes('Firmware updated')?'Firmware update':'Fix it for me'; await bot('The test transaction <b>went through</b>. The ₹1 is refunded automatically.'); return gone(); }
+    await bot('The card reader <b>still couldn\'t read the card</b>.'); return false;
+  }
+  if (v==='later'){
+    await bot('This one takes a little time to show. Keep using the device as normal.');
+    const a = await ask({type:'pills',items:[{t:'Okay, I\'ll keep an eye on it'},{t:'It\'s still happening'}]}); me(a);
+    if (a.startsWith('Okay')){ await bot('If it happens again, come back here and raise a request with everything we\'ve tried.');
+      const b = await ask({type:'pills',items:[{t:'Done',go:true},{t:'Raise a request now instead'}]}); me(b);
+      if (b==='Done'){ C.watch=true; return true; } return false; }
+    return false;
+  }
+  if (v==='charge'||v==='net'){
+    const k=card({type:'check',rows:[{l:v==='charge'?'Charging current':'Internet',st:'run'}]}); await sleep(1500); guard(r);
+    const ok = after==='fix' && !sim('simFix') && v==='net';
+    k.rows[0]={l:k.rows[0].l,r:ok?'Connected':v==='charge'?'No current coming in':'Not reachable',bad:!ok,st:'done'}; k.time=now(); render();
+    if (ok){ C.fixedBy='Fix it for me'; await bot('Your device is <b>back online</b>.'); return gone(); }
+    return false;
+  }
+  await bot(after==='restart'?'Is it working normally now?':'Is it working now?');
+  const a = await ask({type:'pills',items:[{t:'It\'s working now',go:true},{t:'Still having problem'}]}); me(a);
+  if (a.startsWith('It\'s working')){ C.fixedBy = after==='restart'?'Restart':after==='fix'?'Fix it for me':'Your steps'; return true; }
+  return false;
+}
+
+/* ---------- endings ---------- */
+async function resolved(){
+  if (C.fixedBy && !C.watch) card({type:'resolved'});
+  await bot('Did this help?',{q:true});
+  const a = await ask({type:'pills',items:[{t:'It solved my problem'},{t:'It needs improvement'}]}); me(a);
+  if (a.startsWith('It needs')){
+    await bot('Want to raise a request so the team can take a look?');
+    const b = await ask({type:'pills',items:[{t:'Raise support ticket',ticket:true},{t:'No, I\'m done'}]}); me(b);
+    if (b.startsWith('Raise')){ C.reason=''; return confirmTicket(); }
+  }
+  return endPills();
+}
+async function endPills(){
+  const a = await ask({type:'pills',items:[{t:'Need help with something else'},{t:'Done'}]}); me(a);
+  start();
+}
+const teamOf = r => /^Field/.test(r) ? 'field service team' : /^RTT/.test(r) ? 'remote support team' : 'support team';
+async function escalate(){
+  const last = C.done.includes('Device restarted') ? 'restarting' : (C.done.length||C.tried.length) ? 'these fixes' : 'the check';
+  if (C.passedButNot){ C.reason = `The device check passed, but you still see the problem. I'll raise a request so the <b>${teamOf(C.issue.route)}</b> can look at it.`; return confirmTicket(); }
+  C.reason = `Since ${last} didn't fix it, I'll raise a request so the <b>${teamOf(C.issue.route)}</b> can take over. I'll attach the device report, so you won't need to explain again.`;
+  return confirmTicket();
+}
+async function safety(){
+  card({type:'danger',items:C.issue.danger});
+  await bot('This <b>isn\'t safe</b>. I\'ll raise an <b>urgent request</b> so a technician reaches you first.');
+  C.priority=true; C.reason=''; return confirmTicket();
+}
+async function direct(){
+  const it=C.issue;
+  await bot('There\'s nothing I can fix remotely for this one, so I\'ll send it straight to our team.');
+  if (it.policy) card({type:'notice',kind:'info',text:it.policy});
+  if (it.inspect) await bot('The technician will <b>inspect the device</b> on the visit.');
+  C.reason=''; return confirmTicket();
+}
+async function touchTest(attempt){
+  if (attempt===1){
+    await bot('Let\'s test your touch screen. First, <b>remove any screen guard</b> and wipe the screen with a dry cloth. Both can stop touch from registering.');
+    await bot('Then <b>6 green spots</b> will appear one by one. Tap each one within 5 seconds. The test starts by itself, so you don\'t need to tap anything if the screen isn\'t responding.');
+    C.tried.push('Asked to remove screen guard and wipe screen');
+  }
+  let a='Run the test again';
+  if (attempt===1){ const r0=RUN; const P={type:'pills',items:[{t:'Start touch test',go:true}],auto:15};
+    const tick=()=>{ if(PROMPT!==P||r0!==RUN) return; P.auto--; if(P.auto<=0){ PROMPT=null; P.resolve('Start touch test'); } else { render(); setTimeout(tick,1000);} };
+    setTimeout(tick,1000); a = await ask(P); }
+  me(a);
+  const res = await runTouch();
+  card({type:'tmap',res,time:now()});
+  const fail = res.filter(x=>x==='f').length;
+  if (!fail){
+    await bot('All <b>6 spots responded</b>. How is the touch screen now?');
+    const b = await ask({type:'pills',items:[{t:'It\'s working now',go:true},{t:'It\'s slow to respond'},{t:'I have a different issue'},{t:'Raise support ticket',ticket:true}]}); me(b);
+    if (b.startsWith('It\'s working')){ C.fixedBy='Cleaning the screen'; return resolved(); }
+    if (b.startsWith('I have')) return start();
+    C.found=[b.startsWith('It\'s slow')?'Touch works but is slow to respond':'Touch test passed'];
+    C.reason = b.startsWith('It\'s slow') ? 'Slow touch can be hardware or software, so I\'ll ask the <b>field service team</b> to check it.' : '';
+    return confirmTicket();
+  }
+  C.found=[`${fail} of 6 touch spots didn't respond`];
+  if (fail===6){ C.tried.push('Touch test: no spot responded'); return pineOne('touch'); }
+  const lift = res[4]==='f' || res[5]==='f';
+  if (lift) card({type:'notice',kind:'info',text:'Buttons moved up, because the bottom of the screen isn\'t responding.'});
+  if (attempt===1){
+    await bot(`<b>${fail} spot${fail>1?'s':''} didn't respond</b>. Let's run the test once more to be sure.`);
+    const b = await ask({type:'pills',lift,items:[{t:'Run the test again',go:true},{t:'Raise support ticket',ticket:true},{t:'Continue on PineOne'}]});
+    if (b.startsWith('Continue')){ me(b); return pineOne('other'); }
+    if (b.startsWith('Run')){ PROMPT=null; return touchTest(2); }
+    me(b); C.reason=''; return confirmTicket();
+  }
+  C.reason = `The same area${fail>1?'s':''} didn't respond twice, so the screen needs a check. I'll raise a request for the <b>field service team</b>.`;
+  C.lift = lift; return confirmTicket();
+}
+function runTouch(){ const r=RUN; return new Promise(res=>{
+  const L={type:'tt',res:Array(6).fill(null),active:null,retry:false}; LAYER=L; let q=[0,1,2,3,4,5], missed=[], tm;
+  const dead = sim('simTouch') ? [0,1,2,3,4,5] : sim('simFix') ? [3,4] : [];
+  const next=()=>{ clearTimeout(tm); if(r!==RUN) return;
+    if (!q.length){ if(!L.retry && missed.length){ L.retry=true; q=missed; missed=[]; q.forEach(i=>L.res[i]=null); } else { LAYER=null; render(); return res(L.res); } }
+    L.active=q.shift(); render();
+    tm=setTimeout(()=>{ L.res[L.active]='f'; if(!L.retry) missed.push(L.active); next(); }, L.retry?1000:5000); };
+  L.tap=i=>{ if(i!==L.active||dead.includes(i)) return; L.res[i]='p'; next(); };
+  next();
+});}
+
+/* ---------- PineOne handoff: terminal can't be used ---------- */
+async function pineOne(why){
+  const msg = why==='touch' ? 'Your screen <b>isn\'t responding to touch</b>, so let\'s continue on <b>PineOne</b> from your phone. You don\'t need to tap anything here.'
+            : why==='issue' ? 'You can\'t use this terminal for this issue, so raise it from <b>PineOne</b> on your phone.'
+            : 'Continue on <b>PineOne</b> from your phone.';
+  await bot(msg);
+  card({type:'pineone'});
+  if (why==='touch') return; // no further taps possible
+  const a = await ask({type:'pills',items:[{t:'Done'}]}); me(a); start();
+}
+/* ---------- request ---------- */
+const ISSUE_CHIPS = {"Draining fast / low backup": ["Battery lasts less than half a day", "Drops quickly even when not in use", "Drains faster during card payments"], "Not charging / not holding charge": ["Drops to 0% within 2–3 hours of a full charge", "Switches off even when it shows charge left", "Full charge is gone by the next morning"], "Device not charging": ["Charging icon doesn't appear when plugged in", "Shows charging but the percentage doesn't go up", "Charges only when the cable is held at an angle"], "Switches off on battery / sudden shutdown": ["Switches off in the middle of a payment", "Switches off as soon as it's unplugged", "Switches off when the battery is below 30%"], "Swollen / bulging / heating": ["Back cover is bulging or lifting", "Device feels hot even when not in use", "There's a burning smell from the device"], "Charger / adapter not working": ["Charger light doesn't turn on", "Device charges with another charger, not this one", "Charger gets very hot"], "Charger cable damaged": ["Wire is cut or exposed", "Cable sparks or gets hot", "Connector end is broken"], "Cable loose / connection problem": ["Charging stops when the cable moves", "Cable falls out of the port easily", "Charges only at an angle"], "Charging port / pin loose or damaged": ["Port feels loose or wobbly", "Pin inside the port looks bent", "Cable doesn't stay plugged in"], "Charger missing / new charger needed": ["Charger never came with the device", "Charger is lost", "Need a spare charger"], "Touch not working / unresponsive": ["Some parts of the screen don't respond", "Screen responds after a delay", "Screen taps by itself"], "Display not working properly": ["Screen is very dim", "Screen goes dark while in use", "Colours or text look wrong"], "Lines / flicker / dim": ["Lines across the screen", "Screen keeps flickering", "Part of the screen is blank"], "Power button not working": ["Button is stuck and doesn't click", "Button clicks but nothing happens", "Device turns off when the button is touched lightly"], "Screen broken / cracked": ["Screen is cracked but still works", "Screen is cracked and doesn't respond", "Glass is shattered with sharp edges"], "Not printing": ["Nothing comes out after a payment", "Printer makes a noise but no slip comes out", "Prints only sometimes"], "Blank / half / faint print": ["Text is too light to read", "Only half the slip prints", "Slip comes out completely blank"], "Printer error message": ["Shows 'Paper out' with paper loaded", "Shows 'Cover open' with the flap closed", "Error appears after every slip"], "Flap issue / paper roll jam": ["Paper gets stuck inside", "Flap doesn't close properly", "Roller doesn't move the paper"], "Chip card / mag stripe not working": ["Chip cards show 'Card read error'", "Swiped cards are not read", "Works for some cards, fails for others"], "Card not reading (not sure which)": ["No card is being read at all", "Card is read only after many tries", "Tap payments also fail"], "Swipe not working": ["Swipe shows 'Card read error'", "Needs several swipes to read", "Works only when swiped very slowly"], "Card reader error message": ["Error appears on every card payment", "Error appears and the device restarts", "Error appears only for some cards"], "Hanging / freezing / slow": ["Freezes during a payment", "Payment app takes long to open", "Screen stops responding until a restart"], "Auto restart / reboot": ["Restarts in the middle of a payment", "Restarts several times a day", "Restarts when it gets hot"], "App crash": ["App closes during a payment", "App closes as soon as it opens", "App crashes after printing the slip"], "Device broken / cracked": ["Device fell and the body cracked", "Parts inside are exposed", "Device still works but is damaged"], "Base / stand / flap broken": ["Base or stand is broken", "Printer flap is broken", "Device doesn't sit firmly"], "Water / burn damage": ["Liquid spilled on the device", "Device has burn marks", "Device got wet in the rain"], "Internet not connected": ["No internet at all", "Internet drops during payments", "Works on WiFi but not on SIM"]};
+const SUB_CHIPS = {
+  card:["Payment failed but the customer was charged","Card declined for many customers","Payment status didn't update"],
+  upi:["Customer paid but the payment didn't show","QR code doesn't appear","Payment stuck on pending"],
+  emi:["EMI option not showing for the card","Brand offer not applied","EMI payment failed"],
+  fuel:["Pump sales not showing in the app","Tank data not updating","Dispenser shows offline"],
+  dispute:["Customer says they didn't make this payment","Customer raised a chargeback","Got a fraud alert for a payment"],
+  pbl:["Link doesn't open for the customer","Customer paid but it isn't showing","Can't create a payment link"],
+  credit:["Money not received in my bank account","Received less than expected","Settlement is later than usual"],
+  batch:["Batch won't settle","Batch shows full or locked","Need auto-settlement turned on"],
+  report:["Need a settlement report for a date range","Report doesn't match my sales","Can't download the report"],
+  hold:["Money is on hold, need to know why","Account frozen by police or court","Documents submitted, still on hold"],
+  paper:["Need new paper rolls","Ordered rolls not delivered","Want to stop paper roll supply"],
+  charges:["Unexpected amount debited","Need an invoice or statement","Charged more than my plan"],
+  service:["Need to return the machine","Need the machine moved to a new address","Need training on the device"],
+  vas:["Want to stop a service and get a refund","Want to activate a service","Charged for a service I didn't ask for"],
+  details:["Need to change my bank account","Need to update phone or address","KYC status still pending"],
+  login:["Can't log in to PineOne","Forgot my password","Need a new user ID"],
+  query:["Want to know how something works","Following up on an earlier complaint","Want a call from sales"]
+};
+const chipsFor = () => (C.issue && ISSUE_CHIPS[C.issue.n]) || (C.sub && SUB_CHIPS[C.sub]) || [];
+const caseKey = () => [C.cat,C.sub,C.issue?C.issue.n:C.issueName||'other'].join('|');
+async function confirmTicket(auto){
+  const dup = REQS.find(x=>x.key===caseKey());
+  if (dup){
+    await bot('You already have an <b>open request</b> for this issue.');
+    card({type:'ticket',r:dup,existing:true});
+    const a = await ask({type:'pills',items:[{t:'Okay, I\'ll wait'},{t:'Create a new request'}]}); me(a);
+    if (a.startsWith('Okay')) return endPills();
+  }
+  if (C.reason) await bot(C.reason);
+  if (auto) return submitTicket();
+  const ch = chipsFor();
+  const EX = {device:"e.g. The screen shows 'Error 23' when I start a sale", transaction:"e.g. A customer paid ₹1,200 by UPI but it isn't in my sales", settlement:"e.g. Yesterday's settlement amount doesn't match my sales", account:"e.g. I was charged a fee I don't recognise"};
+  await bot(ch.length?'What exactly is happening?':'Tell us what\'s going wrong',{q:true});
+  const d = await ask({type:'desc',chips:ch,val:C.desc||'',ph: ch.length?'Pick the closest match above, or write your own':(EX[C.cat]||EX.device),
+    help: ch.length?'Required. The technician reads this before calling you.':'Required. Say what you see and when it happens, so the team can call you prepared.'}); C.desc=d; me(d);
+  await bot('I\'ll create a support request with these details:');
+  card({type:'summary'});
+  const a = await ask({type:'pills',items:[{t:'Create request',ticket:true},{t:'Cancel',cancel:true}]}); me(a);
+  if (a==='Cancel'){ await bot('Okay, I haven\'t raised anything.'); return endPills(); }
+  await bot('Where should we send updates about this request?');
+  const n = await ask({type:'pills',items:[{t:'+91 98••• ••210',d:'registered'},{t:'Another number'}]}); me(n);
+  if (n==='Another number'){ await bot('Enter the 10-digit mobile number.'); const num = await ask({type:'phone'}); me('+91 '+num); C.phone='+91 '+num; } else C.phone='+91 98••• ••210';
+  await bot(`Enter the 4-digit code we sent to <b>${esc(C.phone)}</b>.`);
+  PROMPT_ERR='';
+  for(;;){ const code = await ask({type:'otp'}); if(code!=='0000') break; PROMPT_ERR='That code doesn\'t match. Check the SMS and try again.'; }
+  PROMPT_ERR=''; me('Code entered');
+  return submitTicket();
+}
+async function submitTicket(){
+  const r0=RUN; const k=card({type:'check',rows:[{l:'Creating your request',st:'run'}],bare:true}); await sleep(1100); guard(r0);
+  T.splice(T.indexOf(k),1); SEEN=Math.min(SEEN,T.length);
+  const r = {id:'SR-'+(2614000+Math.floor(Math.random()*999)), key:caseKey(), name:C.issue?C.issue.n:C.issueName||'Call me back',
+    team: C.issue?teamOf(C.issue.route).replace(/^./,x=>x.toUpperCase()) : C.callback?'Support team':NONDEV[C.cat].n+' team',
+    eta: C.priority?'Within 4 hours':C.callback?'Call within 1–2 hours':'Within 24 hours', priority:C.priority};
+  REQS.unshift(r); card({type:'ticket',r});
+  await bot('Request created. We\'ll send updates to you by SMS.');
+  return endPills();
+}
+
+/* ============================ RENDER ============================ */
+const app = document.getElementById('app');
+function chk(x){ const s = x.st==='wait'?'<span class="dot"></span>':x.st==='run'?'<span class="spin"></span>':x.st==='fail'?ic('close',16,'#B3261E',2.6):x.bad?ic('alert',17,'#B26A00'):ic('check',17,'#1E8E4F',2.6);
+  return `<div class="chk ${x.st==='wait'?'wait':''}"><span class="st">${s}</span><div style="flex:1"><div class="l">${esc(x.l)}</div>${x.st==='done'&&x.r?`<div class="r" style="${x.bad?'color:#8A5A00':''}">${esc(x.r)}</div>`:x.st==='fail'?'<div class="r" style="color:#B3261E">Couldn\'t connect</div>':''}</div></div>`; }
+function caseRows(){
+  const rows=[['Issue',C.issue?C.issue.n:C.issueName||'Not listed (call back)']];
+  if (C.cat) rows.push(['Category',(C.cat==='device'?'Device':NONDEV[C.cat].n)+(C.sub?' › '+(C.cat==='device'?DEVICE[C.sub].n:NONDEV[C.cat].subs[C.sub].n):'')]);
+  if (C.when) rows.push(['When',C.when]);
+  if (C.desc) rows.push(['Description',C.desc]);
+  if (C.cat==='device') rows.push(['Device','POS 4287664 · Sharma Stores']);
+  if (C.found&&C.found.length) rows.push(['Found',C.found.join('; ')]);
+  const did=[...(C.done||[]),...(C.tried||[])]; if (did.length) rows.push(['Tried',did.join('; ')]);
+  if (C.issue&&C.issue.checks) rows.push(['Report','Attached']);
+  return rows;
+}
+function renderCard(m, active){
+  switch(m.type){
+   case 'check': return m.bare ? `<div class="cs" style="display:flex;gap:8px;align-items:center"><span class="spin"></span>${esc(m.rows[0].l)}…</div>` :
+     `<div class="card"><div class="ch">${ic('shield',18,'#1E8E4F')}<div style="flex:1"><div class="ct">${m.rows.length>1?'Device health check':'Device check'}</div><div class="cs">${m.time?'POS 4287664 · '+m.time:'Checking…'}</div></div></div><div>${m.rows.map(chk).join('')}</div></div>`;
+   case 'fix': { const offer=m.state==='offer'&&active; const n=m.items.filter(x=>x.st==='done').length;
+     const title = m.title||(m.state==='done'?'Fixes applied':m.state==='skipped'?'Not applied':m.state==='run'?'Fixing your device…':'I can fix this for you');
+     const sub = m.state==='offer' ? (m.note||'Takes about 30 seconds. Your payments aren\'t affected.') : m.state==='run' ? `${n} of ${m.items.length} done · keep the device on` : m.state==='done' ? `All ${m.items.length} done` : 'You chose not to run these';
+     return `<div class="fixcard ${m.state}"><div class="fh"><span class="fic">${ic(m.state==='done'?'check':'bolt',16,m.state==='done'?'#003323':'#50D387',2.4)}</span><div style="flex:1"><div class="ct">${title}</div><div class="cs">${esc(sub)}</div></div></div>
+     <div class="fl">${m.items.map(x=>`<div class="li ${x.st}">${x.st==='run'?'<span class="spin" style="border-color:#2E5A48;border-top-color:#50D387"></span>':x.st==='done'?ic('check',16,'#50D387',2.8):'<span class="pend"></span>'}<span>${esc(x.t)}</span></div>`).join('')}</div>
+     ${offer?`<div class="btnrow"><button class="btn sec2" data-act="card:no">Not now</button><button class="btn light" style="flex:2" data-act="card:yes">${ic('bolt',16,'#003323',2.4)}Fix it for me</button></div>`:''}</div>`; }
+   case 'tips': return `<div class="card">${m.tips.map(([i,t,d])=>`<div style="display:flex;gap:10px"><span style="width:32px;height:32px;border-radius:9px;background:var(--amber50);display:flex;align-items:center;justify-content:center;flex-shrink:0">${ic(i,16,'#8A5A00')}</span><div><div style="font-size:14px;font-weight:600">${esc(t)}</div><div class="cs">${esc(d)}</div></div></div>`).join('')}<div class="cs" style="border-top:1px solid var(--line2);padding-top:8px">Suggestions only. Nothing is changed on your device.</div></div>`;
+   case 'ledger': { const n=m.steps.filter(s=>s.st==='ok'||s.st==='no').length;
+     return `<div class="card"><div class="ch"><div class="ct" style="flex:1">Steps to try</div><div class="cs">${n} of ${m.steps.length} done</div></div><div class="ledger">${m.steps.map((s,i)=>{
+       const cls = s.st==='checking'?'cur':s.st; const num = s.st==='ok'?ic('check',14,'#fff',3):s.st==='no'?ic('close',13,'#5A6580',3):s.st==='lock'?ic('lock',12,'#8A93A8',2.4):i+1;
+       const act = s.st==='cur'&&active ? `<div class="lact"><button class="sbtn p" data-act="led:done">Done</button><button class="sbtn q" data-act="led:cant">I can't do this</button></div>` : '';
+       const res = s.st==='checking' ? `<div class="lres" style="display:flex;gap:6px;align-items:center;color:var(--ink3)"><span class="spin" style="width:12px;height:12px;border-width:2px"></span>${m.watch==='charge'?'Checking if it\'s charging…':'Checking the connection…'}</div>` : s.res?`<div class="lres" style="color:${/still|Couldn/.test(s.res)?'#8A5A00':'#1E7A45'}">${esc(s.res)}</div>`:'';
+       return `<div class="lrow ${cls}"><span class="lnum">${num}</span><div style="flex:1"><div class="lt">${esc(s.t)}</div>${s.st!=='lock'?`<div class="ld">${esc(s.d)}</div>`:''}${res}${act}</div></div>`;}).join('')}</div></div>`; }
+   case 'danger': return `<div class="danger"><div class="ct">${ic('alert',20,'#B3261E',2.4)}Stop using it now</div>${m.items.map(x=>`<div class="x">${ic('close',14,'#B3261E',2.6)}${esc(x)}</div>`).join('')}</div>`;
+   case 'notice': return `<div class="notice ${m.kind}">${ic(m.kind==='warn'?'alert':'info',18)}<span>${esc(m.text)}</span></div>`;
+   case 'tmap': { const f=m.res.filter(x=>x==='f').length; return `<div class="card" style="flex-direction:row;align-items:center;gap:14px"><div class="tmap">${m.res.map(r=>`<i class="${r==='p'?'p':'f'}">${ic(r==='p'?'check':'close',14,r==='p'?'#1E8E4F':'#B3261E',2.8)}</i>`).join('')}</div><div><div class="ct">Touch test</div><div class="cs">${6-f} of 6 spots responded<br>${m.time}</div></div></div>`; }
+   case 'summary': return `<div class="card">${caseRows().map(([k,v])=>`<div class="kv"><span class="k">${k}</span><span class="v">${esc(v)}</span></div>`).join('')}${C.priority?`<div class="notice warn" style="padding:8px 10px">${ic('alert',16)}<span>Marked urgent</span></div>`:''}</div>`;
+   case 'ticket': { const r=m.r; return `<div class="card"><div class="okhead">${m.existing?`<span class="okic" style="background:var(--blue50)">${ic('ticket',18,'#1F4FB8')}</span>`:`<span class="okic">${ic('check',20,'#1E8E4F',2.8)}</span>`}<div style="flex:1"><div class="ct">${esc(r.name)}</div><div class="cs">${esc(r.id)} · <span style="color:${m.existing?'#1F4FB8':'#1E7A45'};font-weight:600">Open</span>${r.priority?' · Urgent':''}</div></div></div>
+       <div class="kv"><span class="k">Sent to</span><span class="v">${esc(r.team)}</span></div><div class="kv"><span class="k">Expected update</span><span class="v">${esc(r.eta)}</span></div></div>`; }
+   case 'resolved': return `<div class="card" style="background:var(--g50);border-color:var(--g100)"><div class="okhead"><span class="okic">${ic('check',20,'#1E8E4F',2.8)}</span><div><div class="ct">Issue fixed</div><div class="cs">Fixed by: ${esc(C.fixedBy)}</div></div></div></div>`;
+   case 'pineone': return P1CARD();
+   case 'openreq': return `<div class="notice info">${ic('ticket',18)}<span>You have <b>${REQS.length} open request${REQS.length>1?'s':''}</b>. Latest: ${esc(REQS[0].id)} · ${esc(REQS[0].name)}</span></div>`;
+  }
+  return '';
+}
+function renderPrompt(p){
+  if (!p) return '';
+  if (p.type==='list') return `<div class="olist m">${p.items.map((x,i)=>`<button class="orow ${x.muted?'muted':''}" data-act="pick:${i}">${p.plain||!x.ic?'':`<span class="oi">${ic(x.ic,17,x.muted?'#5A6580':'#1E8E4F')}</span>`}<div style="flex:1"><div class="ot" style="${x.more?'color:var(--g600);font-weight:600':''}">${esc(x.t)}</div>${x.d?`<div class="od">${esc(x.d)}</div>`:''}</div>${ic('right',16,'#8A93A8')}</button>`).join('')}</div>`;
+  if (p.type==='pills') return `<div class="pills m">${p.items.map((x,i)=>{ x=typeof x==='string'?{t:x}:x; return `<button class="pill ${x.go?'go':''} ${x.ticket?'ticket':''} ${x.cancel?'cancel':''}" data-act="pill:${i}">${x.ticket?ic('ticket',15):''}${esc(x.t)}${p.auto&&i===0?` <span style="opacity:.7;font-weight:400">· starts in ${p.auto}s</span>`:''}${x.d?`<span style="font-weight:400;opacity:.65">· ${x.d}</span>`:''}</button>`;}).join('')}</div>`;
+  if (p.type==='checklist') return `<div class="card m"><div class="cl">${p.items.map((t,i)=>`<button class="clrow ${p.sel.includes(i)?'on':''}" data-act="cl:${i}" role="checkbox" aria-checked="${p.sel.includes(i)}"><span class="cbox">${p.sel.includes(i)?ic('check',13,'#fff',3):''}</span>${esc(t)}</button>`).join('')}</div>
+     <div class="btnrow"><button class="btn sec" data-act="cl:none">None of these</button><button class="btn primary" data-act="cl:ok" ${p.sel.length?'':'disabled'}>Confirm</button></div></div>`;
+  if (p.type==='desc') return `<div class="card m">${p.chips.length?'<div class="cs">Pick the closest match, or write your own.</div>':''}<div class="pills">${p.chips.map((t,i)=>`<button class="pill ${p.val.includes(t)?'chipon':''}" aria-pressed="${p.val.includes(t)}" data-act="chip:${i}" style="min-height:34px;font-size:13px;text-align:left;padding:6px 12px">${esc(t)}</button>`).join('')}</div>
+     <textarea id="desc" class="inp" rows="3" style="height:auto;padding:10px 12px;font-size:14px;letter-spacing:0;resize:none" placeholder="${esc(p.ph)}" aria-describedby="dh">${esc(p.val)}</textarea>
+     <div class="cs" id="dh">${esc(p.help)}</div>
+     <button class="btn primary" data-act="desc" ${p.val.trim().length>=10?'':'disabled'}>Continue</button></div>`;
+  if (p.type==='phone') return `<div class="card m"><input class="inp" id="ph" inputmode="numeric" maxlength="10" placeholder="10-digit mobile number" autocomplete="off"><button class="btn primary" data-act="phone">Send code</button></div>`;
+  if (p.type==='otp') return `<div class="card m"><div class="otp ${PROMPT_ERR?'bad':''}">${[0,1,2,3].map(i=>`<input inputmode="numeric" maxlength="1" data-otp="${i}" aria-label="Digit ${i+1}">`).join('')}</div>${PROMPT_ERR?`<div class="cs" style="color:var(--red)" role="alert">${PROMPT_ERR}</div>`:''}<div class="cs" id="rs"></div><button class="btn primary" data-act="otp">Verify</button></div>`;
+  return '';
+}
+function renderPicker(){
+  const subs = TAB==='device' ? Object.entries(DEVICE).map(([k,v])=>({k,n:v.n,ic:v.ic,d:v.issues.slice(0,3).map(x=>x.n.split(' / ')[0]).join(', ')})) :
+    Object.entries(NONDEV[TAB].subs).map(([k,v])=>({k,n:v.n,ic:v.ic,d:v.issues.slice(0,3).join(', ')}));
+  const short={device:'Device',transaction:'Payments',settlement:'Settlement',account:'Account'};
+  const open = REQS.length ? `<div style="padding:12px 16px 0"><div class="notice info">${ic('ticket',18)}<span>You have <b>${REQS.length} open request${REQS.length>1?'s':''}</b>. Latest: ${esc(REQS[0].id)} · ${esc(REQS[0].name)}</span></div></div>` : '';
+  return `<div class="appbar"><button class="iconbtn" aria-label="Back">${ic('back',22)}</button><div class="ab-t">Log a complaint</div></div>
+   <div class="tabs" role="tablist">${[...CATS.filter(c=>c.id===TAB),...CATS.filter(c=>c.id!==TAB)].map(c=>`<button class="tab ${TAB===c.id?'on':''}" role="tab" aria-selected="${TAB===c.id}" data-act="tab:${c.id}">${ic(c.ic,16)}${short[c.id]}</button>`).join('')}</div>
+   <div class="picklist">${open}<div class="ph">What's the issue about?</div>
+   <div style="padding:0 16px 16px"><div class="olist">${subs.map(x=>`<button class="orow" data-act="sub:${x.k}"><span class="oi">${ic(x.ic,17,'#1E8E4F')}</span><div style="flex:1;min-width:0"><div class="ot">${esc(x.n)}</div><div class="od" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(x.d)}</div></div>${ic('right',16,'#8A93A8')}</button>`).join('')}
+   <button class="orow muted" data-act="sub:other"><span class="oi" style="background:var(--line2)">${ic('more',17,'#5A6580')}</span><div class="ot">Something else</div>${ic('right',16,'#8A93A8')}</button></div></div></div>`;
+}
+const P1CARD = () => `<div class="card"><div class="ch">${ic('phone',18,'#1E8E4F')}<div class="ct">Continue on PineOne</div></div>
+  <div style="display:flex;gap:14px;align-items:center"><div class="qr" aria-label="QR code to open PineOne">${Array.from({length:49},(_,i)=>`<i style="background:${[0,1,2,7,9,14,15,16,4,5,6,11,13,18,19,20,28,29,30,35,37,42,43,44,24,17,31,39,46,22,26,33].includes(i)?'#2C3448':'transparent'}"></i>`).join('')}</div>
+  <div class="cs" style="flex:1">Scan with your phone camera to open PineOne.</div></div>
+  <ol class="p1steps"><li>Open the <b>PineOne</b> app on your phone</li><li>Go to <b>Help &amp; Support</b></li><li>Tap <b>Log a complaint</b> and choose this issue</li></ol>
+  <div class="cs" style="border-top:1px solid var(--line2);padding-top:8px">No smartphone? Call support on the number printed on your device sticker.</div></div>`;
+function renderLayer(){
+  const L=LAYER; if(!L) return '';
+  if (L.type==='tt'){ const done=L.res.filter(Boolean).length;
+    return `<div class="layer tt" style="inset:0"><div style="padding:14px 16px 10px;text-align:center"><div style="font-size:16px;font-weight:600">${L.retry?'One more try':'Tap the green spot'}</div><div style="font-size:13px;color:#B7BCC8;margin-top:2px">${done} of 6 checked</div></div>
+     <div class="tt-grid">${L.res.map((r,i)=>`<button class="tt-cell" data-act="tt:${i}" aria-label="Spot ${i+1}">${i===L.active?`<span class="tt-spot">Tap</span><span class="tt-bar"><div style="animation:drain ${L.retry?1:5}s linear forwards"></div></span>`:r==='p'?ic('check',32,'#50D387',3):r==='f'?ic('close',32,'#F28B82',3):''}</button>`).join('')}</div>
+     <div style="padding:10px;text-align:center;font-size:12px;color:#B7BCC8">The test ends by itself.</div></div>`; }
+  if (L.type==='boot') return `<div class="layer boot" style="inset:0"><div class="logo">pine labs</div><span class="spin" style="width:28px;height:28px;border-width:3px;border-color:#333;border-top-color:#50D387"></span><div style="font-size:12px;color:#8A93A8">Restarting…</div></div>`;
+  if (L.type==='poshome') return `<div class="layer poshome" style="inset:0"><div style="padding:16px;font-size:17px;font-weight:600;background:#fff;border-bottom:1px solid var(--line)">Home</div>
+     <div class="notif"><div style="display:flex;gap:10px;align-items:center"><span class="okic" style="width:32px;height:32px">${ic('chat',16,'#1E8E4F')}</span><div style="flex:1"><div class="ct">Help & Support</div><div class="cs">Your device restarted. Let's check if it helped.</div></div></div><button class="btn primary" data-act="resume">Continue</button></div>
+     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:4px 12px;opacity:.6"><div class="tile">Sale</div><div class="tile">UPI / QR</div><div class="tile">Settlement</div><div class="tile">Reports</div></div></div>`;
+  return '';
+}
+function render(){
+  const msgs = T.map((m,idx)=>{
+    const A = idx>=SEEN?'m':'';
+    if (m.k==='typing') return `<div class="${A}"><div class="typing"><i></i><i></i><i></i></div></div>`;
+    if (m.k==='bot') return `<div class="${A} bot ${m.err?'err':''} ${m.q?'q':''}">${m.html}</div>`;
+    if (m.k==='me') return `<div class="${A} me">${m.edit?`<button data-act="edit:${idx}" aria-label="Change answer: ${esc(m.text)}">${esc(m.text)}${ic('edit',13,'#8A93A8')}</button>`:`<div>${esc(m.text)}</div>`}</div>`;
+    if (m.k==='divider') return `<div class="${A} divider">${esc(m.text)}</div>`;
+    if (m.k==='card') return `<div class="${A}">${renderCard(m, PROMPT && PROMPT.card===m)}</div>`;
+  }).join('');
+  if (VIEW==='p1'){ app.innerHTML = `<div class="appbar"><button class="iconbtn" data-act="to-pick" aria-label="Back">${ic('back',22)}</button><div class="ab-t">Get help on PineOne</div></div><div class="thread"><div class="bot">Use PineOne on your phone when this terminal's screen isn't responding or it won't turn on.</div>${P1CARD()}</div>`; return; }
+  if (VIEW==='pick'){
+    const before={}; app.querySelectorAll('.tab').forEach(t=>before[t.dataset.act]=t.getBoundingClientRect().left);
+    app.innerHTML = renderPicker();
+    const tabs=app.querySelector('.tabs'); tabs.scrollLeft=0;
+    tabs.querySelectorAll('.tab').forEach(t=>{ const b=before[t.dataset.act]; if(b==null) return; const d=b-t.getBoundingClientRect().left; if(!d) return;
+      t.style.transition='none'; t.style.transform=`translateX(${d}px)`; requestAnimationFrame(()=>requestAnimationFrame(()=>{ t.style.transition='transform .35s cubic-bezier(.2,.8,.2,1), background .25s, color .25s, border-color .25s'; t.style.transform=''; })); });
+    if (SWAP){ app.querySelector('.picklist').classList.add('swap'); SWAP=false; }
+    return; }
+  let inline = PROMPT && !PROMPT.card ? renderPrompt(PROMPT) : '';
+  if (PROMPT===LASTP) inline = inline.replace(/ m"/,'"');
+  const oldTh = app.querySelector('.thread'); const oldTop = oldTh ? oldTh.scrollTop : 0;
+  const cat = CATS.find(c=>c.id===C.cat), subN = C.sub ? (C.cat==='device'?DEVICE[C.sub].n:NONDEV[C.cat].subs[C.sub].n) : 'Something else';
+  app.innerHTML = `<div class="appbar"><button class="iconbtn" data-act="to-pick" aria-label="Back">${ic('back',22)}</button><div class="ab-t">Log a complaint</div></div>
+   <div class="thread ${(PROMPT&&PROMPT.lift)||C.lift?'lift':''}" role="log" aria-live="polite"><div class="pinned"><span style="width:28px;height:28px;border-radius:8px;background:var(--g100);display:flex;align-items:center;justify-content:center;flex-shrink:0">${ic(cat.ic,15,'#1E8E4F')}</span><div class="pt">${esc(cat.n)} › <b>${esc(subN)}</b></div><button class="linkbtn" data-act="to-pick">Change</button></div>${msgs}${inline}</div>${renderLayer()}`;
+  SEEN=T.length; LASTP=PROMPT;
+  const th=app.querySelector('.thread'); th.scrollTop=oldTop;
+  if (th.scrollHeight-th.clientHeight-oldTop>4) requestAnimationFrame(()=>th.scrollTo({top:th.scrollHeight,behavior:'smooth'}));
+  if (PROMPT&&PROMPT.type==='otp'){ const f=app.querySelector('[data-otp="0"]'); f&&f.focus(); PROMPT.sent=PROMPT.sent||Date.now(); otpTimer(); }
+  if (PROMPT&&PROMPT.type==='desc'){ const f=document.getElementById('desc'); if(f){ f.focus(); f.setSelectionRange(f.value.length,f.value.length);} }
+  if (PROMPT&&PROMPT.type==='phone'){ const f=document.getElementById('ph'); f&&f.focus(); }
+}
+let otpT; function otpTimer(){ clearTimeout(otpT); const el=document.getElementById('rs'); if(!el||!PROMPT) return; const left=30-Math.floor((Date.now()-PROMPT.sent)/1000);
+  el.innerHTML = left>0?`Resend code in 0:${String(left).padStart(2,'0')}`:`Didn't get it? <button data-act="resend" style="border:none;background:none;color:var(--g600);font-weight:600;padding:0">Resend code</button>`; if(left>0) otpT=setTimeout(otpTimer,1000); }
+
+app.addEventListener('click', e=>{
+  const b=e.target.closest('[data-act]'); if(!b||b.disabled) return;
+  const [a,v]=b.dataset.act.split(':'); const p=PROMPT;
+  if (a==='restart-chat'||a==='to-pick') return start();
+  if (a==='p1'){ VIEW='p1'; return render(); }
+  if (a==='tab'){ if(TAB===v) return; TAB=v; SWAP=true; return render(); }
+  if (a==='sub') return openSub(TAB, v);
+  if (a==='resume' && LAYER && LAYER.resume) return LAYER.resume();
+  if (a==='tt' && LAYER && LAYER.tap) return LAYER.tap(+v);
+  if (a==='edit'){ const m=T[+v]; if(!m||!m.edit) return; RUN++; LAYER=null; const s=m.edit; T=T.slice(0,s.len); SEEN=T.length; LASTP=null; C=Object.assign({},s.C); PROMPT=s.prompt; render(); return; }
+  if (!p) return;
+  if (a==='pick'){ return p.onPick(p.items[+v]); }
+  if (a==='pill'){ const x=p.items[+v]; PROMPT=null; return p.resolve(typeof x==='string'?x:x.t); }
+  if (a==='card'||a==='led'){ PROMPT=null; return p.resolve(v); }
+  if (a==='cl'){ if(v==='ok'){ PROMPT=null; return p.resolve([...p.sel].sort()); } if(v==='none'){ PROMPT=null; return p.resolve([]); } const i=+v; p.sel=p.sel.includes(i)?p.sel.filter(x=>x!==i):[...p.sel,i]; return render(); }
+  if (a==='chip'){ const ta=document.getElementById('desc'); const t=p.chips[+v]; const parts=ta.value.split(/\.\s*/).map(x=>x.trim()).filter(Boolean); const i=parts.indexOf(t); if(i>=0) parts.splice(i,1); else parts.push(t); ta.value = parts.join('. '); p.val=ta.value; syncDesc(); ta.focus(); return; }
+  if (a==='desc'){ const t=document.getElementById('desc').value.trim(); if(t.length<10) return; PROMPT=null; return p.resolve(t); }
+  if (a==='phone'){ const n=(document.getElementById('ph').value||'').replace(/\D/g,''); if(n.length!==10){ document.getElementById('ph').style.borderColor='#B3261E'; return; } PROMPT=null; return p.resolve(n); }
+  if (a==='resend'){ p.sent=Date.now(); return otpTimer(); }
+  if (a==='otp'){ const c=[...app.querySelectorAll('[data-otp]')].map(i=>i.value).join(''); if(c.length<4){ PROMPT_ERR='Enter all 4 digits'; return render(); } PROMPT=null; return p.resolve(c); }
+});
+function syncDesc(){ const ta=document.getElementById('desc'), b=app.querySelector('[data-act="desc"]'), h=document.getElementById('dh'); if(!ta||!b) return; const n=ta.value.trim().length; b.disabled=n<10; h.textContent = n<10 ? PROMPT.help : (PROMPT.chips.length?'Thanks, that helps the technician come prepared.':'Thanks, that helps the team come prepared.'); app.querySelectorAll('[data-act^="chip:"]').forEach(b2=>{ const on=ta.value.includes(PROMPT.chips[+b2.dataset.act.split(':')[1]]); b2.classList.toggle('chipon',on); b2.setAttribute('aria-pressed',on); }); h.style.color = n<10 ? '' : 'var(--g700)'; if(PROMPT) PROMPT.val=ta.value; }
+app.addEventListener('input', e=>{ if(e.target.id==='desc') return syncDesc(); const d=e.target.dataset.otp; if(d==null) return; e.target.value=e.target.value.replace(/\D/g,''); if(e.target.value&&+d<3) app.querySelector(`[data-otp="${+d+1}"]`).focus(); });
+app.addEventListener('keydown', e=>{ const d=e.target.dataset.otp; if(d!=null&&e.key==='Backspace'&&!e.target.value&&+d>0) app.querySelector(`[data-otp="${+d-1}"]`).focus(); });
+start();
 </script>
 </body>
 </html>
