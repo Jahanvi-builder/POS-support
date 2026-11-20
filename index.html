@@ -412,7 +412,7 @@ async function nonDevice(){
   }
   C.reason=''; await confirmTicket();
 }
-async function somethingElse(){ await bot('Tell us what\'s wrong and our support team will look into it.'); C.callback=true; C.reason=''; await confirmTicket(); }
+async function somethingElse(){ await bot('Since this isn\'t in our list, our support team will look into it personally.'); C.callback=true; C.reason=''; await confirmTicket(); }
 
 /* ---------- device issue ---------- */
 async function runIssue(){
@@ -708,8 +708,11 @@ async function confirmTicket(auto){
   }
   if (C.reason) await bot(C.reason);
   if (auto) return submitTicket();
-  await bot('What exactly is happening?',{q:true});
-  const d = await ask({type:'desc',chips:chipsFor(),val:C.desc||''}); C.desc=d; me(d);
+  const ch = chipsFor();
+  const EX = {device:"e.g. The screen shows 'Error 23' when I start a sale", transaction:"e.g. A customer paid ₹1,200 by UPI but it isn't in my sales", settlement:"e.g. Yesterday's settlement amount doesn't match my sales", account:"e.g. I was charged a fee I don't recognise"};
+  await bot(ch.length?'What exactly is happening?':'Tell us what\'s going wrong',{q:true});
+  const d = await ask({type:'desc',chips:ch,val:C.desc||'',ph: ch.length?'Pick the closest match above, or write your own':(EX[C.cat]||EX.device),
+    help: ch.length?'Required. The technician reads this before calling you.':'Required. Say what you see and when it happens, so the team can call you prepared.'}); C.desc=d; me(d);
   await bot('I\'ll create a support request with these details:');
   card({type:'summary'});
   const a = await ask({type:'pills',items:[{t:'Create request',ticket:true},{t:'Cancel',cancel:true}]}); me(a);
@@ -785,8 +788,8 @@ function renderPrompt(p){
   if (p.type==='checklist') return `<div class="card m"><div class="cl">${p.items.map((t,i)=>`<button class="clrow ${p.sel.includes(i)?'on':''}" data-act="cl:${i}" role="checkbox" aria-checked="${p.sel.includes(i)}"><span class="cbox">${p.sel.includes(i)?ic('check',13,'#fff',3):''}</span>${esc(t)}</button>`).join('')}</div>
      <div class="btnrow"><button class="btn sec" data-act="cl:none">None of these</button><button class="btn primary" data-act="cl:ok" ${p.sel.length?'':'disabled'}>Confirm</button></div></div>`;
   if (p.type==='desc') return `<div class="card m">${p.chips.length?'<div class="cs">Pick the closest match, or write your own.</div>':''}<div class="pills">${p.chips.map((t,i)=>`<button class="pill ${p.val.includes(t)?'chipon':''}" aria-pressed="${p.val.includes(t)}" data-act="chip:${i}" style="min-height:34px;font-size:13px;text-align:left;padding:6px 12px">${esc(t)}</button>`).join('')}</div>
-     <textarea id="desc" class="inp" rows="3" style="height:auto;padding:10px 12px;font-size:14px;letter-spacing:0;resize:none" placeholder="Pick the closest match above, or write your own" aria-describedby="dh">${esc(p.val)}</textarea>
-     <div class="cs" id="dh">Required. The technician reads this before calling you.</div>
+     <textarea id="desc" class="inp" rows="3" style="height:auto;padding:10px 12px;font-size:14px;letter-spacing:0;resize:none" placeholder="${esc(p.ph)}" aria-describedby="dh">${esc(p.val)}</textarea>
+     <div class="cs" id="dh">${esc(p.help)}</div>
      <button class="btn primary" data-act="desc" ${p.val.trim().length>=10?'':'disabled'}>Continue</button></div>`;
   if (p.type==='phone') return `<div class="card m"><input class="inp" id="ph" inputmode="numeric" maxlength="10" placeholder="10-digit mobile number" autocomplete="off"><button class="btn primary" data-act="phone">Send code</button></div>`;
   if (p.type==='otp') return `<div class="card m"><div class="otp ${PROMPT_ERR?'bad':''}">${[0,1,2,3].map(i=>`<input inputmode="numeric" maxlength="1" data-otp="${i}" aria-label="Digit ${i+1}">`).join('')}</div>${PROMPT_ERR?`<div class="cs" style="color:var(--red)" role="alert">${PROMPT_ERR}</div>`:''}<div class="cs" id="rs"></div><button class="btn primary" data-act="otp">Verify</button></div>`;
@@ -875,7 +878,7 @@ app.addEventListener('click', e=>{
   if (a==='resend'){ p.sent=Date.now(); return otpTimer(); }
   if (a==='otp'){ const c=[...app.querySelectorAll('[data-otp]')].map(i=>i.value).join(''); if(c.length<4){ PROMPT_ERR='Enter all 4 digits'; return render(); } PROMPT=null; return p.resolve(c); }
 });
-function syncDesc(){ const ta=document.getElementById('desc'), b=app.querySelector('[data-act="desc"]'), h=document.getElementById('dh'); if(!ta||!b) return; const n=ta.value.trim().length; b.disabled=n<10; h.textContent = n<10 ? 'Required. The technician reads this before calling you.' : 'Thanks, that helps the technician come prepared.'; app.querySelectorAll('[data-act^="chip:"]').forEach(b2=>{ const on=ta.value.includes(PROMPT.chips[+b2.dataset.act.split(':')[1]]); b2.classList.toggle('chipon',on); b2.setAttribute('aria-pressed',on); }); h.style.color = n<10 ? '' : 'var(--g700)'; if(PROMPT) PROMPT.val=ta.value; }
+function syncDesc(){ const ta=document.getElementById('desc'), b=app.querySelector('[data-act="desc"]'), h=document.getElementById('dh'); if(!ta||!b) return; const n=ta.value.trim().length; b.disabled=n<10; h.textContent = n<10 ? PROMPT.help : (PROMPT.chips.length?'Thanks, that helps the technician come prepared.':'Thanks, that helps the team come prepared.'); app.querySelectorAll('[data-act^="chip:"]').forEach(b2=>{ const on=ta.value.includes(PROMPT.chips[+b2.dataset.act.split(':')[1]]); b2.classList.toggle('chipon',on); b2.setAttribute('aria-pressed',on); }); h.style.color = n<10 ? '' : 'var(--g700)'; if(PROMPT) PROMPT.val=ta.value; }
 app.addEventListener('input', e=>{ if(e.target.id==='desc') return syncDesc(); const d=e.target.dataset.otp; if(d==null) return; e.target.value=e.target.value.replace(/\D/g,''); if(e.target.value&&+d<3) app.querySelector(`[data-otp="${+d+1}"]`).focus(); });
 app.addEventListener('keydown', e=>{ const d=e.target.dataset.otp; if(d!=null&&e.key==='Backspace'&&!e.target.value&&+d>0) app.querySelector(`[data-otp="${+d-1}"]`).focus(); });
 start();
