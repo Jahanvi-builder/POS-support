@@ -199,6 +199,7 @@ input,textarea{font-family:inherit;color:inherit}
       <label><input type="checkbox" id="simOff"> Device can't be reached</label>
       <label><input type="checkbox" id="simFix"> Fixes don't solve it</label>
       <label><input type="checkbox" id="simTouch"> Touch screen fully dead</label>
+      <label><input type="checkbox" id="simFw"> Card reader firmware is up to date</label>
     </div>
     <p style="font-size:12px;color:var(--ink3)">OTP: any 4 digits · 0000 shows the wrong-code state.</p>
   </aside>
@@ -430,7 +431,8 @@ async function runIssue(){
 async function afterDiagnosis(){
   const it=C.issue;
   if (it.fixes){ const r=await deviceFix(); if(r) return resolved(); if(C.forceTicket) return escalate(); }
-  if (it.update){ const r=await firmware(); if(r) return resolved(); if(C.forceTicket) return escalate(); }
+  if (it.update && C.fwOk){ await bot('No update is needed. Let\'s check the card reader with a <b>₹1 test transaction</b>.'); const r=await verify('test'); if(r) return resolved(); }
+  else if (it.update){ const r=await firmware(); if(r) return resolved(); if(C.forceTicket) return escalate(); }
   if (it.restart){ const r=await restart(); if(r) return resolved(); if(C.forceTicket) return escalate(); }
   if (it.steps){ const r=await merchantSteps(); if(r) return resolved(); }
   return escalate();
@@ -438,7 +440,8 @@ async function afterDiagnosis(){
 async function diagnose(){
   const it=C.issue, r=RUN;
   await bot('Checking your device. <b>Keep this screen open</b> until it finishes.');
-  const rows = it.checks.map(s=>{const [l,v]=s.split('|'); return {l, r:v.replace(/^!/,''), bad:v[0]==='!', st:'wait'};});
+  C.fwOk = !!(it.update && sim('simFw'));
+  const rows = it.checks.map(s=>{const [l,v]=s.split('|'); if(C.fwOk && l==='Firmware') return {l, r:'Up to date (stable)', bad:false, st:'wait'}; return {l, r:v.replace(/^!/,''), bad:v[0]==='!', st:'wait'};});
   const k = card({type:'check',rows});
   for (let i=0;i<rows.length;i++){
     rows[i].st='run'; render(); await sleep(850); guard(r);
@@ -446,7 +449,7 @@ async function diagnose(){
     rows[i].st='done'; render();
   }
   k.time=now(); render();
-  await bot(it.finding);
+  await bot(C.fwOk ? (it.n==='Card reader error message' ? 'The reader shows <b>error CR-12</b>. Its firmware is <b>up to date</b>.' : 'Your card reader is connected and its firmware is <b>up to date</b>.') : it.finding);
   C.found = rows.filter(x=>x.bad).map(x=>x.l+': '+x.r);
   return true;
 }
@@ -552,7 +555,7 @@ async function verify(after){
     await bot('Insert, swipe or tap any card on the device now.',{fast:true});
     const k=card({type:'check',rows:[{l:'Waiting for card',st:'run'}]}); await sleep(2000); guard(r);
     const ok=!sim('simFix'); k.rows[0]={l:'₹1 test transaction',r:ok?'Approved · refunded automatically':'Card not read',bad:!ok,st:'done'}; k.time=now(); render();
-    if (ok){ C.fixedBy=C.done.includes('Firmware updated')?'Firmware update':'Fix it for me'; await bot('The test transaction <b>went through</b>. The ₹1 is refunded automatically.'); return gone(); }
+    if (ok){ C.fixedBy=C.done.includes('Firmware updated')?'Firmware update':after==='steps'?'Your steps':after==='test'?'Card reader is working again':'Fix it for me'; await bot('The test transaction <b>went through</b>. The ₹1 is refunded automatically.'); return gone(); }
     await bot('The card reader <b>still couldn\'t read the card</b>.'); return false;
   }
   if (v==='later'){
@@ -595,6 +598,7 @@ async function endPills(){
 const teamOf = r => /^Field/.test(r) ? 'field service team' : /^RTT/.test(r) ? 'remote support team' : 'support team';
 async function escalate(){
   const last = C.done.includes('Device restarted') ? 'restarting' : C.done.length ? 'these fixes' : C.tried.length ? 'these steps' : 'the check';
+  if (C.fwOk && !C.passedButNot){ C.reason = `Since the firmware is up to date and cards still aren't being read, the card reader needs a hardware check. I'll raise a request so the <b>${teamOf(C.issue.route)}</b> can take over.`; return confirmTicket(); }
   if (C.forceTicket){ C.reason = `Okay, I'll raise a request now so the <b>${teamOf(C.issue.route)}</b> can take over.`; return confirmTicket(); }
   if (C.skippedFix && !C.done.length && !C.tried.length){ C.reason = `Since the fix wasn't run, I'll raise a request so the <b>${teamOf(C.issue.route)}</b> can take over.${C.issue.checks?' I\'ll attach the device report, so you won\'t need to explain again.':''}`; return confirmTicket(); }
   if (C.couldnt && !C.done.length){ C.reason = `Since the steps couldn't be done on your side, I'll raise a request so the <b>${teamOf(C.issue.route)}</b> can take over.`; return confirmTicket(); }
