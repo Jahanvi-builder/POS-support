@@ -292,7 +292,7 @@ const DEVICE = {
   {n:'Card not reading (not sure which)',t:'A',route:'RTT first, then Field',verify:'txn',update:true,checks:['Card reader|Connected','Firmware|!Unstable version'],finding:'Your card reader is on an <b>unstable firmware version</b>.'},
   {n:'Swipe not working',t:'A',route:'Field – EDC replacement',verify:'txn',update:true,checks:['Magstripe reader|Connected','Firmware|!Unstable version'],finding:'Your card reader is on an <b>unstable firmware version</b>.'},
   {n:'Not able to insert card in slot',t:'B',route:'Field – card reader (to confirm)',verify:'ask',steps:[ST('Clean the chip slot','Wipe the slot gently with a dry, clean card.')]},
-  {n:'Card reader error message',t:'A',route:'RTT if config; Field if hardware',verify:'txn',checks:['Reader error|!CR-12 · configuration','Firmware|Stable'],finding:'The reader shows <b>error CR-12</b>, a configuration problem.',fixes:['Reload the card reader configuration']}
+  {n:'Card reader error message',t:'A',route:'RTT if config; Field if hardware',verify:'txn',update:true,checks:['Reader error|!CR-12','Firmware|!Unstable version'],finding:'The reader shows <b>error CR-12</b> and is on an <b>unstable firmware version</b>.'}
  ]},
  hang:{n:'Device hanging / restarting',ic:'hang',issues:[
   {n:'Hanging / freezing / slow',t:'A',route:'RTT',verify:'ask',restart:'remote',checks:['Memory|!92% full','Background apps|!6 running','App & firmware|Up to date'],
@@ -429,9 +429,9 @@ async function runIssue(){
 }
 async function afterDiagnosis(){
   const it=C.issue;
-  if (it.fixes){ const r=await deviceFix(); if(r) return resolved(); }
-  if (it.update){ const r=await firmware(); if(r) return resolved(); }
-  if (it.restart){ const r=await restart(); if(r) return resolved(); }
+  if (it.fixes){ const r=await deviceFix(); if(r) return resolved(); if(C.forceTicket) return escalate(); }
+  if (it.update){ const r=await firmware(); if(r) return resolved(); if(C.forceTicket) return escalate(); }
+  if (it.restart){ const r=await restart(); if(r) return resolved(); if(C.forceTicket) return escalate(); }
   if (it.steps){ const r=await merchantSteps(); if(r) return resolved(); }
   return escalate();
 }
@@ -465,7 +465,7 @@ async function deviceFix(){
   const it=C.issue, r=RUN;
   const k = card({type:'fix',items:it.fixes.map(t=>({t,st:'wait'})),note:it.note,state:'offer'});
   const a = await ask({type:'card',card:k});
-  if (a==='no'){ k.state='skipped'; me('Not now'); return false; }
+  if (a==='no'){ k.state='skipped'; me('Not now'); C.skippedFix=true; return false; }
   me('Fix it for me'); k.state='run'; render();
   for (const x of k.items){ x.st='run'; render(); await sleep(1100); guard(r); x.st='done'; C.done.push(x.t); render(); }
   k.state='done'; render();
@@ -481,7 +481,7 @@ async function firmware(){
   const a = await ask({type:'pills',items:[{t:'Update now',go:true},{t:'After I close for the day'}]}); me(a);
   if (a!=='Update now'){ await bot('Okay. I\'ll install it <b>tonight at 11 PM</b>. If cards still don\'t work tomorrow, come back and I\'ll raise a request with everything we\'ve tried.'); C.done.push('Firmware update scheduled for tonight');
     const b = await ask({type:'pills',items:[{t:'Done',go:true},{t:'Raise a request now instead'}]}); me(b);
-    if (b==='Done'){ C.watch=true; return true; } return false; }
+    if (b==='Done'){ C.watch=true; return true; } C.forceTicket=true; return false; }
   const k = card({type:'fix',title:'Updating firmware',items:[{t:'Downloading update',st:'wait'},{t:'Installing',st:'wait'},{t:'Restarting the card reader',st:'wait'}],state:'run'});
   for (const x of k.items){ x.st='run'; render(); await sleep(1000); guard(r); x.st='done'; render(); }
   k.state='done'; k.title='Firmware updated'; C.done.push('Firmware updated'); render();
@@ -560,7 +560,7 @@ async function verify(after){
     const a = await ask({type:'pills',items:[{t:'Okay, I\'ll keep an eye on it'},{t:'It\'s still happening'}]}); me(a);
     if (a.startsWith('Okay')){ await bot('If it happens again, come back here and raise a request with everything we\'ve tried.');
       const b = await ask({type:'pills',items:[{t:'Done',go:true},{t:'Raise a request now instead'}]}); me(b);
-      if (b==='Done'){ C.watch=true; return true; } return false; }
+      if (b==='Done'){ C.watch=true; return true; } C.forceTicket=true; return false; }
     return false;
   }
   if (v==='charge'||v==='net'){
@@ -595,6 +595,8 @@ async function endPills(){
 const teamOf = r => /^Field/.test(r) ? 'field service team' : /^RTT/.test(r) ? 'remote support team' : 'support team';
 async function escalate(){
   const last = C.done.includes('Device restarted') ? 'restarting' : C.done.length ? 'these fixes' : C.tried.length ? 'these steps' : 'the check';
+  if (C.forceTicket){ C.reason = `Okay, I'll raise a request now so the <b>${teamOf(C.issue.route)}</b> can take over.`; return confirmTicket(); }
+  if (C.skippedFix && !C.done.length && !C.tried.length){ C.reason = `Since the fix wasn't run, I'll raise a request so the <b>${teamOf(C.issue.route)}</b> can take over.${C.issue.checks?' I\'ll attach the device report, so you won\'t need to explain again.':''}`; return confirmTicket(); }
   if (C.couldnt && !C.done.length){ C.reason = `Since the steps couldn't be done on your side, I'll raise a request so the <b>${teamOf(C.issue.route)}</b> can take over.`; return confirmTicket(); }
   if (C.passedButNot){ C.reason = `The device check passed, but you still see the problem. I'll raise a request so the <b>${teamOf(C.issue.route)}</b> can look at it.`; return confirmTicket(); }
   C.reason = `Since ${last} didn't solve it, I'll raise a request so the <b>${teamOf(C.issue.route)}</b> can take over.${C.issue.checks?' I\'ll attach the device report, so you won\'t need to explain again.':''}`;
