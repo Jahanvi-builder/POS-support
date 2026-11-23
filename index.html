@@ -605,18 +605,12 @@ async function verify(after){
 
 /* ---------- endings ---------- */
 async function resolved(){
+  // outcome is recorded at "Yes, it's fixed"; Done / Back / leaving all just close the flow
   if (C.fixedBy && !C.watch) card({type:'resolved'});
-  await bot('Did this help?',{q:true});
-  const a = await ask({type:'pills',items:[{t:'It solved my problem'},{t:'It needs improvement'}]}); me(a);
-  if (a.startsWith('It needs')){
-    await bot('Want to raise a request so the team can take a look?');
-    const b = await ask({type:'pills',items:[{t:'Raise support ticket',ticket:true},{t:'No, I\'m done'}]}); me(b);
-    if (b.startsWith('Raise')){ C.reason=''; return confirmTicket(); }
-  }
   return endPills();
 }
 async function endPills(){
-  const a = await ask({type:'pills',items:[{t:'Need help with something else'},{t:'Done'}]}); me(a);
+  const a = await ask({type:'pills',items:[{t:'Done',go:true},{t:'Need help with something else'}]}); me(a);
   start();
 }
 const teamOf = r => /^Field/.test(r) ? 'field service team' : /^RTT/.test(r) ? 'remote support team' : 'support team';
