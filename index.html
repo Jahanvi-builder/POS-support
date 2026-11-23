@@ -825,10 +825,9 @@ function renderPicker(){
   const subs = TAB==='device' ? Object.entries(DEVICE).map(([k,v])=>({k,n:v.n,ic:v.ic,d:v.issues.slice(0,3).map(x=>x.n.split(' / ')[0]).join(', ')})) :
     Object.entries(NONDEV[TAB].subs).map(([k,v])=>({k,n:v.n,ic:v.ic,d:v.issues.slice(0,3).join(', ')}));
   const short={device:'Device',transaction:'Payments',settlement:'Settlement',account:'Account'};
-  const open = REQS.length ? `<div style="padding:12px 16px 0"><div class="notice info">${ic('ticket',18)}<span>You have <b>${REQS.length} open request${REQS.length>1?'s':''}</b>. Latest: ${esc(REQS[0].id)} · ${esc(REQS[0].name)}</span></div></div>` : '';
   return `<div class="appbar"><button class="iconbtn" aria-label="Back">${ic('back',22)}</button><div class="ab-t">Log a complaint</div></div>
    <div class="tabs" role="tablist">${[...CATS.filter(c=>c.id===TAB),...CATS.filter(c=>c.id!==TAB)].map(c=>`<button class="tab ${TAB===c.id?'on':''}" role="tab" aria-selected="${TAB===c.id}" data-act="tab:${c.id}">${ic(c.ic,16)}${short[c.id]}</button>`).join('')}</div>
-   <div class="picklist">${open}<div class="ph">What's the issue about?</div>
+   <div class="picklist"><div class="ph">What's the issue about?</div>
    <div style="padding:0 16px 16px"><div class="olist">${subs.map(x=>`<button class="orow" data-act="sub:${x.k}"><span class="oi">${ic(x.ic,17,'#1E8E4F')}</span><div style="flex:1;min-width:0"><div class="ot">${esc(x.n)}</div><div class="od" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(x.d)}</div></div>${ic('right',16,'#8A93A8')}</button>`).join('')}
    <button class="orow muted" data-act="sub:other"><span class="oi" style="background:var(--line2)">${ic('more',17,'#5A6580')}</span><div class="ot">Something else</div>${ic('right',16,'#8A93A8')}</button></div></div></div>`;
 }
