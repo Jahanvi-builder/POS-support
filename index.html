@@ -289,11 +289,22 @@ const DEVICE = {
    steps:[ST('Open the flap','Lift the printer cover.'),ST('Clear the jam','Remove any torn paper inside.'),ST('Reseat the roll and close','Shiny side up, press until it clicks.')]}
  ]},
  card:{n:'Card reader',ic:'card',issues:[
-  {n:'Chip card / mag stripe not working',t:'A',route:'Field – EDC replacement',verify:'txn',update:true,steps:[ST('Clean the chip slot','Wipe the slot gently with a dry, clean card.')],checks:['Card reader|Connected','Firmware|!Unstable version'],finding:'Your card reader is on an <b>unstable firmware version</b>.'},
-  {n:'Card not reading (not sure which)',t:'A',route:'RTT first, then Field',verify:'txn',update:true,checks:['Card reader|Connected','Firmware|!Unstable version'],finding:'Your card reader is on an <b>unstable firmware version</b>.'},
-  {n:'Swipe not working',t:'A',route:'Field – EDC replacement',verify:'txn',update:true,checks:['Magstripe reader|Connected','Firmware|!Unstable version'],finding:'Your card reader is on an <b>unstable firmware version</b>.'},
-  {n:'Not able to insert card in slot',t:'B',route:'Field – card reader (to confirm)',verify:'ask',steps:[ST('Clean the chip slot','Wipe the slot gently with a dry, clean card.')]},
-  {n:'Card reader error message',t:'A',route:'RTT if config; Field if hardware',verify:'txn',update:true,checks:['Reader error|!CR-12','Firmware|!Unstable version'],finding:'The reader shows <b>error CR-12</b> and is on an <b>unstable firmware version</b>.'}
+  {n:'Chip card / mag stripe not working',t:'A',route:'Field – EDC replacement',verify:'txn',update:true,modes:['chip','swipe'],failMode:'chip',steps:[ST('Clean the chip slot','Wipe the slot gently with a dry, clean card.'),ST('Clean the magstripe slot','Run a dry, clean card through the swipe slot once.')],
+   checks:['Chip reader (insert)|!Read errors reported','Magstripe reader (swipe)|!Read errors reported','Contactless reader (tap)|No errors','Firmware|!Unstable version'],
+   finding:'The chip and magstripe readers are reporting <b>read errors</b>, and the firmware is <b>unstable</b>.',findingOk:'The chip and magstripe readers are reporting <b>read errors</b>. The firmware is up to date.'},
+  {n:'Card not reading (not sure which)',t:'A',route:'RTT first, then Field',verify:'txn',update:true,modes:['chip','swipe','tap'],failMode:'chip',steps:[ST('Clean the chip slot','Wipe the slot gently with a dry, clean card.'),ST('Clean the magstripe slot','Run a dry, clean card through the swipe slot once.')],
+   checks:['Chip reader (insert)|!Read errors reported','Magstripe reader (swipe)|No errors','Contactless reader (tap)|No errors','Firmware|!Unstable version'],
+   finding:'The <b>chip reader</b> is reporting read errors, and the firmware is <b>unstable</b>.',findingOk:'The <b>chip reader</b> is reporting read errors. The firmware is up to date.'},
+  {n:'Swipe not working',t:'A',route:'Field – EDC replacement',verify:'txn',update:true,modes:['swipe'],failMode:'swipe',steps:[ST('Clean the magstripe slot','Run a dry, clean card through the swipe slot once.')],
+   checks:['Magstripe reader (swipe)|!Read errors reported','Firmware|!Unstable version'],
+   finding:'The <b>magstripe reader</b> is reporting read errors, and the firmware is <b>unstable</b>.',findingOk:'The <b>magstripe reader</b> is reporting read errors. The firmware is up to date.'},
+  {n:'Tap / contactless not working',t:'A',route:'Field – EDC replacement (to confirm)',verify:'txn',update:true,modes:['tap'],failMode:'tap',
+   checks:['Contactless reader (tap)|!Cards not detected','Firmware|!Unstable version'],
+   finding:'The <b>contactless reader isn\'t detecting cards</b>, and the firmware is <b>unstable</b>.',findingOk:'The <b>contactless reader isn\'t detecting cards</b>. The firmware is up to date.'},
+  {n:'Not able to insert card in slot',t:'B',route:'Field – card reader (to confirm)',verify:'txn',modes:['chip','swipe','tap'],failMode:'chip',steps:[ST('Clean the chip slot','Wipe the slot gently with a dry, clean card.')]},
+  {n:'Card reader error message',t:'A',route:'RTT if config; Field if hardware',verify:'txn',update:true,modes:['chip','swipe','tap'],failMode:'chip',
+   checks:['Reader error|!CR-12 · chip reader','Firmware|!Unstable version'],
+   finding:'The reader shows <b>error CR-12</b> on the chip reader, and the firmware is <b>unstable</b>.',findingOk:'The reader shows <b>error CR-12</b> on the chip reader. The firmware is up to date.'}
  ]},
  hang:{n:'Device hanging / restarting',ic:'hang',issues:[
   {n:'Hanging / freezing / slow',t:'A',route:'RTT',verify:'ask',restart:'remote',checks:['Memory|!92% full','Background apps|!6 running','App & firmware|Up to date'],
@@ -314,9 +325,9 @@ const DEVICE = {
   {n:'Internet not connected',t:'C',route:'RTT',verify:'net',checks:['Signal strength|!Weak (1 bar)','Internet|!Not reachable','APN settings|Correct'],
    finding:'Mobile signal is <b>weak (1 bar)</b>, so the device can\'t reach the internet.',fixes:['Reset connection settings'],
    steps:[ST('Switch on WiFi','Swipe down from the top and turn it on.'),ST('Move to a stronger signal','Near the entrance or a window.')]},
-  {n:'Weak / slow internet',t:'C',route:'RTT',verify:'ask',checks:['Signal strength|!Weak (1 bar)','Pine Labs server|Reachable','APN settings|Correct'],
-   finding:'Your device can reach our server, but the mobile signal is <b>weak (1 bar)</b>.',fixes:['Reset connection settings'],
-   steps:[ST('Switch on WiFi','Swipe down from the top and turn it on.'),ST('Move to a stronger signal','Near the entrance or a window.')]}
+  {n:'Weak / slow internet',t:'C',route:'RTT',verify:'speed',checks:['Speed test|!0.3 Mbps (slow)','Signal strength|!Weak (1 bar)','Pine Labs server|Reachable','APN settings|Correct'],
+   finding:'Your internet is <b>slow (0.3 Mbps)</b> because the mobile signal is weak.',fixes:['Reset the connection (SIM, network and app)'],
+   steps:[ST('Move to WiFi','Swipe down from the top, turn on WiFi and connect to your shop network.'),ST('Move closer to a stronger signal','Near the entrance or a window.')]}
  ]}
 };
 const NONDEV = {
@@ -431,7 +442,7 @@ async function runIssue(){
 async function afterDiagnosis(){
   const it=C.issue;
   if (it.fixes){ const r=await deviceFix(); if(r) return resolved(); if(C.forceTicket) return escalate(); }
-  if (it.update && C.fwOk){ await bot('No update is needed. Let\'s check the card reader with a <b>₹1 test transaction</b>.'); const r=await verify('test'); if(r) return resolved(); }
+  if (it.update && C.fwOk){ await bot((it.modes||[]).length>1?'No update is needed. Let\'s check the card reader with <b>₹1 test transactions</b>.':'No update is needed. Let\'s check the card reader with a <b>₹1 test transaction</b>.'); const r=await verify('test'); if(r) return resolved(); }
   else if (it.update){ const r=await firmware(); if(r) return resolved(); if(C.forceTicket) return escalate(); }
   if (it.restart){ const r=await restart(); if(r) return resolved(); if(C.forceTicket) return escalate(); }
   if (it.steps){ const r=await merchantSteps(); if(r) return resolved(); }
@@ -449,7 +460,7 @@ async function diagnose(){
     rows[i].st='done'; render();
   }
   k.time=now(); render();
-  await bot(C.fwOk ? (it.n==='Card reader error message' ? 'The reader shows <b>error CR-12</b>. Its firmware is <b>up to date</b>.' : 'Your card reader is connected and its firmware is <b>up to date</b>.') : it.finding);
+  await bot(C.fwOk && it.findingOk ? it.findingOk : it.finding);
   C.found = rows.filter(x=>x.bad).map(x=>x.l+': '+x.r);
   return true;
 }
@@ -488,7 +499,7 @@ async function firmware(){
   const k = card({type:'fix',title:'Updating firmware',items:[{t:'Downloading update',st:'wait'},{t:'Installing',st:'wait'},{t:'Restarting the card reader',st:'wait'}],state:'run'});
   for (const x of k.items){ x.st='run'; render(); await sleep(1000); guard(r); x.st='done'; render(); }
   k.state='done'; k.title='Firmware updated'; C.done.push('Firmware updated'); render();
-  await bot('Firmware updated. Let\'s check the card reader with a <b>₹1 test transaction</b>.');
+  await bot((C.issue.modes||[]).length>1?'Firmware updated. Let\'s check the card reader with <b>₹1 test transactions</b>.':'Firmware updated. Let\'s check the card reader with a <b>₹1 test transaction</b>.');
   return verify('fix');
 }
 /* Restart: chat resumes after boot */
@@ -551,12 +562,25 @@ async function verify(after){
     await bot('The test slip <b>came out blank</b>.'); return false;
   }
   if (v==='txn'){
-    const a = await ask({type:'pills',items:[{t:'Start ₹1 test',go:true}]}); me(a);
-    await bot('Insert, swipe or tap any card on the device now.',{fast:true});
-    const k=card({type:'check',rows:[{l:'Waiting for card',st:'run'}]}); await sleep(2000); guard(r);
-    const ok=!sim('simFix'); k.rows[0]={l:'₹1 test transaction',r:ok?'Approved · refunded automatically':'Card not read',bad:!ok,st:'done'}; k.time=now(); render();
-    if (ok){ C.fixedBy=C.done.includes('Firmware updated')?'Firmware update':after==='steps'?'Your steps':after==='test'?'Card reader is working again':'Fix it for me'; await bot('The test transaction <b>went through</b>. The ₹1 is refunded automatically.'); return gone(); }
-    await bot('The card reader <b>still couldn\'t read the card</b>.'); return false;
+    const modes = C.issue.modes||['chip'], L={chip:'Insert (chip)',swipe:'Swipe (magstripe)',tap:'Tap (contactless)'}, A={chip:'Insert',swipe:'Swipe',tap:'Tap'};
+    const a = await ask({type:'pills',items:[{t:modes.length>1?'Start ₹1 tests':'Start ₹1 test',go:true}]}); me(a);
+    await bot(modes.length>1?`Let's test each way of reading a card. Follow the prompts on the device: <b>${modes.map(m=>A[m].toLowerCase()).join(', then ')}</b> any card.`:`<b>${A[modes[0]]}</b> any card on the device now.`,{fast:true});
+    const k=card({type:'check',title:modes.length>1?'₹1 test transactions':'₹1 test transaction',rows:modes.map(m=>({l:L[m],st:'wait'}))}); const fails=[];
+    for (let i=0;i<modes.length;i++){ k.rows[i].st='run'; render(); await sleep(1400); guard(r);
+      const bad = sim('simFix') && modes[i]===(C.issue.failMode||modes[0]); if(bad) fails.push(modes[i]);
+      k.rows[i]={l:L[modes[i]],r:bad?'Card not read':'Approved · ₹1 refunded',bad,st:'done'}; render(); }
+    k.time=now(); render();
+    if (!fails.length){ C.fixedBy=C.done.includes('Firmware updated')?'Firmware update':after==='steps'?'Your steps':after==='test'?'Card reader is working again':'Fix it for me';
+      await bot(modes.length>1?'All test transactions <b>went through</b>. The ₹1 amounts are refunded automatically.':'The test transaction <b>went through</b>. The ₹1 is refunded automatically.'); return gone(); }
+    C.found = (C.found||[]).filter(x=>!/test:/.test(x)).concat([`₹1 test: ${fails.map(m=>A[m].toLowerCase()).join(', ')} failed`]);
+    C.modeOnly = modes.length>1 && fails.length<modes.length ? fails : null;
+    await bot(modes.length>1?`<b>${fails.map(m=>A[m]).join(', ')}</b> still ${fails.length>1?'don\'t':'doesn\'t'} work. ${C.modeOnly?'The other methods are fine.':''}`:'The card reader <b>still couldn\'t read the card</b>.'); return false;
+  }
+  if (v==='speed'){
+    const k=card({type:'check',rows:[{l:'Speed test',st:'run'}]}); await sleep(1800); guard(r);
+    const ok=!sim('simFix'); k.rows[0]={l:'Speed test',r:ok?'6.2 Mbps (good)':'0.3 Mbps (still slow)',bad:!ok,st:'done'}; k.time=now(); render();
+    if (ok){ C.fixedBy=after==='steps'?'Your steps':'Reset connection'; await bot('Your internet speed is <b>back to normal</b>.'); return gone(); }
+    await bot('Your internet is <b>still slow</b>.'); return false;
   }
   if (v==='later'){
     await bot('This one takes a little time to show. Keep using the device as normal.');
@@ -598,6 +622,7 @@ async function endPills(){
 const teamOf = r => /^Field/.test(r) ? 'field service team' : /^RTT/.test(r) ? 'remote support team' : 'support team';
 async function escalate(){
   const last = C.done.includes('Device restarted') ? 'restarting' : C.done.length ? 'these fixes' : C.tried.length ? 'these steps' : 'the check';
+  if (C.modeOnly && !C.passedButNot){ const A={chip:'Inserting',swipe:'Swiping',tap:'Tapping'}; C.reason = `${C.modeOnly.map(m=>A[m]).join(' and ')} still fails while the other methods work, so that part of the card reader needs a hardware check. I'll raise a request so the <b>${teamOf(C.issue.route)}</b> can take over.`; return confirmTicket(); }
   if (C.fwOk && !C.passedButNot){ C.reason = `Since the firmware is up to date and cards still aren't being read, the card reader needs a hardware check. I'll raise a request so the <b>${teamOf(C.issue.route)}</b> can take over.`; return confirmTicket(); }
   if (C.forceTicket){ C.reason = `Okay, I'll raise a request now so the <b>${teamOf(C.issue.route)}</b> can take over.`; return confirmTicket(); }
   if (C.skippedFix && !C.done.length && !C.tried.length){ C.reason = `Since the fix wasn't run, I'll raise a request so the <b>${teamOf(C.issue.route)}</b> can take over.${C.issue.checks?' I\'ll attach the device report, so you won\'t need to explain again.':''}`; return confirmTicket(); }
@@ -677,7 +702,7 @@ async function pineOne(why){
   const a = await ask({type:'pills',items:[{t:'Done'}]}); me(a); start();
 }
 /* ---------- request ---------- */
-const ISSUE_CHIPS = {"Draining fast / low backup": ["Battery lasts less than half a day", "Drops quickly even when not in use", "Drains faster during card payments"], "Not charging / not holding charge": ["Charging icon doesn't appear when plugged in", "Shows charging but the percentage doesn't go up", "Battery drops to 0% within 2–3 hours of a full charge"], "Switches off on battery / sudden shutdown": ["Switches off in the middle of a payment", "Switches off as soon as it's unplugged", "Switches off when the battery is below 30%"], "Swollen / bulging / heating": ["Back cover is bulging or lifting", "Device feels hot even when not in use", "There's a burning smell from the device"], "Charger / adapter not working": ["Charger light doesn't turn on", "Device charges with another charger, not this one", "Charger gets very hot"], "Charger cable damaged": ["Wire is cut or exposed", "Cable sparks or gets hot", "Connector end is broken"], "Cable loose / connection problem": ["Charging stops when the cable moves", "Cable falls out of the port easily", "Charges only at an angle"], "Charging port / pin loose or damaged": ["Port feels loose or wobbly", "Pin inside the port looks bent", "Cable doesn't stay plugged in"], "Charger missing / new charger needed": ["Charger never came with the device", "Charger is lost", "Need a spare charger"], "Touch not working / unresponsive": ["Some parts of the screen don't respond", "Screen responds after a delay", "Screen taps by itself"], "Display not working properly": ["Screen is very dim", "Screen goes dark while in use", "Colours or text look wrong"], "Lines / flicker / dim": ["Lines across the screen", "Screen keeps flickering", "Part of the screen is blank"], "Power button not working": ["Button is stuck and doesn't click", "Button clicks but nothing happens", "Device turns off when the button is touched lightly"], "Screen broken / cracked": ["Screen is cracked but still works", "Screen is cracked and doesn't respond", "Glass is shattered with sharp edges"], "Not printing": ["Nothing comes out after a payment", "Printer makes a noise but no slip comes out", "Prints only sometimes"], "Blank / half / faint print": ["Text is too light to read", "Only half the slip prints", "Slip comes out completely blank"], "Printer error message": ["Shows 'Paper out' with paper loaded", "Shows 'Cover open' with the flap closed", "Error appears after every slip"], "Flap issue / paper roll jam": ["Paper gets stuck inside", "Flap doesn't close properly", "Roller doesn't move the paper"], "Chip card / mag stripe not working": ["Chip cards show 'Card read error'", "Swiped cards are not read", "Works for some cards, fails for others"], "Card not reading (not sure which)": ["No card is being read at all", "Card is read only after many tries", "Tap payments also fail"], "Swipe not working": ["Swipe shows 'Card read error'", "Needs several swipes to read", "Works only when swiped very slowly"], "Card reader error message": ["Error appears on every card payment", "Error appears and the device restarts", "Error appears only for some cards"], "Hanging / freezing / slow": ["Freezes during a payment", "Payment app takes long to open", "Screen stops responding until a restart"], "Auto restart / reboot": ["Restarts in the middle of a payment", "Restarts several times a day", "Restarts when it gets hot"], "App crash": ["App closes during a payment", "App closes as soon as it opens", "App crashes after printing the slip"], "Device broken / cracked": ["Device fell and the body cracked", "Parts inside are exposed", "Device still works but is damaged"], "Base / stand / flap broken": ["Base or stand is broken", "Printer flap is broken", "Device doesn't sit firmly"], "Water / burn damage": ["Liquid spilled on the device", "Device has burn marks", "Device got wet in the rain"], "Internet not connected": ["No internet at all", "Internet drops during payments", "Works on WiFi but not on SIM"], "Printer damaged": ["Printer cover is broken", "Printer part is loose or missing", "Printer stopped working after a fall"], "Not able to insert card in slot": ["Card doesn't go into the slot", "Something is stuck in the slot", "Card goes in only partly"], "Weak / slow internet": ["Payments take long to go through", "Payments time out", "Internet is slow at certain times of day"]};
+const ISSUE_CHIPS = {"Draining fast / low backup": ["Battery lasts less than half a day", "Drops quickly even when not in use", "Drains faster during card payments"], "Not charging / not holding charge": ["Charging icon doesn't appear when plugged in", "Shows charging but the percentage doesn't go up", "Battery drops to 0% within 2–3 hours of a full charge"], "Switches off on battery / sudden shutdown": ["Switches off in the middle of a payment", "Switches off as soon as it's unplugged", "Switches off when the battery is below 30%"], "Swollen / bulging / heating": ["Back cover is bulging or lifting", "Device feels hot even when not in use", "There's a burning smell from the device"], "Charger / adapter not working": ["Charger light doesn't turn on", "Device charges with another charger, not this one", "Charger gets very hot"], "Charger cable damaged": ["Wire is cut or exposed", "Cable sparks or gets hot", "Connector end is broken"], "Cable loose / connection problem": ["Charging stops when the cable moves", "Cable falls out of the port easily", "Charges only at an angle"], "Charging port / pin loose or damaged": ["Port feels loose or wobbly", "Pin inside the port looks bent", "Cable doesn't stay plugged in"], "Charger missing / new charger needed": ["Charger never came with the device", "Charger is lost", "Need a spare charger"], "Touch not working / unresponsive": ["Some parts of the screen don't respond", "Screen responds after a delay", "Screen taps by itself"], "Display not working properly": ["Screen is very dim", "Screen goes dark while in use", "Colours or text look wrong"], "Lines / flicker / dim": ["Lines across the screen", "Screen keeps flickering", "Part of the screen is blank"], "Power button not working": ["Button is stuck and doesn't click", "Button clicks but nothing happens", "Device turns off when the button is touched lightly"], "Screen broken / cracked": ["Screen is cracked but still works", "Screen is cracked and doesn't respond", "Glass is shattered with sharp edges"], "Not printing": ["Nothing comes out after a payment", "Printer makes a noise but no slip comes out", "Prints only sometimes"], "Blank / half / faint print": ["Text is too light to read", "Only half the slip prints", "Slip comes out completely blank"], "Printer error message": ["Shows 'Paper out' with paper loaded", "Shows 'Cover open' with the flap closed", "Error appears after every slip"], "Flap issue / paper roll jam": ["Paper gets stuck inside", "Flap doesn't close properly", "Roller doesn't move the paper"], "Chip card / mag stripe not working": ["Chip cards show 'Card read error'", "Swiped cards are not read", "Works for some cards, fails for others"], "Card not reading (not sure which)": ["No card is being read at all", "Card is read only after many tries", "Tap payments also fail"], "Swipe not working": ["Swipe shows 'Card read error'", "Needs several swipes to read", "Works only when swiped very slowly"], "Card reader error message": ["Error appears on every card payment", "Error appears and the device restarts", "Error appears only for some cards"], "Hanging / freezing / slow": ["Freezes during a payment", "Payment app takes long to open", "Screen stops responding until a restart"], "Auto restart / reboot": ["Restarts in the middle of a payment", "Restarts several times a day", "Restarts when it gets hot"], "App crash": ["App closes during a payment", "App closes as soon as it opens", "App crashes after printing the slip"], "Device broken / cracked": ["Device fell and the body cracked", "Parts inside are exposed", "Device still works but is damaged"], "Base / stand / flap broken": ["Base or stand is broken", "Printer flap is broken", "Device doesn't sit firmly"], "Water / burn damage": ["Liquid spilled on the device", "Device has burn marks", "Device got wet in the rain"], "Internet not connected": ["No internet at all", "Internet drops during payments", "Works on WiFi but not on SIM"], "Printer damaged": ["Printer cover is broken", "Printer part is loose or missing", "Printer stopped working after a fall"], "Not able to insert card in slot": ["Card doesn't go into the slot", "Something is stuck in the slot", "Card goes in only partly"], "Weak / slow internet": ["Payments take long to go through", "Payments time out", "Internet is slow at certain times of day"], "Tap / contactless not working": ["Tap payments don't go through", "Card isn't detected when tapped", "Only phone or watch payments fail"]};
 const SUB_CHIPS = {
   card:["Payment failed but the customer was charged","Card declined for many customers","Payment status didn't update"],
   upi:["Customer paid but the payment didn't show","QR code doesn't appear","Payment stuck on pending"],
@@ -756,7 +781,7 @@ function caseRows(){
 function renderCard(m, active){
   switch(m.type){
    case 'check': return m.bare ? `<div class="cs" style="display:flex;gap:8px;align-items:center"><span class="spin"></span>${esc(m.rows[0].l)}…</div>` :
-     `<div class="card"><div class="ch">${ic('shield',18,'#1E8E4F')}<div style="flex:1"><div class="ct">${m.rows.length>1?'Device health check':'Device check'}</div><div class="cs">${m.time?'POS 4287664 · '+m.time:'Checking…'}</div></div></div><div>${m.rows.map(chk).join('')}</div></div>`;
+     `<div class="card"><div class="ch">${ic('shield',18,'#1E8E4F')}<div style="flex:1"><div class="ct">${m.title||(m.rows.length>1?'Device health check':'Device check')}</div><div class="cs">${m.time?'POS 4287664 · '+m.time:'Checking…'}</div></div></div><div>${m.rows.map(chk).join('')}</div></div>`;
    case 'fix': { const offer=m.state==='offer'&&active; const n=m.items.filter(x=>x.st==='done').length;
      const title = m.title||(m.state==='done'?'Fixes applied':m.state==='skipped'?'Not applied':m.state==='run'?'Fixing your device…':'I can fix this for you');
      const sub = m.state==='offer' ? (m.note||'Takes about 30 seconds. Your payments aren\'t affected.') : m.state==='run' ? `${n} of ${m.items.length} done · keep the device on` : m.state==='done' ? `All ${m.items.length} done` : 'You chose not to run these';
