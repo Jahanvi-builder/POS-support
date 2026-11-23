@@ -526,6 +526,7 @@ async function merchantSteps(){
     } else { s.st='ok'; s.res='Done'; C.tried.push(s.t); }
     if (k.steps[i+1]) k.steps[i+1].st='cur'; render();
   }
+  if (!k.steps.some(x=>x.st==='ok')){ C.couldnt=true; return false; }
   if (['charge','net'].includes(it.verify)){ await bot(it.verify==='charge'?'The device <b>still isn\'t charging</b> after these steps.':'The device <b>still can\'t connect</b> after these steps.'); return false; }
   return verify('steps');
 }
@@ -593,9 +594,10 @@ async function endPills(){
 }
 const teamOf = r => /^Field/.test(r) ? 'field service team' : /^RTT/.test(r) ? 'remote support team' : 'support team';
 async function escalate(){
-  const last = C.done.includes('Device restarted') ? 'restarting' : (C.done.length||C.tried.length) ? 'these fixes' : 'the check';
+  const last = C.done.includes('Device restarted') ? 'restarting' : C.done.length ? 'these fixes' : C.tried.length ? 'these steps' : 'the check';
+  if (C.couldnt && !C.done.length){ C.reason = `Since the steps couldn't be done on your side, I'll raise a request so the <b>${teamOf(C.issue.route)}</b> can take over.`; return confirmTicket(); }
   if (C.passedButNot){ C.reason = `The device check passed, but you still see the problem. I'll raise a request so the <b>${teamOf(C.issue.route)}</b> can look at it.`; return confirmTicket(); }
-  C.reason = `Since ${last} didn't fix it, I'll raise a request so the <b>${teamOf(C.issue.route)}</b> can take over. I'll attach the device report, so you won't need to explain again.`;
+  C.reason = `Since ${last} didn't solve it, I'll raise a request so the <b>${teamOf(C.issue.route)}</b> can take over.${C.issue.checks?' I\'ll attach the device report, so you won\'t need to explain again.':''}`;
   return confirmTicket();
 }
 async function safety(){
@@ -756,7 +758,7 @@ function renderCard(m, active){
      <div class="fl">${m.items.map(x=>`<div class="li ${x.st}">${x.st==='run'?'<span class="spin" style="border-color:#2E5A48;border-top-color:#50D387"></span>':x.st==='done'?ic('check',16,'#50D387',2.8):'<span class="pend"></span>'}<span>${esc(x.t)}</span></div>`).join('')}</div>
      ${offer?`<div class="btnrow"><button class="btn sec2" data-act="card:no">Not now</button><button class="btn light" style="flex:2" data-act="card:yes">${ic('bolt',16,'#003323',2.4)}Fix it for me</button></div>`:''}</div>`; }
    case 'tips': return `<div class="card">${m.tips.map(([i,t,d])=>`<div style="display:flex;gap:10px"><span style="width:32px;height:32px;border-radius:9px;background:var(--amber50);display:flex;align-items:center;justify-content:center;flex-shrink:0">${ic(i,16,'#8A5A00')}</span><div><div style="font-size:14px;font-weight:600">${esc(t)}</div><div class="cs">${esc(d)}</div></div></div>`).join('')}<div class="cs" style="border-top:1px solid var(--line2);padding-top:8px">Suggestions only. Nothing is changed on your device.</div></div>`;
-   case 'ledger': { const n=m.steps.filter(s=>s.st==='ok'||s.st==='no').length;
+   case 'ledger': { const n=m.steps.filter(s=>s.st==='ok').length;
      return `<div class="card"><div class="ch"><div class="ct" style="flex:1">Steps to try</div><div class="cs">${n} of ${m.steps.length} done</div></div><div class="ledger">${m.steps.map((s,i)=>{
        const cls = s.st==='checking'?'cur':s.st; const num = s.st==='ok'?ic('check',14,'#fff',3):s.st==='no'?ic('close',13,'#5A6580',3):s.st==='lock'?ic('lock',12,'#8A93A8',2.4):i+1;
        const act = s.st==='cur'&&active ? `<div class="lact"><button class="sbtn p" data-act="led:done">Done</button><button class="sbtn q" data-act="led:cant">I can't do this</button></div>` : '';
