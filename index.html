@@ -72,8 +72,6 @@ input,textarea{font-family:inherit;color:inherit}
 .qr{width:84px;height:84px;display:grid;grid-template-columns:repeat(7,1fr);gap:2px;padding:6px;border:1px solid var(--line);border-radius:8px;flex-shrink:0}.qr i{border-radius:1px}
 .p1steps{margin:0;padding-left:18px;font-size:13px;line-height:20px;display:flex;flex-direction:column;gap:4px}
 .thread.lift{padding-bottom:260px}
-.picklist .orow{padding:8px 14px;min-height:48px}
-.picklist .ph{padding:10px 16px 6px}
 .ohdr{padding:10px 14px 6px;font-size:11px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em;background:var(--bg);border-bottom:1px solid var(--line2)}
 .olist{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
 .orow{width:100%;border:none;background:#fff;display:flex;align-items:center;gap:12px;padding:12px 14px;text-align:left;min-height:52px;border-bottom:1px solid var(--line2)}
@@ -816,7 +814,7 @@ function renderPrompt(p){
   return '';
 }
 function renderPicker(){
-  const subs = TAB==='device' ? Object.entries(DEVICE).map(([k,v])=>({k,n:v.n,ic:v.ic,d:v.issues.slice(0,3).map(x=>x.n.split(' / ')[0]).join(', ')})) :
+  const subs = TAB==='device' ? Object.entries(DEVICE).map(([k,v])=>({k,n:v.n,ic:v.ic,d:(v.issues.some(x=>x.grp)?[...new Set(v.issues.map(x=>x.grp))].join(', '):v.issues.slice(0,3).map(x=>x.n.split(' / ')[0]).join(', '))})) :
     Object.entries(NONDEV[TAB].subs).map(([k,v])=>({k,n:v.n,ic:v.ic,d:v.issues.slice(0,3).join(', ')}));
   const short={device:'Device',transaction:'Payments',settlement:'Settlement',account:'Account'};
   return `<div class="appbar"><button class="iconbtn" aria-label="Back">${ic('back',22)}</button><div class="ab-t">Log a complaint</div></div>
