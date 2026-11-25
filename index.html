@@ -72,9 +72,6 @@ input,textarea{font-family:inherit;color:inherit}
 .qr{width:84px;height:84px;display:grid;grid-template-columns:repeat(7,1fr);gap:2px;padding:6px;border:1px solid var(--line);border-radius:8px;flex-shrink:0}.qr i{border-radius:1px}
 .p1steps{margin:0;padding-left:18px;font-size:13px;line-height:20px;display:flex;flex-direction:column;gap:4px}
 .thread.lift{padding-bottom:260px}
-.picklist .orow{padding:8px 14px;min-height:48px}
-.picklist .ph{padding:10px 16px 6px}
-.ohdr{padding:10px 14px 6px;font-size:11px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em;background:var(--bg);border-bottom:1px solid var(--line2)}
 .olist{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
 .orow{width:100%;border:none;background:#fff;display:flex;align-items:center;gap:12px;padding:12px 14px;text-align:left;min-height:52px;border-bottom:1px solid var(--line2)}
 .orow:last-child{border-bottom:none}
@@ -234,70 +231,37 @@ const esc = s => String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&l
    verify = charge | net | print | txn | ask | later */
 const ST = (t,d) => ({t,d});
 const DEVICE = {
- battery:{n:'Battery & charging',ic:'battery',issues:[
-  {grp:'Battery',n:'Draining fast / low backup',t:'A',route:'Field – battery replacement',verify:'later',
+ battery:{n:'Battery',ic:'battery',issues:[
+  {n:'Draining fast / low backup',t:'A',route:'Field – battery replacement',verify:'later',
    checks:['Charger type|Eligible charger','Payment app|!Update available','Background apps|!4 apps using battery','Battery drain, last 7 days|!18% an hour'],
    finding:'Your battery is draining <b>faster than normal</b>. 4 background apps are using power and the payment app is out of date.',
    fixes:['Close 4 background apps','Update the payment app'],
    tips:[['sun','Lower the screen brightness','It\'s at 100%. Lower it if you work indoors.'],['plug','Charge fully with an eligible charger','Other chargers can wear the battery faster.']]},
-  {grp:'Battery',n:'Not charging / not holding charge',t:'C',route:'Field',verify:'charge',
+  {n:'Not charging / not holding charge',t:'C',route:'Field',verify:'charge',
    checks:['Charging current|!No current coming in','Charger type|Eligible charger','Battery health|Good (86%)'],
    finding:'Your device <b>isn\'t getting any charging current</b>. The battery itself looks healthy.',
    steps:[ST('Try a different wall socket','Use one you know is working.'),ST('Reconnect the cable at both ends','Push it in firmly at the device and the adapter.'),ST('Try another eligible charger','If you have a spare one.')]},
-  {grp:'Battery',n:'Switches off on battery / sudden shutdown',t:'C',route:'Field – battery replacement',verify:'later',
+  {n:'Switches off on battery / sudden shutdown',t:'C',route:'Field – battery replacement',verify:'later',
    checks:['Battery health|72%','Overheating errors|None in 7 days'],
    finding:'Battery health is <b>72%</b> and there are no heating errors.',
    steps:[ST('Charge it to 100%','Keep it on an eligible charger until full.'),ST('Unplug and use as normal','Use it on battery for about 10 minutes.')]},
-  {grp:'Battery',n:'Dead / replacement needed',t:'G',pineone:true,route:'Field – battery replacement',checks:['Battery health|!12%'],finding:'Battery health is <b>12%</b>. The battery has failed and needs to be replaced.'},
-  {grp:'Battery',n:'Swollen / bulging / heating',t:'E',route:'Field',danger:['Stop using the device','Unplug it from the charger','Don\'t charge it again','Keep it away from heat and water']},
-  {grp:'Charger & power',n:'Charger / adapter not working',t:'C',route:'Field – adapter',verify:'charge',
+  {n:'Dead / replacement needed',t:'G',pineone:true,route:'Field – battery replacement',checks:['Battery health|!12%'],finding:'Battery health is <b>12%</b>. The battery has failed and needs to be replaced.'},
+  {n:'Swollen / bulging / heating',t:'E',route:'Field',danger:['Stop using the device','Unplug it from the charger','Don\'t charge it again','Keep it away from heat and water']}
+ ]},
+ power:{n:'Power & Charging',ic:'plug',issues:[
+  {n:'Charger / adapter not working',t:'C',route:'Field – adapter',verify:'charge',
    checks:['Charging current|!No current coming in','Charger type|!Not an eligible charger','Battery health|Good (88%)'],
    finding:'No charging current, and the charger <b>isn\'t recognised as an eligible charger</b>.',
    steps:[ST('Try a different wall socket','Use one you know is working.'),ST('Use an eligible charger','Other chargers may not supply enough power.')]},
-  {grp:'Charger & power',n:'Charger cable damaged',t:'E',route:'Field',danger:['Stop using the damaged cable','Unplug it from the wall socket','Use another eligible charger if you have one']},
-  {grp:'Cable & port',n:'Cable loose / connection problem',t:'C',route:'Field',verify:'charge',checks:['Charging status|!Keeps stopping and starting','Battery health|Good (90%)'],
+  {n:'Charger cable damaged',t:'E',route:'Field',danger:['Stop using the damaged cable','Unplug it from the wall socket','Use another eligible charger if you have one']}
+ ]},
+ cable:{n:'Charger cable',ic:'cable',issues:[
+  {n:'Cable loose / connection problem',t:'C',route:'Field',verify:'charge',checks:['Charging status|!Keeps stopping and starting','Battery health|Good (90%)'],
    finding:'Charging <b>keeps stopping and starting</b>, which usually means a loose connection.',
    steps:[ST('Reconnect both ends firmly','At the device and at the adapter.'),ST('Try another eligible charger','If you have a spare one.')]},
-  {grp:'Cable & port',n:'Charging port / pin loose or damaged',t:'B',route:'Field – port repair',verify:'charge',
+  {n:'Charging port / pin loose or damaged',t:'B',route:'Field – port repair',verify:'charge',
    steps:[ST('Clean the charging port','Remove dust gently with a dry brush.'),ST('Check the pin isn\'t bent','It should sit straight in the middle.'),ST('Reconnect the cable firmly','Push until it clicks.'),ST('Try another charger','If you have a spare one.')]},
-  {grp:'Cable & port',n:'Charger missing / new charger needed',t:'F',route:'Field'}
- ]},
- network:{n:'Network & Connectivity',ic:'wifi',issues:[
-  {n:'Internet not connected',t:'C',route:'RTT',verify:'net',checks:['Signal strength|!Weak (1 bar)','Internet|!Not reachable','APN settings|Correct'],
-   finding:'Mobile signal is <b>weak (1 bar)</b>, so the device can\'t reach the internet.',fixes:['Reset connection settings'],
-   steps:[ST('Switch on WiFi','Swipe down from the top and turn it on.'),ST('Move to a stronger signal','Near the entrance or a window.')]},
-  {n:'Weak / slow internet',t:'C',route:'RTT',verify:'speed',checks:['Speed test|!0.3 Mbps (slow)','Signal strength|!Weak (1 bar)','Pine Labs server|Reachable','APN settings|Correct'],
-   finding:'Your internet is <b>slow (0.3 Mbps)</b> because the mobile signal is weak.',fixes:['Reset the connection (SIM, network and app)'],
-   steps:[ST('Move to WiFi','Swipe down from the top, turn on WiFi and connect to your shop network.'),ST('Move closer to a stronger signal','Near the entrance or a window.')]}
- ]},
- card:{n:'Card reader',ic:'card',issues:[
-  {n:'Chip / swipe not working',t:'A',route:'Field – EDC replacement',verify:'txn',update:true,modes:['chip','swipe'],failMode:'chip',steps:[ST('Clean the chip slot','Wipe the slot gently with a dry, clean card.'),ST('Clean the magstripe slot','Run a dry, clean card through the swipe slot once.')],
-   checks:['Card dip error|!Error code reported','Card swipe error|!Error code reported','Card tap error|No errors','Firmware|!Unstable version'],
-   finding:'The device is reporting <b>card dip and swipe errors</b>, and the firmware is <b>unstable</b>.',findingOk:'The device is reporting <b>card dip and swipe errors</b>. The firmware is up to date.'},
-  {n:'Card not reading (not sure which)',t:'A',route:'RTT first, then Field',verify:'txn',update:true,modes:['chip','swipe','tap'],failMode:'chip',steps:[ST('Clean the chip slot','Wipe the slot gently with a dry, clean card.'),ST('Clean the magstripe slot','Run a dry, clean card through the swipe slot once.')],
-   checks:['Card dip error|!Error code reported','Card swipe error|No errors','Card tap error|No errors','Firmware|!Unstable version'],
-   finding:'The device is reporting <b>card dip errors</b>, and the firmware is <b>unstable</b>.',findingOk:'The device is reporting <b>card dip errors</b>. The firmware is up to date.'},
-  {n:'Tap / contactless not working',t:'A',route:'Field – EDC replacement',verify:'txn',update:true,modes:['tap'],failMode:'tap',
-   checks:['Card tap error|!Error code reported','Firmware|!Unstable version'],
-   finding:'The device is reporting <b>card tap errors</b>, and the firmware is <b>unstable</b>.',findingOk:'The device is reporting <b>card tap errors</b>. The firmware is up to date.'},
-  {n:'Not able to insert card in slot',t:'B',route:'Field – EDC replacement',caution:'Don\'t force the card in, and never use a pin or anything sharp to clean the slot.',verify:'txn',modes:['chip','swipe','tap'],failMode:'chip',steps:[ST('Clean the chip slot','Wipe the slot gently with a dry, clean card.')]},
-  {n:'Card reader error message',t:'A',route:'RTT if config; Field if hardware',verify:'txn',update:true,modes:['chip','swipe','tap'],failMode:'chip',
-   checks:['Card dip error|!CR-12','Firmware|!Unstable version'],
-   finding:'The reader shows <b>card dip error CR-12</b>, and the firmware is <b>unstable</b>.',findingOk:'The reader shows <b>card dip error CR-12</b>. The firmware is up to date.'}
- ]},
- printer:{n:'Printer',ic:'printer',issues:[
-  {n:'Not printing',t:'C',route:'Field',verify:'print',checks:['Paper sensor|Paper detected','Print head temperature|Normal','Printer service|!Not responding'],
-   finding:'The <b>printer service stopped responding</b>.',fixes:['Restart the printer service','Reset print darkness'],
-   steps:[ST('Load the roll the right way','Shiny side up, feeding from underneath.'),ST('Close the flap firmly','Press until it clicks.')]},
-  {n:'Blank / half / faint print',t:'C',route:'Field – printer',verify:'print',checks:['Paper sensor|Paper detected','Print darkness|!Set too low'],
-   finding:'Print darkness is <b>set too low</b>.',fixes:['Reset print darkness','Restart the printer service'],
-   steps:[ST('Load the roll the right way','Shiny side up. Thermal paper only prints on one side.'),ST('Close the flap firmly','Press until it clicks.')]},
-  {n:'Printer error message',t:'C',route:'Field – printer',verify:'print',checks:['Printer error|!E-04 · cover open','Paper sensor|Paper detected'],
-   finding:'The printer reports <b>error E-04: cover open</b>.',fixes:['Restart the printer service'],
-   steps:[ST('Close the flap firmly','Press both corners until it clicks.')]},
-  {n:'Printer damaged',t:'F',route:'Field – EDC replacement',inspect:true},
-  {n:'Flap issue / paper roll jam',t:'B',route:'Field – printer part',verify:'print',
-   steps:[ST('Open the flap','Lift the printer cover.'),ST('Clear the jam','Remove any torn paper inside.'),ST('Reseat the roll and close','Shiny side up, press until it clicks.')]}
+  {n:'Charger missing / new charger needed',t:'F',route:'Field'}
  ]},
  display:{n:'Display and touch',ic:'touch',issues:[
   {n:'Touch not working / unresponsive',t:'D',route:'Field – EDC replacement'},
@@ -310,6 +274,38 @@ const DEVICE = {
    finding:'The device <b>isn\'t detecting power button presses</b>.',steps:[ST('Check the button isn\'t stuck','Press it gently a few times. It should click back.')]},
   {n:'Screen broken / cracked',t:'F',route:'Field – EDC replacement',inspect:true}
  ]},
+ printer:{n:'Printer',ic:'printer',issues:[
+  {n:'Not printing',t:'C',route:'Field',verify:'print',checks:['Paper sensor|Paper detected','Print head temperature|Normal','Printer service|!Not responding'],
+   finding:'The <b>printer service stopped responding</b>.',fixes:['Restart the printer service','Reset print darkness'],
+   steps:[ST('Load the roll the right way','Shiny side up, feeding from underneath.'),ST('Close the flap firmly','Press until it clicks.')]},
+  {n:'Blank / half / faint print',t:'C',route:'Field – printer',verify:'print',checks:['Paper sensor|Paper detected','Print darkness|!Set too low'],
+   finding:'Print darkness is <b>set too low</b>.',fixes:['Reset print darkness','Restart the printer service'],
+   steps:[ST('Load the roll the right way','Shiny side up. Thermal paper only prints on one side.'),ST('Close the flap firmly','Press until it clicks.')]},
+  {n:'Printer error message',t:'C',route:'Field – printer',verify:'print',checks:['Printer error|!E-04 · cover open','Paper sensor|Paper detected'],
+   finding:'The printer reports <b>error E-04: cover open</b>.',fixes:['Restart the printer service'],
+   steps:[ST('Close the flap firmly','Press both corners until it clicks.')]},
+  {n:'Printer damaged',t:'F',route:'Field – printer (to confirm)',inspect:true},
+  {n:'Flap issue / paper roll jam',t:'B',route:'Field – printer part',verify:'print',
+   steps:[ST('Open the flap','Lift the printer cover.'),ST('Clear the jam','Remove any torn paper inside.'),ST('Reseat the roll and close','Shiny side up, press until it clicks.')]}
+ ]},
+ card:{n:'Card reader',ic:'card',issues:[
+  {n:'Chip card / mag stripe not working',t:'A',route:'Field – EDC replacement',verify:'txn',update:true,modes:['chip','swipe'],failMode:'chip',steps:[ST('Clean the chip slot','Wipe the slot gently with a dry, clean card.'),ST('Clean the magstripe slot','Run a dry, clean card through the swipe slot once.')],
+   checks:['Chip reader (insert)|!Read errors reported','Magstripe reader (swipe)|!Read errors reported','Contactless reader (tap)|No errors','Firmware|!Unstable version'],
+   finding:'The chip and magstripe readers are reporting <b>read errors</b>, and the firmware is <b>unstable</b>.',findingOk:'The chip and magstripe readers are reporting <b>read errors</b>. The firmware is up to date.'},
+  {n:'Card not reading (not sure which)',t:'A',route:'RTT first, then Field',verify:'txn',update:true,modes:['chip','swipe','tap'],failMode:'chip',steps:[ST('Clean the chip slot','Wipe the slot gently with a dry, clean card.'),ST('Clean the magstripe slot','Run a dry, clean card through the swipe slot once.')],
+   checks:['Chip reader (insert)|!Read errors reported','Magstripe reader (swipe)|No errors','Contactless reader (tap)|No errors','Firmware|!Unstable version'],
+   finding:'The <b>chip reader</b> is reporting read errors, and the firmware is <b>unstable</b>.',findingOk:'The <b>chip reader</b> is reporting read errors. The firmware is up to date.'},
+  {n:'Swipe not working',t:'A',route:'Field – EDC replacement',verify:'txn',update:true,modes:['swipe'],failMode:'swipe',steps:[ST('Clean the magstripe slot','Run a dry, clean card through the swipe slot once.')],
+   checks:['Magstripe reader (swipe)|!Read errors reported','Firmware|!Unstable version'],
+   finding:'The <b>magstripe reader</b> is reporting read errors, and the firmware is <b>unstable</b>.',findingOk:'The <b>magstripe reader</b> is reporting read errors. The firmware is up to date.'},
+  {n:'Tap / contactless not working',t:'A',route:'Field – EDC replacement (to confirm)',verify:'txn',update:true,modes:['tap'],failMode:'tap',
+   checks:['Contactless reader (tap)|!Cards not detected','Firmware|!Unstable version'],
+   finding:'The <b>contactless reader isn\'t detecting cards</b>, and the firmware is <b>unstable</b>.',findingOk:'The <b>contactless reader isn\'t detecting cards</b>. The firmware is up to date.'},
+  {n:'Not able to insert card in slot',t:'B',route:'Field – card reader (to confirm)',verify:'txn',modes:['chip','swipe','tap'],failMode:'chip',steps:[ST('Clean the chip slot','Wipe the slot gently with a dry, clean card.')]},
+  {n:'Card reader error message',t:'A',route:'RTT if config; Field if hardware',verify:'txn',update:true,modes:['chip','swipe','tap'],failMode:'chip',
+   checks:['Reader error|!CR-12 · chip reader','Firmware|!Unstable version'],
+   finding:'The reader shows <b>error CR-12</b> on the chip reader, and the firmware is <b>unstable</b>.',findingOk:'The reader shows <b>error CR-12</b> on the chip reader. The firmware is up to date.'}
+ ]},
  hang:{n:'Device hanging / restarting',ic:'hang',issues:[
   {n:'Hanging / freezing / slow',t:'A',route:'RTT',verify:'ask',restart:'remote',checks:['Memory|!92% full','Background apps|!6 running','App & firmware|Up to date'],
    finding:'Memory is <b>92% full</b> and 6 apps are running in the background.',fixes:['Settle open transactions and save logs','Clear memory','Close background apps'],note:'Your payments are settled first. Nothing is lost.'},
@@ -321,11 +317,18 @@ const DEVICE = {
  ]},
  damage:{n:'Physical damage',ic:'damage',issues:[
   {n:'Device broken / cracked',t:'F',route:'Field – EDC replacement',inspect:true,policy:'Damage charges may apply as per your agreement.'},
-  {n:'Base / stand / flap broken',t:'F',route:'Field – EDC replacement',inspect:true},
+  {n:'Base / stand / flap broken',t:'F',route:'Field – part replacement',inspect:true},
   {n:'Lost / stolen / misplaced',t:'F',pineone:true,route:'RTT / Ops',policy:'We\'ll block this terminal so nobody else can use it, and send a replacement.'},
   {n:'Water / burn damage',t:'E',route:'Field – EDC replacement',danger:['Switch the device off','Unplug it from the charger','Don\'t charge it','Don\'t dry it with heat']}
+ ]},
+ network:{n:'Network & Connectivity',ic:'wifi',issues:[
+  {n:'Internet not connected',t:'C',route:'RTT',verify:'net',checks:['Signal strength|!Weak (1 bar)','Internet|!Not reachable','APN settings|Correct'],
+   finding:'Mobile signal is <b>weak (1 bar)</b>, so the device can\'t reach the internet.',fixes:['Reset connection settings'],
+   steps:[ST('Switch on WiFi','Swipe down from the top and turn it on.'),ST('Move to a stronger signal','Near the entrance or a window.')]},
+  {n:'Weak / slow internet',t:'C',route:'RTT',verify:'speed',checks:['Speed test|!0.3 Mbps (slow)','Signal strength|!Weak (1 bar)','Pine Labs server|Reachable','APN settings|Correct'],
+   finding:'Your internet is <b>slow (0.3 Mbps)</b> because the mobile signal is weak.',fixes:['Reset the connection (SIM, network and app)'],
+   steps:[ST('Move to WiFi','Swipe down from the top, turn on WiFi and connect to your shop network.'),ST('Move closer to a stronger signal','Near the entrance or a window.')]}
  ]}
-
 };
 const NONDEV = {
  transaction:{n:'Payment / Transaction',ic:'txn',d:'Card, UPI/QR, EMI, disputes',subs:{
@@ -404,7 +407,7 @@ async function pickSub(){
 }
 async function pickIssue(all){
   let items;
-  if (C.cat==='device'){ items=[]; let g=null; DEVICE[C.sub].issues.forEach((x,i)=>{ if(x.grp&&x.grp!==g){ g=x.grp; items.push({hdr:g}); } items.push({id:i,t:x.n}); }); }
+  if (C.cat==='device') items = DEVICE[C.sub].issues.map((x,i)=>({id:i,t:x.n}));
   else { const l=NONDEV[C.cat].subs[C.sub].issues; items=(all?l:l.slice(0,6)).map(x=>({id:x,t:x})); if(!all&&l.length>6) items.push({id:'_more',t:`Show all ${l.length}`,more:true}); }
   if (!all) await bot('Which of these is happening?',{q:true});
   ask({type:'list',plain:true,items:[...items,{id:'other',t:'Something else',muted:true}],onPick:it=>{
@@ -438,7 +441,7 @@ async function runIssue(){
 }
 async function afterDiagnosis(){
   const it=C.issue;
-  if (it.fixes){ const r=await deviceFix(); if(r==='declined') return declined(); if(r) return resolved(); if(C.forceTicket) return escalate(); }
+  if (it.fixes){ const r=await deviceFix(); if(r) return resolved(); if(C.forceTicket) return escalate(); }
   if (it.update && C.fwOk){ await bot((it.modes||[]).length>1?'No update is needed. Let\'s check the card reader with <b>₹1 test transactions</b>.':'No update is needed. Let\'s check the card reader with a <b>₹1 test transaction</b>.'); const r=await verify('test'); if(r) return resolved(); }
   else if (it.update){ const r=await firmware(); if(r) return resolved(); if(C.forceTicket) return escalate(); }
   if (it.restart){ const r=await restart(); if(r) return resolved(); if(C.forceTicket) return escalate(); }
@@ -476,7 +479,7 @@ async function deviceFix(){
   const it=C.issue, r=RUN;
   const k = card({type:'fix',items:it.fixes.map(t=>({t,st:'wait'})),note:it.note,state:'offer'});
   const a = await ask({type:'card',card:k});
-  if (a==='no'){ k.state='skipped'; me('Not now'); return 'declined'; }
+  if (a==='no'){ k.state='skipped'; me('Not now'); C.skippedFix=true; return false; }
   me('Fix it for me'); k.state='run'; render();
   for (const x of k.items){ x.st='run'; render(); await sleep(1100); guard(r); x.st='done'; C.done.push(x.t); render(); }
   k.state='done'; render();
@@ -523,7 +526,6 @@ function reboot(){ const r=RUN; return new Promise(res=>{ LAYER={type:'boot'}; r
 /* Merchant does it: "already tried?" → ledger unlocking in order */
 async function merchantSteps(){
   const it=C.issue, r=RUN; let steps=it.steps.map((s,i)=>({...s,i}));
-  if (it.caution) card({type:'notice',kind:'warn',text:it.caution});
   await bot(steps.length>1?`Try these <b>${steps.length} steps</b> on your side, one at a time. Each one unlocks after you finish the one before.`:'Try this on your side:');
   const k = card({type:'ledger',steps:steps.map(s=>({...s,st:'lock'})),watch:it.verify}); k.steps[0].st='cur'; render();
   const fixAt = Math.min(1,k.steps.length-1);
@@ -602,10 +604,6 @@ async function verify(after){
 }
 
 /* ---------- endings ---------- */
-async function declined(){
-  await bot('Okay. Nothing was changed on your device and no request was raised. You can come back and run the fix any time.');
-  return endPills();
-}
 async function resolved(){
   // outcome is recorded at "Yes, it's fixed"; Done / Back / leaving all just close the flow
   if (C.fixedBy && !C.watch) card({type:'resolved'});
@@ -698,7 +696,7 @@ async function pineOne(why){
   const a = await ask({type:'pills',items:[{t:'Done'}]}); me(a); start();
 }
 /* ---------- request ---------- */
-const ISSUE_CHIPS = {"Draining fast / low backup": ["Battery lasts less than half a day", "Drops quickly even when not in use", "Drains faster during card payments"], "Not charging / not holding charge": ["Charging icon doesn't appear when plugged in", "Shows charging but the percentage doesn't go up", "Battery drops to 0% within 2–3 hours of a full charge"], "Switches off on battery / sudden shutdown": ["Switches off in the middle of a payment", "Switches off as soon as it's unplugged", "Switches off when the battery is below 30%"], "Swollen / bulging / heating": ["Back cover is bulging or lifting", "Device feels hot even when not in use", "There's a burning smell from the device"], "Charger / adapter not working": ["Charger light doesn't turn on", "Device charges with another charger, not this one", "Charger gets very hot"], "Charger cable damaged": ["Wire is cut or exposed", "Cable sparks or gets hot", "Connector end is broken"], "Cable loose / connection problem": ["Charging stops when the cable moves", "Cable falls out of the port easily", "Charges only at an angle"], "Charging port / pin loose or damaged": ["Port feels loose or wobbly", "Pin inside the port looks bent", "Cable doesn't stay plugged in"], "Charger missing / new charger needed": ["Charger never came with the device", "Charger is lost", "Need a spare charger"], "Touch not working / unresponsive": ["Some parts of the screen don't respond", "Screen responds after a delay", "Screen taps by itself"], "Display not working properly": ["Screen is very dim", "Screen goes dark while in use", "Colours or text look wrong"], "Lines / flicker / dim": ["Lines across the screen", "Screen keeps flickering", "Part of the screen is blank"], "Power button not working": ["Button is stuck and doesn't click", "Button clicks but nothing happens", "Device turns off when the button is touched lightly"], "Screen broken / cracked": ["Screen is cracked but still works", "Screen is cracked and doesn't respond", "Glass is shattered with sharp edges"], "Not printing": ["Nothing comes out after a payment", "Printer makes a noise but no slip comes out", "Prints only sometimes"], "Blank / half / faint print": ["Text is too light to read", "Only half the slip prints", "Slip comes out completely blank"], "Printer error message": ["Shows 'Paper out' with paper loaded", "Shows 'Cover open' with the flap closed", "Error appears after every slip"], "Flap issue / paper roll jam": ["Paper gets stuck inside", "Flap doesn't close properly", "Roller doesn't move the paper"], "Card not reading (not sure which)": ["No card is being read at all", "Card is read only after many tries", "Tap payments also fail"], "Card reader error message": ["Error appears on every card payment", "Error appears and the device restarts", "Error appears only for some cards"], "Hanging / freezing / slow": ["Freezes during a payment", "Payment app takes long to open", "Screen stops responding until a restart"], "Auto restart / reboot": ["Restarts in the middle of a payment", "Restarts several times a day", "Restarts when it gets hot"], "App crash": ["App closes during a payment", "App closes as soon as it opens", "App crashes after printing the slip"], "Device broken / cracked": ["Device fell and the body cracked", "Parts inside are exposed", "Device still works but is damaged"], "Base / stand / flap broken": ["Base or stand is broken", "Printer flap is broken", "Device doesn't sit firmly"], "Water / burn damage": ["Liquid spilled on the device", "Device has burn marks", "Device got wet in the rain"], "Internet not connected": ["No internet at all", "Internet drops during payments", "Works on WiFi but not on SIM"], "Printer damaged": ["Printer cover is broken", "Printer part is loose or missing", "Printer stopped working after a fall"], "Not able to insert card in slot": ["Card doesn't go into the slot", "Something is stuck in the slot", "Card goes in only partly"], "Weak / slow internet": ["Payments take long to go through", "Payments time out", "Internet is slow at certain times of day"], "Tap / contactless not working": ["Tap payments don't go through", "Card isn't detected when tapped", "Only phone or watch payments fail"], "Chip / swipe not working": ["Chip cards show 'Card read error'", "Swiped cards are not read", "Works for some cards, fails for others"]};
+const ISSUE_CHIPS = {"Draining fast / low backup": ["Battery lasts less than half a day", "Drops quickly even when not in use", "Drains faster during card payments"], "Not charging / not holding charge": ["Charging icon doesn't appear when plugged in", "Shows charging but the percentage doesn't go up", "Battery drops to 0% within 2–3 hours of a full charge"], "Switches off on battery / sudden shutdown": ["Switches off in the middle of a payment", "Switches off as soon as it's unplugged", "Switches off when the battery is below 30%"], "Swollen / bulging / heating": ["Back cover is bulging or lifting", "Device feels hot even when not in use", "There's a burning smell from the device"], "Charger / adapter not working": ["Charger light doesn't turn on", "Device charges with another charger, not this one", "Charger gets very hot"], "Charger cable damaged": ["Wire is cut or exposed", "Cable sparks or gets hot", "Connector end is broken"], "Cable loose / connection problem": ["Charging stops when the cable moves", "Cable falls out of the port easily", "Charges only at an angle"], "Charging port / pin loose or damaged": ["Port feels loose or wobbly", "Pin inside the port looks bent", "Cable doesn't stay plugged in"], "Charger missing / new charger needed": ["Charger never came with the device", "Charger is lost", "Need a spare charger"], "Touch not working / unresponsive": ["Some parts of the screen don't respond", "Screen responds after a delay", "Screen taps by itself"], "Display not working properly": ["Screen is very dim", "Screen goes dark while in use", "Colours or text look wrong"], "Lines / flicker / dim": ["Lines across the screen", "Screen keeps flickering", "Part of the screen is blank"], "Power button not working": ["Button is stuck and doesn't click", "Button clicks but nothing happens", "Device turns off when the button is touched lightly"], "Screen broken / cracked": ["Screen is cracked but still works", "Screen is cracked and doesn't respond", "Glass is shattered with sharp edges"], "Not printing": ["Nothing comes out after a payment", "Printer makes a noise but no slip comes out", "Prints only sometimes"], "Blank / half / faint print": ["Text is too light to read", "Only half the slip prints", "Slip comes out completely blank"], "Printer error message": ["Shows 'Paper out' with paper loaded", "Shows 'Cover open' with the flap closed", "Error appears after every slip"], "Flap issue / paper roll jam": ["Paper gets stuck inside", "Flap doesn't close properly", "Roller doesn't move the paper"], "Chip card / mag stripe not working": ["Chip cards show 'Card read error'", "Swiped cards are not read", "Works for some cards, fails for others"], "Card not reading (not sure which)": ["No card is being read at all", "Card is read only after many tries", "Tap payments also fail"], "Swipe not working": ["Swipe shows 'Card read error'", "Needs several swipes to read", "Works only when swiped very slowly"], "Card reader error message": ["Error appears on every card payment", "Error appears and the device restarts", "Error appears only for some cards"], "Hanging / freezing / slow": ["Freezes during a payment", "Payment app takes long to open", "Screen stops responding until a restart"], "Auto restart / reboot": ["Restarts in the middle of a payment", "Restarts several times a day", "Restarts when it gets hot"], "App crash": ["App closes during a payment", "App closes as soon as it opens", "App crashes after printing the slip"], "Device broken / cracked": ["Device fell and the body cracked", "Parts inside are exposed", "Device still works but is damaged"], "Base / stand / flap broken": ["Base or stand is broken", "Printer flap is broken", "Device doesn't sit firmly"], "Water / burn damage": ["Liquid spilled on the device", "Device has burn marks", "Device got wet in the rain"], "Internet not connected": ["No internet at all", "Internet drops during payments", "Works on WiFi but not on SIM"], "Printer damaged": ["Printer cover is broken", "Printer part is loose or missing", "Printer stopped working after a fall"], "Not able to insert card in slot": ["Card doesn't go into the slot", "Something is stuck in the slot", "Card goes in only partly"], "Weak / slow internet": ["Payments take long to go through", "Payments time out", "Internet is slow at certain times of day"], "Tap / contactless not working": ["Tap payments don't go through", "Card isn't detected when tapped", "Only phone or watch payments fail"]};
 const SUB_CHIPS = {
   card:["Payment failed but the customer was charged","Card declined for many customers","Payment status didn't update"],
   upi:["Customer paid but the payment didn't show","QR code doesn't appear","Payment stuck on pending"],
@@ -721,11 +719,12 @@ const SUB_CHIPS = {
 const chipsFor = () => (C.issue && ISSUE_CHIPS[C.issue.n]) || (C.sub && SUB_CHIPS[C.sub]) || [];
 const caseKey = () => [C.cat,C.sub,C.issue?C.issue.n:C.issueName||'other'].join('|');
 async function confirmTicket(auto){
-  const dup = REQS.find(x=>x.cs===C.cat+'|'+(C.sub||''));
+  const dup = REQS.find(x=>x.key===caseKey());
   if (dup){
-    await bot(`You already have an <b>open request</b> for ${esc(C.sub?(C.cat==='device'?DEVICE[C.sub].n:NONDEV[C.cat].subs[C.sub].n):'this')}. Our team is working on it, so there's no need to raise another.`);
+    await bot('You already have an <b>open request</b> for this issue.');
     card({type:'ticket',r:dup,existing:true});
-    return endPills();
+    const a = await ask({type:'pills',items:[{t:'Okay, I\'ll wait'},{t:'Create a new request'}]}); me(a);
+    if (a.startsWith('Okay')) return endPills();
   }
   if (C.reason) await bot(C.reason);
   if (auto) return submitTicket();
@@ -738,8 +737,9 @@ async function confirmTicket(auto){
   card({type:'summary'});
   const a = await ask({type:'pills',items:[{t:'Create request',ticket:true},{t:'Cancel',cancel:true}]}); me(a);
   if (a==='Cancel'){ await bot('Okay, I haven\'t raised anything.'); return endPills(); }
-  await bot('Which number can our team call you on?',{q:true});
-  const num = await ask({type:'phone'}); me('+91 '+num); C.phone='+91 '+num;
+  await bot('Where should we send updates about this request?');
+  const n = await ask({type:'pills',items:[{t:'+91 98••• ••210',d:'registered'},{t:'Another number'}]}); me(n);
+  if (n==='Another number'){ await bot('Enter the 10-digit mobile number.'); const num = await ask({type:'phone'}); me('+91 '+num); C.phone='+91 '+num; } else C.phone='+91 98••• ••210';
   await bot(`Enter the 4-digit code we sent to <b>${esc(C.phone)}</b>.`);
   PROMPT_ERR='';
   for(;;){ const code = await ask({type:'otp'}); if(code!=='0000') break; PROMPT_ERR='That code doesn\'t match. Check the SMS and try again.'; }
@@ -749,7 +749,7 @@ async function confirmTicket(auto){
 async function submitTicket(){
   const r0=RUN; const k=card({type:'check',rows:[{l:'Creating your request',st:'run'}],bare:true}); await sleep(1100); guard(r0);
   T.splice(T.indexOf(k),1); SEEN=Math.min(SEEN,T.length);
-  const r = {id:'SR-'+(2614000+Math.floor(Math.random()*999)), key:caseKey(), cs:C.cat+'|'+(C.sub||''), name:C.issue?C.issue.n:C.issueName||'Something else',
+  const r = {id:'SR-'+(2614000+Math.floor(Math.random()*999)), key:caseKey(), name:C.issue?C.issue.n:C.issueName||'Call me back',
     team: C.issue?teamOf(C.issue.route).replace(/^./,x=>x.toUpperCase()) : C.callback?'Support team':NONDEV[C.cat].n+' team',
     eta: C.priority?'Within 4 hours':C.callback?'Call within 1–2 hours':'Within 24 hours', priority:C.priority};
   REQS.unshift(r); card({type:'ticket',r});
@@ -803,7 +803,7 @@ function renderCard(m, active){
 }
 function renderPrompt(p){
   if (!p) return '';
-  if (p.type==='list') return `<div class="olist m">${p.items.map((x,i)=> x.hdr ? `<div class="ohdr">${esc(x.hdr)}</div>` : `<button class="orow ${x.muted?'muted':''}" data-act="pick:${i}">${p.plain||!x.ic?'':`<span class="oi">${ic(x.ic,17,x.muted?'#5A6580':'#1E8E4F')}</span>`}<div style="flex:1"><div class="ot" style="${x.more?'color:var(--g600);font-weight:600':''}">${esc(x.t)}</div>${x.d?`<div class="od">${esc(x.d)}</div>`:''}</div>${ic('right',16,'#8A93A8')}</button>`).join('')}</div>`;
+  if (p.type==='list') return `<div class="olist m">${p.items.map((x,i)=>`<button class="orow ${x.muted?'muted':''}" data-act="pick:${i}">${p.plain||!x.ic?'':`<span class="oi">${ic(x.ic,17,x.muted?'#5A6580':'#1E8E4F')}</span>`}<div style="flex:1"><div class="ot" style="${x.more?'color:var(--g600);font-weight:600':''}">${esc(x.t)}</div>${x.d?`<div class="od">${esc(x.d)}</div>`:''}</div>${ic('right',16,'#8A93A8')}</button>`).join('')}</div>`;
   if (p.type==='pills') return `<div class="pills m">${p.items.map((x,i)=>{ x=typeof x==='string'?{t:x}:x; return `<button class="pill ${x.go?'go':''} ${x.ticket?'ticket':''} ${x.cancel?'cancel':''}" data-act="pill:${i}">${x.ticket?ic('ticket',15):''}${esc(x.t)}${p.auto&&i===0?` <span style="opacity:.7;font-weight:400">· starts in ${p.auto}s</span>`:''}${x.d?`<span style="font-weight:400;opacity:.65">· ${x.d}</span>`:''}</button>`;}).join('')}</div>`;
   if (p.type==='checklist') return `<div class="card m"><div class="cl">${p.items.map((t,i)=>`<button class="clrow ${p.sel.includes(i)?'on':''}" data-act="cl:${i}" role="checkbox" aria-checked="${p.sel.includes(i)}"><span class="cbox">${p.sel.includes(i)?ic('check',13,'#fff',3):''}</span>${esc(t)}</button>`).join('')}</div>
      <div class="btnrow"><button class="btn sec" data-act="cl:none">None of these</button><button class="btn primary" data-act="cl:ok" ${p.sel.length?'':'disabled'}>Confirm</button></div></div>`;
@@ -811,7 +811,7 @@ function renderPrompt(p){
      <textarea id="desc" class="inp" rows="3" style="height:auto;padding:10px 12px;font-size:14px;letter-spacing:0;resize:none" placeholder="${esc(p.ph)}" aria-describedby="dh">${esc(p.val)}</textarea>
      <div class="cs" id="dh">${esc(p.help)}</div>
      <button class="btn primary" data-act="desc" ${p.val.trim().length>=10?'':'disabled'}>Continue</button></div>`;
-  if (p.type==='phone') return `<div class="card m"><input class="inp" id="ph" inputmode="numeric" maxlength="10" placeholder="10-digit mobile number" autocomplete="off"><div class="cs">We'll call you and send updates on this number. Use the one you pick up most often.</div><button class="btn primary" data-act="phone">Send code</button></div>`;
+  if (p.type==='phone') return `<div class="card m"><input class="inp" id="ph" inputmode="numeric" maxlength="10" placeholder="10-digit mobile number" autocomplete="off"><button class="btn primary" data-act="phone">Send code</button></div>`;
   if (p.type==='otp') return `<div class="card m"><div class="otp ${PROMPT_ERR?'bad':''}">${[0,1,2,3].map(i=>`<input inputmode="numeric" maxlength="1" data-otp="${i}" aria-label="Digit ${i+1}">`).join('')}</div>${PROMPT_ERR?`<div class="cs" style="color:var(--red)" role="alert">${PROMPT_ERR}</div>`:''}<div class="cs" id="rs"></div><button class="btn primary" data-act="otp">Verify</button></div>`;
   return '';
 }
