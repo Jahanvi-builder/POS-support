@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>POS Help & Support — v3 prototype</title>
+<title>POS Help & Support — v4 prototype</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -18,8 +18,8 @@
 :root{color-scheme:light}
 input,textarea{background:#fff;color:var(--ink);-webkit-text-fill-color:var(--ink);caret-color:var(--g600)}
 input::placeholder,textarea::placeholder{color:var(--ink4);-webkit-text-fill-color:var(--ink4);opacity:1}
-html,body{height:100%;margin:0}
-body{background:var(--page);font-family:Inter,system-ui,sans-serif;color:var(--ink);display:flex;align-items:center;justify-content:center;min-height:100vh;-webkit-font-smoothing:antialiased}
+html,body{margin:0}
+body{background:var(--page);font-family:Inter,system-ui,sans-serif;color:var(--ink);display:flex;align-items:safe center;justify-content:center;min-height:100vh;-webkit-font-smoothing:antialiased}
 button{font-family:inherit;cursor:pointer;color:inherit}
 input,textarea{font-family:inherit;color:inherit}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -30,7 +30,7 @@ input,textarea{font-family:inherit;color:inherit}
 @keyframes pop{0%{transform:scale(.5);opacity:0}70%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
 
 .stage{display:flex;gap:32px;align-items:flex-start;padding:32px}
-.device{width:360px;height:640px;background:#fff;border-radius:6px;box-shadow:0 10px 30px rgba(0,0,0,.14);display:flex;flex-direction:column;overflow:hidden;position:relative;flex-shrink:0}
+.device{position:sticky;top:32px;width:360px;height:640px;background:#fff;border-radius:6px;box-shadow:0 10px 30px rgba(0,0,0,.14);display:flex;flex-direction:column;overflow:hidden;position:relative;flex-shrink:0}
 .statusbar{height:24px;background:var(--g900);flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 10px;color:#CFE9DA;font-size:11px;font-weight:500}
 .notes{width:280px;font-size:13px;line-height:19px;color:var(--ink2)}
 .notes h3{font-size:12px;margin:0 0 6px;color:var(--ink);text-transform:uppercase;letter-spacing:.05em}
@@ -100,6 +100,11 @@ input,textarea{font-family:inherit;color:inherit}
 .btn.primary{background:var(--g900);color:#fff}.btn.sec{background:#fff;color:var(--g900);box-shadow:inset 0 0 0 1.5px var(--g900)}
 .btn.light{background:var(--g400);color:var(--g900)}
 .btn[disabled]{opacity:.4;cursor:default}
+.hlist .hrow{min-height:64px;padding:12px 14px}.hlist .hrow .ot{display:flex;flex-direction:column;font-size:15px}.hlist .hrow .od{font-size:12px;margin-top:2px}
+.cnt{min-width:24px;height:24px;padding:0 7px;border-radius:12px;background:#1F4FB8;color:#fff;font-size:13px;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
+.card.rq .kv .k{min-width:120px;flex-shrink:0}.card.rq .kv .v{text-align:right}.card.rq.hl{border-color:#1F4FB8;box-shadow:0 0 0 1px #1F4FB8}
+.rfoot{margin-top:10px;padding-top:10px;border-top:1px solid var(--line2)}.rst{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#1E7A45}.rst.open{color:#1F4FB8}
+.htoast{background:#1A2133;color:#fff;font-size:13px;border-radius:10px;padding:10px 12px}
 .goreq{width:40px;height:40px;border-radius:50%;border:none;background:var(--line2);display:flex;align-items:center;justify-content:center;flex-shrink:0;align-self:flex-start}
 .goreq:active{background:var(--line)}
 
@@ -178,7 +183,13 @@ input,textarea{font-family:inherit;color:inherit}
 <div class="stage">
   <div class="device"><div class="statusbar"><span>Pine Labs</span><span>4G · 82%</span></div><div id="app" style="flex:1;display:flex;flex-direction:column;min-height:0;position:relative"></div></div>
   <aside class="notes">
-    <span class="v">v3 · 25 Nov product + Ops feedback</span>
+    <span class="v">v4 · 26 Nov Help &amp; Support home + My Requests</span>
+    <h3>New in v4</h3>
+    <ul>
+      <li>Help &amp; Support home: Request Callback and the Help &amp; Support (call / WhatsApp / email) option are removed. A PineOne QR replaces them.</li>
+      <li>With an open request, My Requests moves to the top with a count. Without one, Log a Complaint is on top.</li>
+      <li>My Requests shows the expected resolution time on open requests (placeholder until the data feed is ready).</li>
+    </ul>
     <h3>How it works</h3>
     <ul>
       <li>Category tabs and sub-categories on one screen.</li>
@@ -199,6 +210,7 @@ input,textarea{font-family:inherit;color:inherit}
     </ul>
     <h3>Simulate</h3>
     <div class="sim">
+      <label><input type="checkbox" id="simOpen"> Merchant has an open request</label>
       <label><input type="checkbox" id="simOff"> Device can't be reached</label>
       <label><input type="checkbox" id="simFix"> Fixes don't solve it</label>
       <label><input type="checkbox" id="simTouch"> Touch screen fully dead</label>
@@ -213,7 +225,7 @@ const P = {
   back:'<path d="M19 12H5M11 6l-6 6 6 6"/>', right:'<path d="M9 6l6 6-6 6"/>', check:'<path d="M5 12l5 5 9-10"/>', close:'<path d="M6 6l12 12M18 6L6 18"/>',
   alert:'<path d="M12 3l10 18H2L12 3z"/><path d="M12 10v5M12 18h.01"/>', info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/>',
   edit:'<path d="M4 20h4L19 9l-4-4L4 16v4z"/>', lock:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/>', refresh:'<path d="M20 11a8 8 0 10-2 6"/><path d="M20 4v7h-7"/>',
-  device:'<rect x="6" y="2" width="12" height="20" rx="2"/><path d="M9 6h6M10 18h4"/>', arrowur:'<path d="M7 17L17 7M8 7h9v9"/>', battery:'<rect x="3" y="7" width="16" height="10" rx="2"/><path d="M22 11v2M7 10v4M10 10v4"/>',
+  device:'<rect x="6" y="2" width="12" height="20" rx="2"/><path d="M9 6h6M10 18h4"/>', clock:'<path d="M7 3h10M7 21h10M8 3c0 5 8 5 8 9s-8 4-8 9M16 3c0 5-8 5-8 9s8 4 8 9"/>', arrowur:'<path d="M7 17L17 7M8 7h9v9"/>', battery:'<rect x="3" y="7" width="16" height="10" rx="2"/><path d="M22 11v2M7 10v4M10 10v4"/>',
   plug:'<path d="M9 2v5M15 2v5M6 7h12v4a6 6 0 01-12 0V7zM12 17v5"/>', cable:'<path d="M4 20c4 0 4-6 8-6s4 6 8 6M12 14V4M9 4h6"/>',
   touch:'<path d="M9 11V5a2 2 0 014 0v6"/><path d="M13 9a2 2 0 014 0v3a7 7 0 01-7 7h-.5A5.5 5.5 0 014 13.5V12a2 2 0 014 0"/>', printer:'<path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/>',
   card:'<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/>', hang:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
@@ -373,8 +385,13 @@ const CATS = [
 ];
 
 /* ============================ CHAT ENGINE ============================ */
-let SEEN=0, LASTP=null; let T=[], PROMPT=null, C={}, LAYER=null, RUN=0, PROMPT_ERR='', VIEW='pick', TAB='device', TABX=0, SWAP=false;
+let SEEN=0, LASTP=null; let T=[], PROMPT=null, C={}, LAYER=null, RUN=0, PROMPT_ERR='', VIEW='home', TAB='device', TABX=0, SWAP=false;
 const REQS=[];
+const CLOSED=[{id:'10303327',created:'17 Nov 2026',name:'Wi-Fi connectivity issue'},{id:'10303237',created:'17 Nov 2026',name:'USB cable connectivity issue'},{id:'3051071',created:'27 May 2026',name:'Paper roll request'}];
+const fmtD = d => d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+const fmtEta = d => d.toLocaleDateString('en-GB',{day:'numeric',month:'short'})+', '+d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+function stampReq(r){ const n=new Date(); r.created=r.created||fmtD(n); if(!r.etaAt){ const e=new Date(n.getTime()+24*3600e3); e.setMinutes(0,0,0); r.etaAt=fmtEta(e);} return r; }
+let REQBACK='home';
 const sim = k => document.getElementById(k).checked;
 const now = () => new Date().toLocaleTimeString('en-IN',{hour:'numeric',minute:'2-digit'});
 const sleep = ms => new Promise(r=>setTimeout(r,ms));
@@ -388,6 +405,7 @@ function ask(p){ PROMPT=p; render(); return new Promise(res=>{ p.resolve=res; })
 async function go(fn){ try{ await fn(); }catch(e){ if(e!=='stale') throw e; } }
 
 function start(){ SEEN=0; RUN++; T=[]; PROMPT=null; C={}; LAYER=null; VIEW='pick'; render(); }
+function goHome(){ SEEN=0; RUN++; T=[]; PROMPT=null; C={}; LAYER=null; VIEW='home'; render(); }
 function openSub(cat, sub){
   SEEN=0; RUN++; T=[]; PROMPT=null; LAYER=null; C={cat}; VIEW='flow';
   if (sub==='other'){ render(); return go(somethingElse); }
@@ -613,6 +631,7 @@ async function resolved(){
 }
 async function endPills(){
   const a = await ask({type:'pills',items:[{t:'Done',go:true},{t:'Need help with something else'}]}); me(a);
+  if (a==='Done') return goHome();
   start();
 }
 const teamOf = r => /^Field/.test(r) ? 'field service team' : /^RTT/.test(r) ? 'remote support team' : 'support team';
@@ -696,7 +715,7 @@ async function pineOne(why){
   await bot(msg);
   card({type:'pineone'});
   if (why==='touch') return; // no further taps possible
-  const a = await ask({type:'pills',items:[{t:'Done'}]}); me(a); start();
+  const a = await ask({type:'pills',items:[{t:'Done'}]}); me(a); goHome();
 }
 /* ---------- request ---------- */
 const ISSUE_CHIPS = {"Draining fast / low backup": ["Battery lasts less than half a day", "Drops quickly even when not in use", "Drains faster during card payments"], "Not charging / not holding charge": ["Charging icon doesn't appear when plugged in", "Shows charging but the percentage doesn't go up", "Battery drops to 0% within 2–3 hours of a full charge"], "Switches off on battery / sudden shutdown": ["Switches off in the middle of a payment", "Switches off as soon as it's unplugged", "Switches off when the battery is below 30%"], "Swollen / bulging / heating": ["Back cover is bulging or lifting", "Device feels hot even when not in use", "There's a burning smell from the device"], "Charger / adapter not working": ["Charger light doesn't turn on", "Device charges with another charger, not this one", "Charger gets very hot"], "Charger cable damaged": ["Wire is cut or exposed", "Cable sparks or gets hot", "Connector end is broken"], "Cable loose / connection problem": ["Charging stops when the cable moves", "Cable falls out of the port easily", "Charges only at an angle"], "Charging port / pin loose or damaged": ["Port feels loose or wobbly", "Pin inside the port looks bent", "Cable doesn't stay plugged in"], "Charger missing / new charger needed": ["Charger never came with the device", "Charger is lost", "Need a spare charger"], "Touch not working / unresponsive": ["Some parts of the screen don't respond", "Screen responds after a delay", "Screen taps by itself"], "Display not working properly": ["Screen is very dim", "Screen goes dark while in use", "Colours or text look wrong"], "Lines / flicker / dim": ["Lines across the screen", "Screen keeps flickering", "Part of the screen is blank"], "Power button not working": ["Button is stuck and doesn't click", "Button clicks but nothing happens", "Device turns off when the button is touched lightly"], "Screen broken / cracked": ["Screen is cracked but still works", "Screen is cracked and doesn't respond", "Glass is shattered with sharp edges"], "Not printing": ["Nothing comes out after a payment", "Printer makes a noise but no slip comes out", "Prints only sometimes"], "Blank / half / faint print": ["Text is too light to read", "Only half the slip prints", "Slip comes out completely blank"], "Printer error message": ["Shows 'Paper out' with paper loaded", "Shows 'Cover open' with the flap closed", "Error appears after every slip"], "Flap issue / paper roll jam": ["Paper gets stuck inside", "Flap doesn't close properly", "Roller doesn't move the paper"], "Card not reading (not sure which)": ["No card is being read at all", "Card is read only after many tries", "Tap payments also fail"], "Card reader error message": ["Error appears on every card payment", "Error appears and the device restarts", "Error appears only for some cards"], "Hanging / freezing / slow": ["Freezes during a payment", "Payment app takes long to open", "Screen stops responding until a restart"], "Auto restart / reboot": ["Restarts in the middle of a payment", "Restarts several times a day", "Restarts when it gets hot"], "App crash": ["App closes during a payment", "App closes as soon as it opens", "App crashes after printing the slip"], "Device broken / cracked": ["Device fell and the body cracked", "Parts inside are exposed", "Device still works but is damaged"], "Base / stand / flap broken": ["Base or stand is broken", "Printer flap is broken", "Device doesn't sit firmly"], "Water / burn damage": ["Liquid spilled on the device", "Device has burn marks", "Device got wet in the rain"], "Internet not connected": ["No internet at all", "Internet drops during payments", "Works on WiFi but not on SIM"], "Printer damaged": ["Printer cover is broken", "Printer part is loose or missing", "Printer stopped working after a fall"], "Not able to insert card in slot": ["Card doesn't go into the slot", "Something is stuck in the slot", "Card goes in only partly"], "Weak / slow internet": ["Payments take long to go through", "Payments time out", "Internet is slow at certain times of day"], "Tap / contactless not working": ["Tap payments don't go through", "Card isn't detected when tapped", "Only phone or watch payments fail"], "Chip / swipe not working": ["Chip cards show 'Card read error'", "Swiped cards are not read", "Works for some cards, fails for others"]};
@@ -753,7 +772,7 @@ async function submitTicket(){
   const r = {id:'SR-'+(2614000+Math.floor(Math.random()*999)), key:caseKey(), cs:C.cat+'|'+(C.sub||''), name:C.issue?C.issue.n:C.issueName||'Something else',
     team: C.issue?teamOf(C.issue.route).replace(/^./,x=>x.toUpperCase()) : C.callback?'Support team':NONDEV[C.cat].n+' team',
     eta: C.priority?'Within 4 hours':C.callback?'Call within 1–2 hours':'Within 24 hours', priority:C.priority};
-  REQS.unshift(r); card({type:'ticket',r});
+  REQS.unshift(stampReq(r)); card({type:'ticket',r});
   await bot('Request created. We\'ll send updates to you by SMS.');
   return endPills();
 }
@@ -820,7 +839,7 @@ function renderPicker(){
   const subs = TAB==='device' ? Object.entries(DEVICE).map(([k,v])=>({k,n:v.n,ic:v.ic,d:(v.issues.some(x=>x.grp)?[...new Set(v.issues.map(x=>x.grp))].join(', '):v.issues.slice(0,3).map(x=>x.n.split(' / ')[0]).join(', '))})) :
     Object.entries(NONDEV[TAB].subs).map(([k,v])=>({k,n:v.n,ic:v.ic,d:v.issues.slice(0,3).join(', ')}));
   const short={device:'Device',transaction:'Payments',settlement:'Settlement',account:'Account'};
-  return `<div class="appbar"><button class="iconbtn" aria-label="Back">${ic('back',22)}</button><div class="ab-t">Log a complaint</div></div>
+  return `<div class="appbar"><button class="iconbtn" data-act="home" aria-label="Back">${ic('back',22)}</button><div class="ab-t">Log a complaint</div></div>
    <div class="tabs" role="tablist">${[...CATS.filter(c=>c.id===TAB),...CATS.filter(c=>c.id!==TAB)].map(c=>`<button class="tab ${TAB===c.id?'on':''}" role="tab" aria-selected="${TAB===c.id}" data-act="tab:${c.id}">${ic(c.ic,16)}${short[c.id]}</button>`).join('')}</div>
    <div class="picklist"><div class="ph">What's the issue about?</div>
    <div style="padding:0 16px 16px"><div class="olist">${subs.map(x=>`<button class="orow" data-act="sub:${x.k}"><span class="oi">${ic(x.ic,17,'#1E8E4F')}</span><div style="flex:1;min-width:0"><div class="ot">${esc(x.n)}</div><div class="od" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(x.d)}</div></div>${ic('right',16,'#8A93A8')}</button>`).join('')}
@@ -830,16 +849,37 @@ const P1CARD = () => `<div class="card"><div class="ch">${ic('phone',18,'#1E8E4F
   <div style="display:flex;gap:14px;align-items:center"><div class="qr" aria-label="QR code to open PineOne">${Array.from({length:49},(_,i)=>`<i style="background:${[0,1,2,7,9,14,15,16,4,5,6,11,13,18,19,20,28,29,30,35,37,42,43,44,24,17,31,39,46,22,26,33].includes(i)?'#2C3448':'transparent'}"></i>`).join('')}</div>
   <div class="cs" style="flex:1">Scan with your phone camera to open PineOne.</div></div>
   <ol class="p1steps"><li>Open the <b>PineOne</b> app on your phone</li><li>Go to <b>Help &amp; Support</b></li><li>Tap <b>Log a complaint</b> and choose this issue</li></ol></div>`;
+function renderReqs(hl,back){
+  const st=(open)=>open?`<span class="rst open">${ic('clock',15,'#1F4FB8',2)}Open</span>`:`<span class="rst">${ic('check',15,'#1E7A45',2.4)}Resolved and closed</span>`;
+  const row=(k,v)=>`<div class="kv"><span class="k">${k}</span><span class="v">${v}</span></div>`;
+  const cardH=(r,open)=>`<div class="card rq ${r.id===hl?'hl':''}">${row('Request ID',esc(r.id))}${row('Created date',esc(r.created))}${row('Type',esc(r.name))}${open?row('Expected resolution',`<b style="color:#1A2133">By ${esc(r.etaAt)}</b>`):''}<div class="rfoot">${st(open)}</div></div>`;
+  REQS.forEach(stampReq);
+  return `<div class="appbar" style="background:#fff"><button class="iconbtn" aria-label="Back" data-act="${back}">${ic('back',22)}</button><div class="ab-t">My Requests</div></div>
+   <div style="flex:1;min-height:0;overflow-y:auto;background:var(--bg);padding:12px 16px 16px;display:flex;flex-direction:column;gap:10px">${REQS.map(r=>cardH(r,true)).join('')}${CLOSED.map(r=>cardH(r,false)).join('')}</div>`;
+}
+function renderHome(){
+  const open=REQS.length; const sw=document.getElementById('simOpen'); if(sw) sw.checked=open>0;
+  const rows={
+    req:`<button class="orow hrow" data-act="reqs"><span class="oic">${ic('ticket',18,'#1E8E4F')}</span><span class="ot">My Requests<span class="od">View all Open and Close Requests</span></span>${open?`<span class="cnt" aria-label="${open} open">${open}</span>`:''}${ic('right',18,'#8A93A8')}</button>`,
+    log:`<button class="orow hrow" data-act="to-pick"><span class="oic">${ic('chat',18,'#1E8E4F')}</span><span class="ot">Log a Complaint<span class="od">Raise Complaints or Requests</span></span>${ic('right',18,'#8A93A8')}</button>`,
+    roll:`<button class="orow hrow" data-act="roll"><span class="oic">${ic('printer',18,'#1E8E4F')}</span><span class="ot">Request Paper Roll</span>${ic('right',18,'#8A93A8')}</button>`};
+  const order = open?['req','log','roll']:['log','req','roll'];
+  return `<div class="appbar"><button class="iconbtn" aria-label="Back">${ic('back',22)}</button><div class="ab-t">Help & Support</div></div>
+   <div style="flex:1;min-height:0;overflow-y:auto;background:var(--bg);padding:12px 16px 16px;display:flex;flex-direction:column;gap:14px">
+    <div class="olist hlist">${order.map(k=>rows[k]).join('')}</div>
+    <div class="card" style="margin:0"><div style="display:flex;gap:14px;align-items:center"><div class="qr" aria-label="QR code to open PineOne">${Array.from({length:49},(_,i)=>`<i style="background:${[0,1,2,7,9,14,15,16,4,5,6,11,13,18,19,20,28,29,30,35,37,42,43,44,24,17,31,39,46,22,26,33].includes(i)?'#2C3448':'transparent'}"></i>`).join('')}</div>
+     <div style="flex:1"><div class="ct">Get help on PineOne</div><div class="cs" style="margin-top:2px">Scan with your phone camera to open the PineOne app.</div></div></div></div>
+    ${HOMETOAST?`<div class="htoast">${esc(HOMETOAST)}</div>`:''}
+   </div>`;
+}
+let HOMETOAST='';
 function renderLayer(){
   const L=LAYER; if(!L) return '';
   if (L.type==='tt'){ const done=L.res.filter(Boolean).length;
     return `<div class="layer tt" style="inset:0"><div style="padding:14px 16px 10px;text-align:center"><div style="font-size:16px;font-weight:600">${L.retry?'One more try':'Tap the green spot'}</div><div style="font-size:13px;color:#B7BCC8;margin-top:2px">${done} of 6 checked</div></div>
      <div class="tt-grid">${L.res.map((r,i)=>`<button class="tt-cell" data-act="tt:${i}" aria-label="Spot ${i+1}">${i===L.active?`<span class="tt-spot">Tap</span><span class="tt-bar"><div style="animation:drain ${L.retry?1:5}s linear forwards"></div></span>`:r==='p'?ic('check',32,'#50D387',3):r==='f'?ic('close',32,'#F28B82',3):''}</button>`).join('')}</div>
      <div style="padding:10px;text-align:center;font-size:12px;color:#B7BCC8">The test ends by itself.</div></div>`; }
-  if (L.type==='myreq') return `<div class="layer" style="inset:0;background:var(--bg)"><div class="appbar" style="background:#fff"><button class="iconbtn" aria-label="Back" data-act="closelayer">${ic('back',22)}</button><div class="ab-t">My requests</div></div>
-     <div class="tabs" style="background:#fff"><button class="tab on">Open (${REQS.length})</button><button class="tab">Closed</button></div>
-     <div style="flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:10px">${REQS.map(r=>`<div class="card" style="margin:0;${r.id===L.hl?'border-color:#1F4FB8;box-shadow:0 0 0 1px #1F4FB8':''}"><div class="okhead"><span class="okic" style="background:var(--blue50)">${ic('ticket',18,'#1F4FB8')}</span><div style="flex:1"><div class="ct">${esc(r.name)}</div><div class="cs">${esc(r.id)} · <span style="color:#1F4FB8;font-weight:600">Open</span>${r.priority?' · Urgent':''}</div></div></div>
-       <div class="kv"><span class="k">Raised</span><span class="v">Today</span></div><div class="kv"><span class="k">Sent to</span><span class="v">${esc(r.team)}</span></div></div>`).join('')}</div></div>`;
+  if (L.type==='myreq') return `<div class="layer" style="inset:0;background:var(--bg)">${renderReqs(L.hl,'closelayer')}</div>`;
   if (L.type==='boot') return `<div class="layer boot" style="inset:0"><div class="logo">pine labs</div><span class="spin" style="width:28px;height:28px;border-width:3px;border-color:#333;border-top-color:#50D387"></span><div style="font-size:12px;color:#8A93A8">Restarting…</div></div>`;
   if (L.type==='poshome') return `<div class="layer poshome" style="inset:0"><div style="padding:16px;font-size:17px;font-weight:600;background:#fff;border-bottom:1px solid var(--line)">Home</div>
      <div class="notif"><div style="display:flex;gap:10px;align-items:center"><span class="okic" style="width:32px;height:32px">${ic('chat',16,'#1E8E4F')}</span><div style="flex:1"><div class="ct">Help & Support</div><div class="cs">Your device restarted. Let's check if it helped.</div></div></div><button class="btn primary" data-act="resume">Continue</button></div>
@@ -855,6 +895,8 @@ function render(){
     if (m.k==='divider') return `<div class="${A} divider">${esc(m.text)}</div>`;
     if (m.k==='card') return `<div class="${A}">${renderCard(m, PROMPT && PROMPT.card===m)}</div>`;
   }).join('');
+  if (VIEW==='home'){ app.innerHTML=renderHome(); return; }
+  if (VIEW==='reqs'){ app.innerHTML=renderReqs(null,'home'); return; }
   if (VIEW==='p1'){ app.innerHTML = `<div class="appbar"><button class="iconbtn" data-act="to-pick" aria-label="Back">${ic('back',22)}</button><div class="ab-t">Get help on PineOne</div></div><div class="thread"><div class="bot">Use PineOne on your phone when this terminal's screen isn't responding or it won't turn on.</div>${P1CARD()}</div>`; return; }
   if (VIEW==='pick'){
     const before={}; app.querySelectorAll('.tab').forEach(t=>before[t.dataset.act]=t.getBoundingClientRect().left);
@@ -888,6 +930,9 @@ app.addEventListener('click', e=>{
   if (a==='tab'){ if(TAB===v) return; TAB=v; SWAP=true; return render(); }
   if (a==='sub') return openSub(TAB, v);
   if (a==='myreq'){ LAYER={type:'myreq',hl:v}; render(); return; }
+  if (a==='home') return goHome();
+  if (a==='reqs'){ VIEW='reqs'; HOMETOAST=''; return render(); }
+  if (a==='roll'){ HOMETOAST='Request Paper Roll stays as it is today. It is not part of this prototype.'; render(); setTimeout(()=>{HOMETOAST=''; if(VIEW==='home') render();},2500); return; }
   if (a==='closelayer' && LAYER && LAYER.type==='myreq'){ LAYER=null; render(); return; }
     if (a==='resume' && LAYER && LAYER.resume) return LAYER.resume();
   if (a==='tt' && LAYER && LAYER.tap) return LAYER.tap(+v);
@@ -906,7 +951,12 @@ app.addEventListener('click', e=>{
 function syncDesc(){ const ta=document.getElementById('desc'), b=app.querySelector('[data-act="desc"]'), h=document.getElementById('dh'); if(!ta||!b) return; const n=ta.value.trim().length; b.disabled=n<10; h.textContent = n<10 ? PROMPT.help : (PROMPT.chips.length?'Thanks, that helps the technician come prepared.':'Thanks, that helps the team come prepared.'); app.querySelectorAll('[data-act^="chip:"]').forEach(b2=>{ const on=ta.value.includes(PROMPT.chips[+b2.dataset.act.split(':')[1]]); b2.classList.toggle('chipon',on); b2.setAttribute('aria-pressed',on); }); h.style.color = n<10 ? '' : 'var(--g700)'; if(PROMPT) PROMPT.val=ta.value; }
 app.addEventListener('input', e=>{ if(e.target.id==='desc') return syncDesc(); const d=e.target.dataset.otp; if(d==null) return; e.target.value=e.target.value.replace(/\D/g,''); if(e.target.value&&+d<3) app.querySelector(`[data-otp="${+d+1}"]`).focus(); });
 app.addEventListener('keydown', e=>{ const d=e.target.dataset.otp; if(d!=null&&e.key==='Backspace'&&!e.target.value&&+d>0) app.querySelector(`[data-otp="${+d-1}"]`).focus(); });
-start();
+document.getElementById('simOpen').addEventListener('change',e=>{
+  if (e.target.checked){ if(!REQS.length) REQS.unshift(stampReq({id:'SR-2614208',cs:'device|printer',name:'Not printing',team:'Field service team'})); }
+  else REQS.splice(0,REQS.length);
+  if (VIEW==='home'||VIEW==='reqs') render();
+});
+goHome();
 </script>
 </body>
 </html>
